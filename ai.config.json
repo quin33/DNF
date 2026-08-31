@@ -1,0 +1,7 @@
+{
+  "baseURL": "",
+  "apiKey": "",
+  "model": "",
+  "maxTokens": 5000,
+  "temperature": 0.85
+}
