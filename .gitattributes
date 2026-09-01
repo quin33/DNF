@@ -1,0 +1,11 @@
+# 强制文本文件在所有平台检出为 LF。
+#
+# 原因：Git for Windows 的系统级配置常带 core.autocrlf=true，检出时会把
+# 仓库里的 LF 转成 CRLF。而 test/ 下多处断言用了字面量 \n 的正则，例如
+# test/feed.test.js 的 /function addFeedBatch\([\s\S]*?\n}\n/，在 CRLF
+# 文本（\r\n}\r\n）下匹配不到，测试会无故失败。
+# 锁定 LF 可让任何人克隆本仓库后测试都能通过，无需改本机 git 配置。
+* text=auto eol=lf
+
+# 二进制文件不做任何换行符转换（reference/ 下的截图）
+*.png binary
