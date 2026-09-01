@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>游戏服务统一控制台</title>
+  <link rel="stylesheet" href="/control-panel.css">
+  <style>
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 42rem), 1fr));
+      gap: 2rem;
+      margin-block: 2rem;
+    }
+    .game-card {
+      background: var(--surface-2, #0F131C);
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .game-card h2 {
+      font-size: 1.25rem;
+      margin: 0 0 0.5rem;
+      color: var(--text-primary, #E5E7EB);
+    }
+    .game-card .subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary, #9CA3AF);
+      margin: 0 0 1rem;
+    }
+    .game-card iframe {
+      width: 100%;
+      height: 70vh;
+      border: none;
+      border-radius: 8px;
+      background: var(--surface-1, #0A0D12);
+    }
+    .error-state {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-secondary, #9CA3AF);
+      background: var(--surface-1, #0A0D12);
+      border-radius: 8px;
+      margin: 1rem 0;
+      border: 1px dashed var(--border, rgba(255,255,255,0.08));
+    }
+    .error-state code {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--error, #EF4444);
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    .error-state .hint {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: var(--surface-2, #0F131C);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+    .error-state .hint strong {
+      color: var(--text-primary, #E5E7EB);
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    .unified-actions {
+      display: flex;
+      gap: 1rem;
+      margin-block: 2rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="kicker">本机运维台</p>
+        <h1>游戏服务统一控制台</h1>
+      </div>
+      <div class="topbar-meta">
+        <span class="local-badge">仅本机访问</span>
+        <span id="connection-status">加载中</span>
+      </div>
+    </header>
+
+    <main class="app">
+      <section class="overview">
+        <div class="section-heading">
+          <div>
+            <h2>批量操作</h2>
+            <p>同时控制两个游戏服务的启动与停止。</p>
+          </div>
+        </div>
+        <div class="unified-actions">
+          <button id="start-all" class="button" type="button">启动全部服务</button>
+          <button id="restart-all" class="button" type="button">重启全部服务</button>
+          <button id="stop-all" class="button button-danger" type="button">停止全部服务</button>
+          <button id="refresh-all" class="button button-quiet" type="button">刷新全部状态</button>
+        </div>
+      </section>
+
+      <div class="game-grid">
+        <article class="game-card">
+          <h2>问道仙坊</h2>
+          <p class="subtitle">端口 8787 (游戏) / 8790 (控制台)</p>
+          <iframe
+            id="xiuxian-frame"
+            src="http://127.0.0.1:8790/control-panel.html"
+            title="问道仙坊控制台"
+            sandbox="allow-same-origin allow-scripts allow-forms"
+          ></iframe>
+          <div id="xiuxian-error" class="error-state" hidden>
+            <p>⚠️ 无法连接到问道仙坊控制台</p>
+            <code>确认控制台是否运行在 http://127.0.0.1:8790</code>
+            <div class="hint">
+              <strong>启动步骤：</strong>
+              1. 打开 I:\DEEPSEEK\tavern_clone<br>
+              2. 双击运行 <code>启动控制台.bat</code>
+            </div>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <h2>DNF</h2>
+          <p class="subtitle">端口 8788 (游戏) / 8791 (控制台)</p>
+          <iframe
+            id="dnf-frame"
+            src="http://127.0.0.1:8791/control-panel.html"
+            title="DNF控制台"
+            sandbox="allow-same-origin allow-scripts allow-forms"
+          ></iframe>
+          <div id="dnf-error" class="error-state" hidden>
+            <p>⚠️ 无法连接到 DNF 控制台</p>
+            <code>确认控制台是否运行在 http://127.0.0.1:8791</code>
+            <div class="hint">
+              <strong>启动步骤：</strong>
+              1. 打开 I:\DEEPSEEK\DNF<br>
+              2. 双击运行 <code>启动控制台.bat</code>
+            </div>
+          </div>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const GAMES = [
+      { name: '问道仙坊', controlPort: 8790, frame: 'xiuxian-frame', error: 'xiuxian-error' },
+      { name: 'DNF', controlPort: 8791, frame: 'dnf-frame', error: 'dnf-error' }
+    ];
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast toast-${type} toast-show`;
+      setTimeout(() => toast.classList.remove('toast-show'), 4000);
+    }
+
+    async function callControlAPI(port, path, method = 'GET', body = null) {
+      const url = `http://127.0.0.1:${port}${path}`;
+      const options = { method, credentials: 'include' };
+      if (body) {
+        options.headers = { 'Content-Type': 'application/json' };
+        options.body = JSON.stringify(body);
+      }
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      return res.json();
+    }
+
+    async function batchOperation(action) {
+      const actionLabel = action === 'start' ? '启动' : action === 'restart' ? '重启' : '停止';
+      showToast(`正在${actionLabel}全部服务...`, 'info');
+
+      const operations = GAMES.map(async game => {
+        try {
+          await callControlAPI(game.controlPort, `/api/control/server/${action}`, 'POST');
+          return { game: game.name, ok: true };
+        } catch (error) {
+          return { game: game.name, ok: false, error: error.message };
+        }
+      });
+      const results = await Promise.allSettled(operations);
+      const succeeded = results.filter(r => r.status === 'fulfilled' && r.value.ok).map(r => r.value.game);
+      const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
+
+      if (succeeded.length === GAMES.length) {
+        showToast(`全部服务已${actionLabel}`, 'success');
+      } else if (succeeded.length > 0) {
+        showToast(`部分成功：${succeeded.join('、')} 已${actionLabel}`, 'warn');
+      } else {
+        showToast(`${actionLabel}失败，请检查各控制台是否已启动`, 'error');
+      }
+    }
+
+    function refreshFrames() {
+      GAMES.forEach(game => {
+        const frame = document.getElementById(game.frame);
+        if (frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage({ type: 'refresh' }, '*');
+          } catch {
+            frame.src = frame.src; // 跨域时回落到 reload
+          }
+        }
+      });
+      showToast('已刷新全部状态', 'info');
+    }
+
+    // 检测 iframe 加载失败
+    GAMES.forEach(game => {
+      const frame = document.getElementById(game.frame);
+      const errorDiv = document.getElementById(game.error);
+      frame.addEventListener('error', () => {
+        frame.hidden = true;
+        errorDiv.hidden = false;
+      });
+      // 3 秒后如果 iframe 还没有内容，显示错误
+      setTimeout(async () => {
+        try {
+          await callControlAPI(game.controlPort, '/api/control/health');
+        } catch {
+          frame.hidden = true;
+          errorDiv.hidden = false;
+        }
+      }, 3000);
+    });
+
+    document.getElementById('start-all').addEventListener('click', () => batchOperation('start'));
+    document.getElementById('restart-all').addEventListener('click', () => batchOperation('restart'));
+    document.getElementById('stop-all').addEventListener('click', () => batchOperation('stop'));
+    document.getElementById('refresh-all').addEventListener('click', refreshFrames);
+
+    // 定期检查连接状态
+    setInterval(async () => {
+      const checks = await Promise.allSettled(
+        GAMES.map(g => callControlAPI(g.controlPort, '/api/control/health'))
+      );
+      const alive = checks.filter(c => c.status === 'fulfilled').length;
+      document.getElementById('connection-status').textContent =
+        alive === GAMES.length ? '全部在线' : alive > 0 ? `${alive}/${GAMES.length} 在线` : '离线';
+    }, 5000);
+  </script>
+</body>
+</html>

@@ -65,8 +65,10 @@ function createControlPanel(options = {}) {
   const rootDir = options.rootDir || __dirname;
   const runtimeEnv = loadLocalEnv(rootDir, options.env || process.env);
   const host = options.host || '127.0.0.1';
-  const configuredPort = Number(options.port ?? runtimeEnv.CONTROL_PANEL_PORT ?? 8790);
-  const gamePort = Number(options.gamePort ?? runtimeEnv.GAME_PORT ?? 8787);
+  // 兜底端口必须是 DNF 自己的 8791/8788，不能沿用原游戏 xiuxian 的 8790/8787：
+  // .env 不入库，缺失时回落到 8790/8787 会直接和原游戏的控制台与网页服务抢端口。
+  const configuredPort = Number(options.port ?? runtimeEnv.CONTROL_PANEL_PORT ?? 8791);
+  const gamePort = Number(options.gamePort ?? runtimeEnv.GAME_PORT ?? runtimeEnv.PORT ?? 8788);
   const password = String(options.password ?? runtimeEnv.CONTROL_PANEL_PASSWORD ?? '').trim();
   const stateFile = options.stateFile || path.join(rootDir, 'runtime-state.json');
   const supervisor = options.supervisor || createServiceSupervisor({

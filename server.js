@@ -55,8 +55,29 @@ const {
   buildLootAudit,
 } = require('./loot-settlement.js');
 
-const PORT = process.env.PORT || 8787;
+// DNF 固定用 8788（原游戏 xiuxian 用 8787）。回落顺序：PORT → GAME_PORT → 8788。
+// 兜底值绝不能写 8787：.env 不入库，缺失时回落必须落在 DNF 自己的端口上，
+// 否则会抢占原游戏端口，并让两边的启动脚本互相 taskkill。
+const PORT = process.env.PORT || process.env.GAME_PORT || 8788;
 const ROOT = __dirname;
+
+let listenErrorReported = false;
+function handleListenError(error) {
+  if (listenErrorReported) return;
+  listenErrorReported = true;
+  if (error && error.code === 'EADDRINUSE') {
+    console.error('==========================================');
+    console.error(`  端口 ${PORT} 已被占用，DNF 游戏服务未启动。`);
+    console.error('  排查：netstat -ano | findstr :' + PORT);
+    console.error('  提示：DNF 用 8788，原游戏 xiuxian 用 8787，两者不可混用。');
+    console.error('        请检查 .env 的 PORT / GAME_PORT，以及当前命令行窗口');
+    console.error('        是否残留了其它项目设置的 PORT 变量。');
+    console.error('==========================================');
+  } else {
+    console.error('[server] 监听失败：', error && error.message ? error.message : error);
+  }
+  process.exit(1);
+}
 
 function envNumber(name, fallback) {
   const value = Number(process.env[name]);
@@ -3469,6 +3490,12 @@ console.log(
 module.exports = {
   restorePersistedExpeditions,
 };
+
+// 监听失败要给出可读提示而不是抛栈。注意 ws 会把 server 的 'error' 转发到 wss，
+// 且它的监听器注册在前，所以必须同时挂到 wss 上——否则 wss 上没有 'error' 监听器，
+// Node 会在本处理器执行前就以未捕获事件退出。
+server.on('error', handleListenError);
+wss.on('error', handleListenError);
 
 server.listen(PORT, () => {
   console.log('==========================================');

@@ -7,9 +7,11 @@ const path = require('path');
 const AI_COMPANIONS = require('./ai-companions.js');
 const { clearExpiredInjury } = require('./trait-system.js');
 
+// 兜底库名用 dnf.db，不沿用原游戏 xiuxian 的 tavern.db：.env 不入库，
+// 缺失时若回落成 tavern.db，会在本项目目录下另建一个同名库，容易与原游戏混淆。
 const DB_PATH = process.env.TAVERN_DB_PATH
   ? path.resolve(process.env.TAVERN_DB_PATH)
-  : path.join(__dirname, 'tavern.db');
+  : path.join(__dirname, 'dnf.db');
 const db = new DatabaseSync(DB_PATH);
 
 // 多请求/多进程测试与公网部署下减少锁等待，并确保关联约束按预期执行。

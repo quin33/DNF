@@ -1,13 +1,19 @@
 ﻿@echo off
 chcp 65001 >nul
+setlocal
 cd /d "%~dp0"
 set "TAVERN_LOAD_ENV=1"
+rem 端口在此显式钉死，避免继承同一命令行窗口里其它项目（xiuxian 用 8790/8787）
+rem 残留的同名变量。若要改端口，请同时改本文件、.env 与 cloudflared 配置。
+set "PORT=8788"
+set "GAME_PORT=8788"
 set "GAME_HTTP_STATUS="
 for /f %%S in ('curl.exe -s -o nul -w "%%{http_code}" http://127.0.0.1:8788/ 2^>nul') do set "GAME_HTTP_STATUS=%%S"
 if "%GAME_HTTP_STATUS%"=="200" (
   echo 游戏服务已经在 8788 端口运行，无需重复启动。
   start "" "http://127.0.0.1:8788"
   pause
+  endlocal
   exit /b 0
 )
 set "GAME_PORT_PID="
@@ -16,6 +22,7 @@ if not "%GAME_PORT_PID%"=="" (
   echo 8788 端口已被其他程序占用，游戏服务未启动。
   echo 占用进程 PID：%GAME_PORT_PID%
   pause
+  endlocal
   exit /b 1
 )
 title DNF · AI 探险日志服务
@@ -25,3 +32,4 @@ echo ==========================================
 echo.
 node server.js
 pause
+endlocal
