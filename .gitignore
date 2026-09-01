@@ -8,9 +8,16 @@
 *.pem
 *.key
 
+# SQLite 数据库与 WAL/SHM 附属文件（体积大且含玩家数据）
+*.db
+*.db-*
+
 # 日志
 *.log
 logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # 操作系统产物
 Thumbs.db

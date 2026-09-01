@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>问道仙坊 · 管理台</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <div class="admin-app" id="admin-app">
+    <header class="topbar">
+      <a class="brand" href="/admin" aria-label="问道仙坊管理台">
+        <span class="brand-mark" aria-hidden="true">问</span>
+        <span>
+          <strong>问道仙坊</strong>
+          <small>角色管理台</small>
+        </span>
+      </a>
+      <div class="session-actions" id="session-actions" hidden>
+        <span class="session-state"><i aria-hidden="true"></i>管理员会话</span>
+        <button class="button button-quiet" id="logout-button" type="button">退出登录</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="login-view" id="admin-login" aria-labelledby="login-title">
+        <div class="login-panel">
+          <div class="section-kicker">ADMIN ACCESS</div>
+          <h1 id="login-title">进入角色管理台</h1>
+          <p>使用服务器配置的管理员密码建立本次浏览器会话。</p>
+          <form id="login-form">
+            <label for="admin-password">管理员密码</label>
+            <div class="login-row">
+              <input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus>
+              <button class="button button-primary" id="login-button" type="submit">登录</button>
+            </div>
+            <p class="form-message error-text" id="login-error" role="alert" hidden></p>
+          </form>
+        </div>
+      </section>
+
+      <section class="console" id="admin-console" hidden>
+        <nav class="admin-modes" aria-label="管理分类">
+          <button class="button admin-mode-btn is-active" id="mode-players" type="button">玩家角色</button>
+          <button class="button admin-mode-btn" id="mode-companions" type="button">AI 队友名片</button>
+        </nav>
+        <aside class="navigator" id="players-navigator" aria-label="玩家与角色">
+          <div class="navigator-heading">
+            <div>
+              <span class="section-kicker">PLAYERS</span>
+              <h1>玩家与角色</h1>
+            </div>
+            <span class="result-count" id="result-count">0</span>
+          </div>
+          <form class="search-form" id="search-form" role="search">
+            <label class="sr-only" for="player-search">搜索玩家或角色</label>
+            <input id="player-search" name="q" type="search" placeholder="用户名或角色名" autocomplete="off">
+            <button class="button button-primary" id="search-button" type="submit">搜索</button>
+          </form>
+          <div class="list-state" id="player-list-state" role="status">输入名称，或直接搜索全部玩家。</div>
+          <div class="player-results" id="player-results" aria-live="polite"></div>
+        </aside>
+
+        <aside class="navigator" id="companions-navigator" aria-label="AI 队友名片" hidden>
+          <div class="navigator-heading">
+            <div>
+              <span class="section-kicker">AI COMPANIONS</span>
+              <h1>固定预设名片</h1>
+            </div>
+            <span class="result-count" id="companion-count">0</span>
+          </div>
+          <div class="list-state" id="companion-list-state" role="status">读取名片库…</div>
+          <div class="player-results" id="companion-results" aria-live="polite"></div>
+        </aside>
+
+        <section class="workspace" id="players-workspace" aria-label="角色编辑区">
+          <div class="workspace-heading">
+            <div>
+              <span class="section-kicker">CHARACTER RECORD</span>
+              <h2 id="workspace-title">选择一个角色</h2>
+              <p id="workspace-owner">从左侧列表打开角色档案。</p>
+            </div>
+            <span class="version-label" id="version-label" hidden></span>
+          </div>
+
+          <div class="status-message" id="status-message" role="status" hidden>
+            <span id="status-text"></span>
+            <button class="button button-quiet" id="reload-character" type="button" hidden>重新加载</button>
+          </div>
+
+          <div class="editor-state" id="editor-state">
+            <span class="state-mark" aria-hidden="true">录</span>
+            <strong>尚未打开角色档案</strong>
+            <p>搜索玩家后选择一个角色进行查看和编辑。</p>
+          </div>
+
+          <form id="character-editor" novalidate hidden>
+            <fieldset class="field-section">
+              <legend><span>01</span>身份</legend>
+              <div class="field-grid field-grid-two">
+                <label class="field"><span>角色名</span><input name="name" type="text" maxlength="100" required></label>
+                <label class="field"><span>境界 / 职业</span><input name="character_class" type="text" maxlength="100" required></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+              <legend><span>02</span>成长与资源</legend>
+              <div class="field-grid field-grid-four">
+                <label class="field"><span>等级</span><input name="level" type="number" min="0" step="1" required></label>
+                <label class="field"><span>经验</span><input name="exp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>灵石</span><input name="gold" type="number" min="0" step="1" required></label>
+                <span class="field-spacer" aria-hidden="true"></span>
+                <label class="field"><span>当前气血</span><input name="hp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>气血上限</span><input name="max_hp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>当前精力</span><input name="stamina" type="number" min="0" step="1" required></label>
+                <label class="field"><span>精力上限</span><input name="max_stamina" type="number" min="0" step="1" required></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+              <legend><span>03</span>四维属性</legend>
+              <div class="field-grid field-grid-four">
+                <label class="field"><span>力量</span><input name="strength" type="number" min="0" step="1" required></label>
+                <label class="field"><span>敏捷</span><input name="agility" type="number" min="0" step="1" required></label>
+                <label class="field"><span>悟性</span><input name="intelligence" type="number" min="0" step="1" required></label>
+                <label class="field"><span>机缘</span><input name="luck" type="number" min="0" step="1" required></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>04</span>特质</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="traits" rows="7" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>05</span>随身法宝</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="equipment" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>06</span>储物袋</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="bag" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>07</span>已学功法</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="skills" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>08</span>功法池</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="skillPool" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <div class="save-bar">
+              <div>
+                <strong>保存角色档案</strong>
+                <span id="dirty-state">尚无待保存变更</span>
+              </div>
+              <div class="save-actions">
+                <button class="button button-danger" id="delete-character" type="button">删除角色</button>
+                <button class="button button-primary" id="save-character" type="submit">检查并保存</button>
+              </div>
+            </div>
+          </form>
+
+          <section class="audit-section" id="audit-section" hidden aria-labelledby="audit-title">
+            <div class="audit-heading">
+              <div>
+                <span class="section-kicker">RECENT CHANGES</span>
+                <h2 id="audit-title">最近审计记录</h2>
+              </div>
+              <button class="icon-button" id="refresh-audit" type="button" title="刷新审计记录" aria-label="刷新审计记录">↻</button>
+            </div>
+            <div class="audit-list" id="audit-list" aria-live="polite"></div>
+          </section>
+        </section>
+
+        <section class="workspace" id="companions-workspace" aria-label="AI 队友名片编辑区" hidden>
+          <div class="workspace-heading">
+            <div>
+              <span class="section-kicker">COMPANION CARD</span>
+              <h2 id="companion-title">选择一张名片</h2>
+              <p id="companion-subtitle">从左侧列表打开 AI 队友名片。</p>
+            </div>
+            <span class="version-label" id="companion-version" hidden></span>
+          </div>
+
+          <div class="status-message" id="companion-status" role="status" hidden>
+            <span id="companion-status-text"></span>
+          </div>
+
+          <div class="editor-state" id="companion-editor-state">
+            <span class="state-mark" aria-hidden="true">名</span>
+            <strong>尚未打开名片</strong>
+            <p>选择左侧预设名片进行查看和编辑。</p>
+          </div>
+
+          <form id="companion-editor" novalidate hidden>
+            <fieldset class="field-section">
+              <legend><span>01</span>身份</legend>
+              <div class="field-grid field-grid-two">
+                <label class="field"><span>角色名</span><input name="name" type="text" maxlength="100" required disabled></label>
+                <label class="field"><span>称号</span><input name="title" type="text" maxlength="200" required></label>
+                <label class="field"><span>性别</span><select name="gender" required><option value="男">男</option><option value="女">女</option></select></label>
+                <label class="field"><span>性格</span><input name="personality" type="text" maxlength="200" required></label>
+                <label class="field"><span>境界 / 职业</span><input name="character_class" type="text" maxlength="100" required></label>
+                <label class="field"><span>卡框变体</span><input name="title_frame" type="text" maxlength="200" placeholder="如 fate / developer / fate_companion"></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+              <legend><span>02</span>状态与资源</legend>
+              <div class="field-grid field-grid-four">
+                <label class="field"><span>等级</span><input name="level" type="number" min="0" step="1" required></label>
+                <label class="field"><span>经验</span><input name="exp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>灵石</span><input name="gold" type="number" min="0" step="1" required></label>
+                <label class="field"><span>状态</span><input name="status" type="text" maxlength="50" required></label>
+                <label class="field"><span>当前气血</span><input name="hp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>气血上限</span><input name="max_hp" type="number" min="0" step="1" required></label>
+                <label class="field"><span>当前精力</span><input name="stamina" type="number" min="0" step="1" required></label>
+                <label class="field"><span>精力上限</span><input name="max_stamina" type="number" min="0" step="1" required></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+              <legend><span>03</span>四维属性</legend>
+              <div class="field-grid field-grid-four">
+                <label class="field"><span>体魄</span><input name="strength" type="number" min="0" step="1" required></label>
+                <label class="field"><span>身法</span><input name="agility" type="number" min="0" step="1" required></label>
+                <label class="field"><span>神识</span><input name="intelligence" type="number" min="0" step="1" required></label>
+                <label class="field"><span>气运</span><input name="luck" type="number" min="0" step="1" required></label>
+              </div>
+            </fieldset>
+
+            <fieldset class="field-section">
+              <legend><span>04</span>人物小传</legend>
+              <label class="field"><span>简历文本</span><textarea name="bio" rows="6" spellcheck="false"></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>05</span>特质</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="traits" rows="5" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>06</span>特质描述</legend>
+              <label class="field"><span>JSON 对象</span><textarea name="traitDescs" rows="6" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>07</span>随身法宝</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="equipment" rows="7" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>08</span>储物袋</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="bag" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>09</span>已学功法 / 术法</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="skills" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <fieldset class="field-section json-section">
+              <legend><span>10</span>功法池</legend>
+              <label class="field"><span>JSON 数组</span><textarea name="skillPool" rows="8" spellcheck="false" required></textarea></label>
+            </fieldset>
+
+            <div class="save-bar">
+              <div>
+                <strong>保存名片档案</strong>
+                <span id="companion-dirty">尚无待保存变更</span>
+              </div>
+              <div class="save-actions">
+                <button class="button button-quiet" id="reset-companion" type="button">恢复默认</button>
+                <button class="button button-primary" id="save-companion" type="submit">检查并保存</button>
+              </div>
+            </div>
+          </form>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="save-dialog" id="save-dialog" aria-labelledby="save-dialog-title">
+    <form method="dialog">
+      <span class="section-kicker">REVIEW CHANGES</span>
+      <h2 id="save-dialog-title">确认本次修改</h2>
+      <p>以下字段将写入角色档案。保存后会生成审计记录。</p>
+      <ul class="change-summary" id="change-summary"></ul>
+      <div class="dialog-actions">
+        <button class="button button-quiet" value="cancel">返回编辑</button>
+        <button class="button button-primary" id="confirm-save" value="default" type="button">确认保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/admin.js" defer></script>
+</body>
+</html>

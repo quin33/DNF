@@ -1,0 +1,851 @@
+﻿diff --git "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-2-server.before.js" b/server.js
+index bb77818..1dadf2d 100644
+--- "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-2-server.before.js"
++++ b/server.js
+@@ -61,6 +61,110 @@ function authUser(req) {
+   return uid ? DB.findUserById(uid) : null;
+ }
+ 
++const ADMIN_CHARACTER_FIELDS = new Set([
++  'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
++  'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
++  'traits', 'equipment', 'bag', 'skills', 'skillPool',
++]);
++const ADMIN_NUMERIC_FIELDS = new Set([
++  'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
++  'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
++]);
++const ADMIN_TEXT_FIELDS = new Set(['name', 'character_class']);
++const ADMIN_ARRAY_FIELDS = new Set(['traits', 'equipment', 'bag', 'skills', 'skillPool']);
++const ADMIN_TEXT_MAX_LENGTH = 1000;
++const ADMIN_IDENTITY_MAX_LENGTH = 100;
++const ADMIN_ARRAY_MAX_ITEMS = 100;
++
++class AdminInputError extends Error {}
++
++function adminConfigured() {
++  return typeof process.env.ADMIN_PASSWORD === 'string' && process.env.ADMIN_PASSWORD.length > 0;
++}
++
++function adminPasswordMatches(password) {
++  if (!adminConfigured() || typeof password !== 'string') return false;
++  const actual = Buffer.from(password, 'utf8');
++  const expected = Buffer.from(process.env.ADMIN_PASSWORD, 'utf8');
++  return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
++}
++
++function requireAdmin(req, res) {
++  if (!adminConfigured() || !DB.adminSessionValid(bearerToken(req))) {
++    sendJSON(res, 401, { error: '无管理员权限' });
++    return false;
++  }
++  return true;
++}
++
++function isPlainObject(value) {
++  return value !== null && typeof value === 'object' && !Array.isArray(value);
++}
++
++function validateAdminNestedValue(value, depth = 0) {
++  if (depth > 6) throw new AdminInputError('角色数据嵌套过深');
++  if (value === null || typeof value === 'boolean') return;
++  if (typeof value === 'string') {
++    if (value.length > ADMIN_TEXT_MAX_LENGTH) throw new AdminInputError('角色文本过长');
++    return;
++  }
++  if (typeof value === 'number') {
++    if (!Number.isFinite(value) || value < 0) throw new AdminInputError('角色数值无效');
++    return;
++  }
++  if (Array.isArray(value)) {
++    if (value.length > ADMIN_ARRAY_MAX_ITEMS) throw new AdminInputError('角色数组项目过多');
++    value.forEach(item => validateAdminNestedValue(item, depth + 1));
++    return;
++  }
++  if (isPlainObject(value)) {
++    Object.entries(value).forEach(([key, item]) => {
++      if (key.length > ADMIN_IDENTITY_MAX_LENGTH) throw new AdminInputError('角色字段名过长');
++      validateAdminNestedValue(item, depth + 1);
++    });
++    return;
++  }
++  throw new AdminInputError('角色数据结构无效');
++}
++
++function sanitizeAdminCharacter(input, existing) {
++  if (!isPlainObject(input)) throw new AdminInputError('缺少角色数据');
++  const unknown = Object.keys(input).find(field => !ADMIN_CHARACTER_FIELDS.has(field));
++  if (unknown) throw new AdminInputError('包含不允许修改的字段');
++
++  const next = { ...existing };
++  for (const [field, value] of Object.entries(input)) {
++    if (ADMIN_TEXT_FIELDS.has(field)) {
++      if (typeof value !== 'string' || !value.trim() || value.length > ADMIN_IDENTITY_MAX_LENGTH) {
++        throw new AdminInputError('角色文本无效');
++      }
++    } else if (ADMIN_NUMERIC_FIELDS.has(field)) {
++      if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
++        throw new AdminInputError('角色数值无效');
++      }
++    } else if (ADMIN_ARRAY_FIELDS.has(field)) {
++      if (!Array.isArray(value) || value.length > ADMIN_ARRAY_MAX_ITEMS) {
++        throw new AdminInputError('角色数组无效');
++      }
++      value.forEach(item => {
++        const validTrait = field === 'traits' && typeof item === 'string' && item.trim();
++        const validObject = isPlainObject(item) && typeof item.name === 'string' && item.name.trim();
++        if (!validTrait && !validObject) throw new AdminInputError('角色数组项目无效');
++        validateAdminNestedValue(item);
++      });
++    }
++    next[field] = value;
++  }
++
++  if (typeof next.hp === 'number' && typeof next.max_hp === 'number' && next.hp > next.max_hp) {
++    throw new AdminInputError('气血不能超过上限');
++  }
++  if (typeof next.stamina === 'number' && typeof next.max_stamina === 'number' && next.stamina > next.max_stamina) {
++    throw new AdminInputError('精力不能超过上限');
++  }
++  return next;
++}
++
+ /* ============================================================
+    AI 提示词（整合世界观 / 结构 / 叙事 / 装备 / 技能 / 判定）
+    ============================================================ */
+@@ -190,6 +294,101 @@ function sendJSON(res, code, obj) {
+   res.end(body);
+ }
+ 
++async function readAdminBody(req) {
++  try {
++    const body = JSON.parse(await readBody(req));
++    if (!isPlainObject(body)) throw new AdminInputError('请求 JSON 无效');
++    return body;
++  } catch (error) {
++    if (error instanceof AdminInputError) throw error;
++    throw new AdminInputError('请求 JSON 无效');
++  }
++}
++
++async function handleAdminAPI(req, res) {
++  const requestUrl = new URL(req.url || '/', 'http://localhost');
++  const urlPath = requestUrl.pathname;
++
++  if (req.method === 'POST' && urlPath === '/api/admin/login') {
++    if (!adminConfigured()) {
++      sendJSON(res, 401, { error: '无管理员权限' });
++      return;
++    }
++    const body = await readAdminBody(req);
++    if (!adminPasswordMatches(body.password)) {
++      sendJSON(res, 401, { error: '无管理员权限' });
++      return;
++    }
++    const token = DB.createAdminSession(newToken());
++    sendJSON(res, 200, { token });
++    return;
++  }
++
++  if (!requireAdmin(req, res)) return;
++
++  if (req.method === 'POST' && urlPath === '/api/admin/logout') {
++    DB.deleteAdminSession(bearerToken(req));
++    sendJSON(res, 200, { ok: true });
++    return;
++  }
++
++  if (req.method === 'GET' && urlPath === '/api/admin/players') {
++    sendJSON(res, 200, { players: DB.searchPlayers(requestUrl.searchParams.get('q') || '') });
++    return;
++  }
++
++  const characterMatch = urlPath.match(/^\/api\/admin\/characters\/(\d+)$/);
++  if (characterMatch) {
++    const characterId = Number(characterMatch[1]);
++    const existing = DB.getCharacterAdmin(characterId);
++    if (!existing) {
++      sendJSON(res, 404, { error: '角色不存在' });
++      return;
++    }
++
++    if (req.method === 'GET') {
++      sendJSON(res, 200, { character: existing });
++      return;
++    }
++
++    if (req.method === 'PUT') {
++      const body = await readAdminBody(req);
++      if (!Number.isSafeInteger(body.updated_at) || body.updated_at < 0) {
++        throw new AdminInputError('角色版本无效');
++      }
++      const nextData = sanitizeAdminCharacter(body.character, existing.data);
++      const saved = DB.saveCharacterAdminWithAudit(characterId, body.updated_at, nextData);
++      if (saved.status === 'not_found') {
++        sendJSON(res, 404, { error: '角色不存在' });
++        return;
++      }
++      if (saved.status === 'conflict') {
++        sendJSON(res, 409, { error: '角色已被其他操作更新' });
++        return;
++      }
++      sendJSON(res, 200, { ok: true, character: saved.character });
++      return;
++    }
++
++    sendJSON(res, 405, { error: 'Method Not Allowed' });
++    return;
++  }
++
++  if (req.method === 'GET' && urlPath === '/api/admin/audit') {
++    const rawCharacterId = requestUrl.searchParams.get('characterId') || '';
++    if (!/^\d+$/.test(rawCharacterId)) throw new AdminInputError('角色编号无效');
++    const characterId = Number(rawCharacterId);
++    if (!DB.getCharacterAdmin(characterId)) {
++      sendJSON(res, 404, { error: '角色不存在' });
++      return;
++    }
++    sendJSON(res, 200, { logs: DB.getAdminAuditLogs(characterId) });
++    return;
++  }
++
++  sendJSON(res, 404, { error: '未知 API 路径' });
++}
++
+ function serveStatic(res, urlPath) {
+   let p = decodeURIComponent(urlPath.split('?')[0]);
+   if (p === '/' || p === '') p = '/index.html';
+@@ -405,6 +604,19 @@ function parseLootJsonLoose(raw) {
+ 
+ const server = http.createServer(async (req, res) => {
+   const urlPath = req.url || '/';
++  if (urlPath.startsWith('/api/admin')) {
++    try {
++      await handleAdminAPI(req, res);
++    } catch (error) {
++      if (error instanceof AdminInputError) {
++        sendJSON(res, 400, { error: error.message });
++      } else {
++        console.error('[admin-api]', String(error.message || error).slice(0, 200));
++        sendJSON(res, 500, { error: '服务器错误' });
++      }
++    }
++    return;
++  }
+   // 账号 / 角色 / 日志 / 房间 API（联机版）
+   if (urlPath.startsWith('/api/auth') || urlPath.startsWith('/api/me') || urlPath.startsWith('/api/character') || urlPath.startsWith('/api/log') || urlPath === '/api/creation' || urlPath === '/api/rooms') {
+     try {
+diff --git a/test/admin-api.test.js b/test/admin-api.test.js
+new file mode 100644
+index 0000000..f5be521
+--- /dev/null
++++ b/test/admin-api.test.js
+@@ -0,0 +1,337 @@
++const assert = require('node:assert/strict');
++const { spawn } = require('node:child_process');
++const net = require('node:net');
++const path = require('node:path');
++const test = require('node:test');
++
++const DB = require('../db');
++
++const ROOT = path.resolve(__dirname, '..');
++const suffix = `admin-api-${process.pid}-${Date.now()}`;
++const adminPassword = `secret-${suffix}`;
++const username = `player-${suffix}`;
++const smokeUsername = `smoke${process.pid}${Date.now().toString(36)}`.slice(0, 20);
++const smokePassword = `player-password-${suffix}`;
++const originalCharacter = {
++  name: `Fixture ${suffix}`,
++  character_class: 'Warrior',
++  level: 8,
++  hp: 42,
++  max_hp: 50,
++  stamina: 12,
++  max_stamina: 20,
++  strength: 9,
++  agility: 7,
++  intelligence: 5,
++  luck: 4,
++  gold: 123,
++  exp: 456,
++  traits: ['Steady'],
++  equipment: [{ name: 'Sword', slot: 'weapon' }],
++  bag: [{ name: 'Potion', qty: 2 }],
++  skills: [{ name: 'Slash', desc: 'A measured strike.' }],
++  skillPool: [{ name: 'Guard', desc: 'A guarded stance.' }],
++  hidden: 'must survive admin updates',
++};
++
++let userId;
++let characterId;
++let playerToken;
++let adminToken;
++let serverProcess;
++let baseUrl;
++let smokeUserId;
++let smokeCharacterId;
++
++function getFreePort() {
++  return new Promise((resolve, reject) => {
++    const server = net.createServer();
++    server.unref();
++    server.on('error', reject);
++    server.listen(0, '127.0.0.1', () => {
++      const { port } = server.address();
++      server.close(error => error ? reject(error) : resolve(port));
++    });
++  });
++}
++
++async function waitForServer(url, child) {
++  const deadline = Date.now() + 10_000;
++  while (Date.now() < deadline) {
++    if (child.exitCode !== null) throw new Error(`server exited with code ${child.exitCode}`);
++    try {
++      const response = await fetch(`${url}/api/health`);
++      if (response.ok) return;
++    } catch {
++      // The child has not bound its port yet.
++    }
++    await new Promise(resolve => setTimeout(resolve, 50));
++  }
++  throw new Error('server did not become ready');
++}
++
++async function startServer(password) {
++  const port = await getFreePort();
++  const env = { ...process.env, PORT: String(port) };
++  if (password === undefined) delete env.ADMIN_PASSWORD;
++  else env.ADMIN_PASSWORD = password;
++
++  const child = spawn(process.execPath, ['server.js'], {
++    cwd: ROOT,
++    env,
++    stdio: ['ignore', 'pipe', 'pipe'],
++  });
++  let output = '';
++  child.stdout.on('data', chunk => { output += chunk; });
++  child.stderr.on('data', chunk => { output += chunk; });
++  const url = `http://127.0.0.1:${port}`;
++  try {
++    await waitForServer(url, child);
++  } catch (error) {
++    child.kill();
++    throw new Error(`${error.message}\n${output}`);
++  }
++  return { child, url };
++}
++
++async function stopServer(child) {
++  if (!child || child.exitCode !== null) return;
++  child.kill();
++  await Promise.race([
++    new Promise(resolve => child.once('exit', resolve)),
++    new Promise(resolve => setTimeout(resolve, 2_000)),
++  ]);
++}
++
++async function request(method, urlPath, { token, body, rawBody } = {}) {
++  const headers = {};
++  if (token) headers.authorization = `Bearer ${token}`;
++  if (body !== undefined || rawBody !== undefined) headers['content-type'] = 'application/json';
++  const response = await fetch(`${baseUrl}${urlPath}`, {
++    method,
++    headers,
++    body: rawBody !== undefined ? rawBody : (body === undefined ? undefined : JSON.stringify(body)),
++  });
++  const text = await response.text();
++  let responseBody = null;
++  if (text) {
++    try { responseBody = JSON.parse(text); }
++    catch { responseBody = text; }
++  }
++  return { status: response.status, body: responseBody };
++}
++
++function adminRequest(method, urlPath, body) {
++  return request(method, urlPath, { token: adminToken, body });
++}
++
++test.before(async () => {
++  userId = Number(DB.createUser(username, 'hash', 'salt'));
++  characterId = Number(DB.createCharacter(userId, originalCharacter.name, originalCharacter));
++  playerToken = `${suffix}-player-token`;
++  DB.createSession(userId, playerToken);
++
++  const started = await startServer(adminPassword);
++  serverProcess = started.child;
++  baseUrl = started.url;
++});
++
++test.after(async () => {
++  await stopServer(serverProcess);
++  const smokeUser = DB.findUserByUsername(smokeUsername);
++  const cleanupSmokeUserId = Number.isInteger(smokeUserId) ? smokeUserId : Number(smokeUser && smokeUser.id);
++  if (Number.isInteger(cleanupSmokeUserId)) {
++    DB.db.prepare('DELETE FROM logs WHERE user_id = ?').run(cleanupSmokeUserId);
++    DB.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(cleanupSmokeUserId);
++    DB.db.prepare('DELETE FROM characters WHERE user_id = ?').run(cleanupSmokeUserId);
++    DB.db.prepare('DELETE FROM users WHERE id = ?').run(cleanupSmokeUserId);
++  }
++  if (Number.isInteger(characterId)) {
++    DB.db.prepare('DELETE FROM admin_audit_logs WHERE character_id = ?').run(characterId);
++    DB.db.prepare('DELETE FROM characters WHERE id = ?').run(characterId);
++  }
++  DB.db.prepare('DELETE FROM admin_sessions WHERE token = ?').run(adminToken || '');
++  if (playerToken) DB.db.prepare('DELETE FROM sessions WHERE token = ?').run(playerToken);
++  if (Number.isInteger(userId)) DB.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
++});
++
++test('spawned server preserves player login sessions and character access', async () => {
++  const registered = await request('POST', '/api/auth/register', {
++    body: { username: smokeUsername, password: smokePassword },
++  });
++  assert.equal(registered.status, 200);
++  smokeUserId = Number(registered.body.user.id);
++
++  const registeredLogout = await request('POST', '/api/auth/logout', {
++    token: registered.body.token,
++  });
++  assert.equal(registeredLogout.status, 200);
++
++  const loggedIn = await request('POST', '/api/auth/login', {
++    body: { username: smokeUsername, password: smokePassword },
++  });
++  assert.equal(loggedIn.status, 200);
++  assert.equal(loggedIn.body.user.id, smokeUserId);
++
++  const created = await request('POST', '/api/character', {
++    token: loggedIn.body.token,
++    body: { character: { name: 'Smoke Hero', hp: 10, max_hp: 10, bag: [] } },
++  });
++  assert.equal(created.status, 200);
++  smokeCharacterId = Number(created.body.id);
++
++  const me = await request('GET', '/api/me', { token: loggedIn.body.token });
++  assert.equal(me.status, 200);
++  assert.equal(me.body.user.username, smokeUsername);
++  assert.equal(me.body.characters.length, 1);
++  assert.equal(me.body.characters[0].id, smokeCharacterId);
++  assert.equal(me.body.characters[0].name, 'Smoke Hero');
++  assert.equal(typeof me.body.characters[0].updated_at, 'number');
++
++  const character = await request('GET', `/api/character/${smokeCharacterId}`, {
++    token: loggedIn.body.token,
++  });
++  assert.equal(character.status, 200);
++  assert.equal(character.body.id, smokeCharacterId);
++  assert.equal(character.body.character.name, 'Smoke Hero');
++  assert.equal(character.body.character.hp, 10);
++});
++
++test('admin login denies missing configuration and wrong passwords, then creates a bearer session', async () => {
++  const unconfigured = await startServer(undefined);
++  try {
++    const response = await fetch(`${unconfigured.url}/api/admin/login`, {
++      method: 'POST',
++      headers: { 'content-type': 'application/json' },
++      body: JSON.stringify({ password: adminPassword }),
++    });
++    assert.equal(response.status, 401);
++  } finally {
++    await stopServer(unconfigured.child);
++  }
++
++  const denied = await request('POST', '/api/admin/login', { body: { password: `${adminPassword}-wrong` } });
++  assert.equal(denied.status, 401);
++
++  const accepted = await request('POST', '/api/admin/login', { body: { password: adminPassword } });
++  assert.equal(accepted.status, 200);
++  assert.equal(typeof accepted.body.token, 'string');
++  assert.ok(accepted.body.token.length >= 32);
++  assert.equal(DB.adminSessionValid(accepted.body.token), true);
++  adminToken = accepted.body.token;
++});
++
++test('admin endpoints reject missing credentials and ordinary player sessions', async () => {
++  const missing = await request('GET', '/api/admin/players');
++  assert.equal(missing.status, 401);
++
++  const player = await request('GET', '/api/admin/players', { token: playerToken });
++  assert.equal(player.status, 401);
++});
++
++test('admin can search players and read a character with its owner and version', async () => {
++  const search = await adminRequest('GET', `/api/admin/players?q=${encodeURIComponent(username)}`);
++  assert.equal(search.status, 200);
++  assert.deepEqual(search.body.players, [{
++    userId,
++    username,
++    characterId,
++    characterName: originalCharacter.name,
++  }]);
++
++  const detail = await adminRequest('GET', `/api/admin/characters/${characterId}`);
++  assert.equal(detail.status, 200);
++  assert.equal(detail.body.character.id, characterId);
++  assert.equal(detail.body.character.userId, userId);
++  assert.equal(detail.body.character.username, username);
++  assert.equal(typeof detail.body.character.updated_at, 'number');
++  assert.deepEqual(detail.body.character.data, originalCharacter);
++
++  const missing = await adminRequest('GET', '/api/admin/characters/999999999');
++  assert.equal(missing.status, 404);
++});
++
++test('admin save updates only submitted whitelist fields and records safe audit snapshots', async () => {
++  const before = DB.getCharacterAdmin(characterId);
++  const response = await adminRequest('PUT', `/api/admin/characters/${characterId}`, {
++    updated_at: before.updated_at,
++    character: { name: 'Updated Fixture', hp: 45, traits: ['Steady', 'Focused'] },
++  });
++
++  assert.equal(response.status, 200);
++  assert.equal(response.body.character.data.name, 'Updated Fixture');
++  assert.equal(response.body.character.data.hp, 45);
++  assert.equal(response.body.character.data.gold, originalCharacter.gold);
++  assert.equal(response.body.character.data.hidden, originalCharacter.hidden);
++  assert.notEqual(response.body.character.updated_at, before.updated_at);
++
++  const audit = await adminRequest('GET', `/api/admin/audit?characterId=${characterId}`);
++  assert.equal(audit.status, 200);
++  assert.equal(audit.body.logs.length, 1);
++  assert.equal(audit.body.logs[0].before.hp, originalCharacter.hp);
++  assert.equal(audit.body.logs[0].after.hp, 45);
++  assert.equal(audit.body.logs[0].before.hidden, undefined);
++  assert.equal(audit.body.logs[0].after.hidden, undefined);
++});
++
++test('admin save rejects unknown fields, invalid numbers, invalid arrays, and oversized text or inventories', async t => {
++  const cases = [
++    ['unknown field', { character: { pass_hash: 'forbidden' } }],
++    ['negative number', { character: { gold: -1 } }],
++    ['resource above maximum', { character: { hp: 51, max_hp: 50 } }],
++    ['stamina above maximum', { character: { stamina: 21, max_stamina: 20 } }],
++    ['non-array collection', { character: { bag: { name: 'not-an-array' } } }],
++    ['malformed collection item', { character: { bag: ['not-an-item-object'] } }],
++    ['overlong text', { character: { name: 'x'.repeat(10_001) } }],
++    ['oversized inventory', { character: { bag: Array.from({ length: 101 }, (_, i) => ({ name: `item-${i}` })) } }],
++  ];
++
++  for (const [name, partial] of cases) {
++    await t.test(name, async () => {
++      const current = DB.getCharacterAdmin(characterId);
++      const response = await adminRequest('PUT', `/api/admin/characters/${characterId}`, {
++        updated_at: current.updated_at,
++        ...partial,
++      });
++      assert.equal(response.status, 400);
++    });
++  }
++
++  const current = DB.getCharacterAdmin(characterId);
++  const nonFinite = await request('PUT', `/api/admin/characters/${characterId}`, {
++    token: adminToken,
++    rawBody: `{"updated_at":${current.updated_at},"character":{"gold":1e309}}`,
++  });
++  assert.equal(nonFinite.status, 400);
++
++  const malformedJson = await request('PUT', `/api/admin/characters/${characterId}`, {
++    token: adminToken,
++    rawBody: '{"character":',
++  });
++  assert.equal(malformedJson.status, 400);
++});
++
++test('admin save returns conflict for a stale version and not found for a missing character', async () => {
++  const current = DB.getCharacterAdmin(characterId);
++  const conflict = await adminRequest('PUT', `/api/admin/characters/${characterId}`, {
++    updated_at: current.updated_at - 1,
++    character: { gold: 999 },
++  });
++  assert.equal(conflict.status, 409);
++  assert.equal(DB.getCharacterAdmin(characterId).data.gold, originalCharacter.gold);
++
++  const missing = await adminRequest('PUT', '/api/admin/characters/999999999', {
++    updated_at: current.updated_at,
++    character: { gold: 999 },
++  });
++  assert.equal(missing.status, 404);
++});
++
++test('admin logout invalidates the current session', async () => {
++  const logout = await adminRequest('POST', '/api/admin/logout');
++  assert.equal(logout.status, 200);
++  assert.equal(logout.body.ok, true);
++
++  const denied = await adminRequest('GET', '/api/admin/players');
++  assert.equal(denied.status, 401);
++});
+diff --git "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-2-test.before/admin-db.test.js" b/test/admin-db.test.js
+index 9561a64..e200bbe 100644
+--- "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-2-test.before/admin-db.test.js"
++++ b/test/admin-db.test.js
+@@ -36,6 +36,7 @@ test.before(() => {
+ });
+ 
+ test.after(() => {
++  DB.db.exec('DROP TRIGGER IF EXISTS fail_admin_audit_insert');
+   DB.db.prepare('DELETE FROM admin_sessions WHERE token LIKE ?').run(`${suffix}%`);
+   DB.db.prepare('DELETE FROM admin_audit_logs WHERE character_id = ?').run(characterId);
+   DB.db.prepare('DELETE FROM characters WHERE id = ?').run(characterId);
+@@ -95,6 +96,54 @@ test('admin save updates a matching version and rejects an outdated version', ()
+   assert.equal(DB.saveCharacterAdmin(characterId, character.updated_at, changed), null);
+ });
+ 
++test('transactional admin save returns the committed after snapshot stored in its audit row', () => {
++  const before = DB.getCharacterAdmin(characterId);
++  const saved = DB.saveCharacterAdminWithAudit(characterId, before.updated_at, {
++    ...before.data,
++    hp: 44,
++  });
++
++  assert.equal(saved.status, 'saved');
++  assert.equal(saved.character.data.hp, 44);
++  assert.notEqual(saved.character.updated_at, before.updated_at);
++
++  const [audit] = DB.getAdminAuditLogs(characterId);
++  assert.deepEqual(audit.after, Object.fromEntries(
++    Object.entries(saved.character.data).filter(([field]) => field !== 'hidden')
++  ));
++  assert.equal(audit.before.hp, before.data.hp);
++});
++
++test('transactional admin save rolls back the character update when audit insertion fails', () => {
++  const before = DB.getCharacterAdmin(characterId);
++  const auditCountBefore = DB.getAdminAuditLogs(characterId).length;
++  DB.db.exec(`
++    CREATE TEMP TRIGGER fail_admin_audit_insert
++    BEFORE INSERT ON admin_audit_logs
++    WHEN NEW.character_id = ${characterId}
++    BEGIN
++      SELECT RAISE(ABORT, 'forced audit failure');
++    END;
++  `);
++
++  try {
++    assert.throws(
++      () => DB.saveCharacterAdminWithAudit(characterId, before.updated_at, {
++        ...before.data,
++        gold: 999,
++      }),
++      /forced audit failure/
++    );
++  } finally {
++    DB.db.exec('DROP TRIGGER IF EXISTS fail_admin_audit_insert');
++  }
++
++  const after = DB.getCharacterAdmin(characterId);
++  assert.equal(after.updated_at, before.updated_at);
++  assert.deepEqual(after.data, before.data);
++  assert.equal(DB.getAdminAuditLogs(characterId).length, auditCountBefore);
++});
++
+ test('admin audit logs retain only whitelisted before and after role snapshots', () => {
+   const before = { ...characterData, pass_hash: 'forbidden' };
+   const after = { ...characterData, level: 10, user_id: 999 };
+diff --git "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-1-db.before.js" b/db.js
+index 7b39e17..ddf4028 100644
+--- "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-1-db.before.js"
++++ b/db.js
+@@ -37,10 +37,36 @@ db.exec(`
+     created_at INTEGER NOT NULL,
+     data TEXT NOT NULL
+   );
++  CREATE TABLE IF NOT EXISTS admin_sessions (
++    token TEXT PRIMARY KEY,
++    created_at INTEGER NOT NULL,
++    expires_at INTEGER NOT NULL
++  );
++  CREATE TABLE IF NOT EXISTS admin_audit_logs (
++    id INTEGER PRIMARY KEY AUTOINCREMENT,
++    user_id INTEGER NOT NULL,
++    character_id INTEGER NOT NULL,
++    created_at INTEGER NOT NULL,
++    before_data TEXT NOT NULL,
++    after_data TEXT NOT NULL
++  );
+ `);
+ 
+ const SESSION_TTL_MS = 7 * 24 * 3600 * 1000;  // 会话 7 天
+ 
++const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
++const ADMIN_CHARACTER_FIELDS = new Set([
++  'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
++  'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
++  'traits', 'equipment', 'bag', 'skills', 'skillPool',
++]);
++
++function adminCharacterSnapshot(data) {
++  return Object.fromEntries(
++    Object.entries(data || {}).filter(([field]) => ADMIN_CHARACTER_FIELDS.has(field))
++  );
++}
++
+ /* ---------- users ---------- */
+ function createUser(username, passHash, salt) {
+   const now = Date.now();
+@@ -79,6 +105,27 @@ function deleteSession(token) {
+   db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+ }
+ 
++/* ---------- admin sessions ---------- */
++function createAdminSession(token) {
++  const now = Date.now();
++  db.prepare('INSERT INTO admin_sessions (token, created_at, expires_at) VALUES (?,?,?)')
++    .run(token, now, now + ADMIN_SESSION_TTL_MS);
++  return token;
++}
++function adminSessionValid(token) {
++  if (!token) return false;
++  const row = db.prepare('SELECT expires_at FROM admin_sessions WHERE token = ?').get(token);
++  if (!row) return false;
++  if (row.expires_at <= Date.now()) {
++    db.prepare('DELETE FROM admin_sessions WHERE token = ?').run(token);
++    return false;
++  }
++  return true;
++}
++function deleteAdminSession(token) {
++  db.prepare('DELETE FROM admin_sessions WHERE token = ?').run(token);
++}
++
+ /* ---------- characters ---------- */
+ function createCharacter(userId, name, data) {
+   const now = Date.now();
+@@ -101,6 +148,122 @@ function saveCharacter(userId, charId, data, name) {
+     .run(JSON.stringify(data), name || data.name || '无名', now, charId, userId);
+ }
+ 
++/* ---------- admin characters ---------- */
++function searchPlayers(query) {
++  const like = `%${String(query || '').trim()}%`;
++  return db.prepare(`
++    SELECT u.id AS user_id, u.username, c.id AS character_id, c.name AS character_name
++    FROM users u
++    JOIN characters c ON c.user_id = u.id
++    WHERE u.username LIKE ? OR c.name LIKE ?
++    ORDER BY u.username ASC, c.name ASC
++  `).all(like, like).map(row => ({
++    userId: row.user_id,
++    username: row.username,
++    characterId: row.character_id,
++    characterName: row.character_name,
++  }));
++}
++function getCharacterAdmin(charId) {
++  const row = db.prepare(`
++    SELECT c.id, c.user_id, c.name, c.data, c.updated_at, u.username
++    FROM characters c
++    JOIN users u ON u.id = c.user_id
++    WHERE c.id = ?
++  `).get(charId);
++  if (!row) return null;
++  return {
++    id: row.id,
++    userId: row.user_id,
++    username: row.username,
++    name: row.name,
++    data: JSON.parse(row.data),
++    updated_at: row.updated_at,
++  };
++}
++function saveCharacterAdmin(charId, expectedUpdatedAt, data) {
++  const existing = getCharacterAdmin(charId);
++  if (!existing || existing.updated_at !== expectedUpdatedAt) return null;
++
++  const nextData = { ...existing.data, ...adminCharacterSnapshot(data) };
++  const now = Math.max(Date.now(), expectedUpdatedAt + 1);
++  const result = db.prepare(
++    'UPDATE characters SET data = ?, name = ?, updated_at = ? WHERE id = ? AND updated_at = ?'
++  ).run(JSON.stringify(nextData), nextData.name || existing.name, now, charId, expectedUpdatedAt);
++  return result.changes === 1 ? { updated_at: now } : null;
++}
++
++function saveCharacterAdminWithAudit(charId, expectedUpdatedAt, data) {
++  db.exec('BEGIN IMMEDIATE');
++  let transactionOpen = true;
++  try {
++    const existing = getCharacterAdmin(charId);
++    if (!existing) {
++      db.exec('ROLLBACK');
++      transactionOpen = false;
++      return { status: 'not_found' };
++    }
++    if (existing.updated_at !== expectedUpdatedAt) {
++      db.exec('ROLLBACK');
++      transactionOpen = false;
++      return { status: 'conflict' };
++    }
++
++    const nextData = { ...existing.data, ...adminCharacterSnapshot(data) };
++    const now = Math.max(Date.now(), expectedUpdatedAt + 1);
++    const result = db.prepare(
++      'UPDATE characters SET data = ?, name = ?, updated_at = ? WHERE id = ? AND updated_at = ?'
++    ).run(JSON.stringify(nextData), nextData.name || existing.name, now, charId, expectedUpdatedAt);
++    if (result.changes !== 1) {
++      db.exec('ROLLBACK');
++      transactionOpen = false;
++      return { status: 'conflict' };
++    }
++
++    const updated = getCharacterAdmin(charId);
++    addAdminAuditLog({
++      characterId: charId,
++      userId: existing.userId,
++      before: existing.data,
++      after: updated.data,
++    });
++    db.exec('COMMIT');
++    transactionOpen = false;
++    return { status: 'saved', character: updated };
++  } catch (error) {
++    if (transactionOpen) {
++      try { db.exec('ROLLBACK'); }
++      catch (rollbackError) { error.rollbackError = rollbackError; }
++    }
++    throw error;
++  }
++}
++
++/* ---------- admin audit logs ---------- */
++function addAdminAuditLog({ characterId, userId, before, after }) {
++  const now = Date.now();
++  const info = db.prepare(`
++    INSERT INTO admin_audit_logs (user_id, character_id, created_at, before_data, after_data)
++    VALUES (?,?,?,?,?)
++  `).run(userId, characterId, now, JSON.stringify(adminCharacterSnapshot(before)), JSON.stringify(adminCharacterSnapshot(after)));
++  return info.lastInsertRowid;
++}
++function getAdminAuditLogs(charId) {
++  return db.prepare(`
++    SELECT id, user_id, character_id, created_at, before_data, after_data
++    FROM admin_audit_logs
++    WHERE character_id = ?
++    ORDER BY created_at DESC, id DESC
++  `).all(charId).map(row => ({
++    id: row.id,
++    userId: row.user_id,
++    characterId: row.character_id,
++    created_at: row.created_at,
++    before: JSON.parse(row.before_data),
++    after: JSON.parse(row.after_data),
++  }));
++}
++
+ /* ---------- logs ---------- */
+ /* 为该用户分配下一个日志业务编号：从 1 开始递增，上限 99999（到顶后停留 99999） */
+ function nextLogSeq(userId) {
+@@ -123,7 +286,10 @@ module.exports = {
+   db,
+   createUser, findUserByUsername, findUserById,
+   createSession, sessionUserId, deleteSession,
++  createAdminSession, adminSessionValid, deleteAdminSession,
+   createCharacter, getCharacters, getCharacter, saveCharacter,
++  searchPlayers, getCharacterAdmin, saveCharacterAdmin, saveCharacterAdminWithAudit,
+   addLog, getLogs, nextLogSeq,
+-  SESSION_TTL_MS,
++  addAdminAuditLog, getAdminAuditLogs,
++  SESSION_TTL_MS, ADMIN_SESSION_TTL_MS,
+ };

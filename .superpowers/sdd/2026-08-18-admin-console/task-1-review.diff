@@ -1,0 +1,275 @@
+﻿diff --git "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-1-db.before.js" b/db.js
+index 7b39e17..cd17d4b 100644
+--- "a/.superpowers\\sdd\\2026-08-18-admin-console\\task-1-db.before.js"
++++ b/db.js
+@@ -37,10 +37,36 @@ db.exec(`
+     created_at INTEGER NOT NULL,
+     data TEXT NOT NULL
+   );
++  CREATE TABLE IF NOT EXISTS admin_sessions (
++    token TEXT PRIMARY KEY,
++    created_at INTEGER NOT NULL,
++    expires_at INTEGER NOT NULL
++  );
++  CREATE TABLE IF NOT EXISTS admin_audit_logs (
++    id INTEGER PRIMARY KEY AUTOINCREMENT,
++    user_id INTEGER NOT NULL,
++    character_id INTEGER NOT NULL,
++    created_at INTEGER NOT NULL,
++    before_data TEXT NOT NULL,
++    after_data TEXT NOT NULL
++  );
+ `);
+ 
+ const SESSION_TTL_MS = 7 * 24 * 3600 * 1000;  // 会话 7 天
+ 
++const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
++const ADMIN_CHARACTER_FIELDS = new Set([
++  'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
++  'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
++  'traits', 'equipment', 'bag', 'skills', 'skillPool',
++]);
++
++function adminCharacterSnapshot(data) {
++  return Object.fromEntries(
++    Object.entries(data || {}).filter(([field]) => ADMIN_CHARACTER_FIELDS.has(field))
++  );
++}
++
+ /* ---------- users ---------- */
+ function createUser(username, passHash, salt) {
+   const now = Date.now();
+@@ -79,6 +105,27 @@ function deleteSession(token) {
+   db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+ }
+ 
++/* ---------- admin sessions ---------- */
++function createAdminSession(token) {
++  const now = Date.now();
++  db.prepare('INSERT INTO admin_sessions (token, created_at, expires_at) VALUES (?,?,?)')
++    .run(token, now, now + ADMIN_SESSION_TTL_MS);
++  return token;
++}
++function adminSessionValid(token) {
++  if (!token) return false;
++  const row = db.prepare('SELECT expires_at FROM admin_sessions WHERE token = ?').get(token);
++  if (!row) return false;
++  if (row.expires_at <= Date.now()) {
++    db.prepare('DELETE FROM admin_sessions WHERE token = ?').run(token);
++    return false;
++  }
++  return true;
++}
++function deleteAdminSession(token) {
++  db.prepare('DELETE FROM admin_sessions WHERE token = ?').run(token);
++}
++
+ /* ---------- characters ---------- */
+ function createCharacter(userId, name, data) {
+   const now = Date.now();
+@@ -101,6 +148,76 @@ function saveCharacter(userId, charId, data, name) {
+     .run(JSON.stringify(data), name || data.name || '无名', now, charId, userId);
+ }
+ 
++/* ---------- admin characters ---------- */
++function searchPlayers(query) {
++  const like = `%${String(query || '').trim()}%`;
++  return db.prepare(`
++    SELECT u.id AS user_id, u.username, c.id AS character_id, c.name AS character_name
++    FROM users u
++    JOIN characters c ON c.user_id = u.id
++    WHERE u.username LIKE ? OR c.name LIKE ?
++    ORDER BY u.username ASC, c.name ASC
++  `).all(like, like).map(row => ({
++    userId: row.user_id,
++    username: row.username,
++    characterId: row.character_id,
++    characterName: row.character_name,
++  }));
++}
++function getCharacterAdmin(charId) {
++  const row = db.prepare(`
++    SELECT c.id, c.user_id, c.name, c.data, c.updated_at, u.username
++    FROM characters c
++    JOIN users u ON u.id = c.user_id
++    WHERE c.id = ?
++  `).get(charId);
++  if (!row) return null;
++  return {
++    id: row.id,
++    userId: row.user_id,
++    username: row.username,
++    name: row.name,
++    data: JSON.parse(row.data),
++    updated_at: row.updated_at,
++  };
++}
++function saveCharacterAdmin(charId, expectedUpdatedAt, data) {
++  const existing = getCharacterAdmin(charId);
++  if (!existing || existing.updated_at !== expectedUpdatedAt) return null;
++
++  const nextData = { ...existing.data, ...adminCharacterSnapshot(data) };
++  const now = Math.max(Date.now(), expectedUpdatedAt + 1);
++  const result = db.prepare(
++    'UPDATE characters SET data = ?, name = ?, updated_at = ? WHERE id = ? AND updated_at = ?'
++  ).run(JSON.stringify(nextData), nextData.name || existing.name, now, charId, expectedUpdatedAt);
++  return result.changes === 1 ? { updated_at: now } : null;
++}
++
++/* ---------- admin audit logs ---------- */
++function addAdminAuditLog({ characterId, userId, before, after }) {
++  const now = Date.now();
++  const info = db.prepare(`
++    INSERT INTO admin_audit_logs (user_id, character_id, created_at, before_data, after_data)
++    VALUES (?,?,?,?,?)
++  `).run(userId, characterId, now, JSON.stringify(adminCharacterSnapshot(before)), JSON.stringify(adminCharacterSnapshot(after)));
++  return info.lastInsertRowid;
++}
++function getAdminAuditLogs(charId) {
++  return db.prepare(`
++    SELECT id, user_id, character_id, created_at, before_data, after_data
++    FROM admin_audit_logs
++    WHERE character_id = ?
++    ORDER BY created_at DESC, id DESC
++  `).all(charId).map(row => ({
++    id: row.id,
++    userId: row.user_id,
++    characterId: row.character_id,
++    created_at: row.created_at,
++    before: JSON.parse(row.before_data),
++    after: JSON.parse(row.after_data),
++  }));
++}
++
+ /* ---------- logs ---------- */
+ /* 为该用户分配下一个日志业务编号：从 1 开始递增，上限 99999（到顶后停留 99999） */
+ function nextLogSeq(userId) {
+@@ -123,7 +240,10 @@ module.exports = {
+   db,
+   createUser, findUserByUsername, findUserById,
+   createSession, sessionUserId, deleteSession,
++  createAdminSession, adminSessionValid, deleteAdminSession,
+   createCharacter, getCharacters, getCharacter, saveCharacter,
++  searchPlayers, getCharacterAdmin, saveCharacterAdmin,
+   addLog, getLogs, nextLogSeq,
+-  SESSION_TTL_MS,
++  addAdminAuditLog, getAdminAuditLogs,
++  SESSION_TTL_MS, ADMIN_SESSION_TTL_MS,
+ };
+diff --git a/test/admin-db.test.js b/test/admin-db.test.js
+new file mode 100644
+index 0000000..9561a64
+--- /dev/null
++++ b/test/admin-db.test.js
+@@ -0,0 +1,111 @@
++const assert = require('node:assert/strict');
++const test = require('node:test');
++
++const DB = require('../db');
++
++const suffix = `admin-db-${process.pid}-${Date.now()}`;
++const username = `player-${suffix}`;
++const characterData = {
++  name: `Admin Fixture ${suffix}`,
++  character_class: 'Warrior',
++  level: 8,
++  hp: 42,
++  max_hp: 50,
++  stamina: 12,
++  max_stamina: 20,
++  strength: 9,
++  agility: 7,
++  intelligence: 5,
++  luck: 4,
++  gold: 123,
++  exp: 456,
++  traits: [{ name: 'Steady' }],
++  equipment: [{ slot: 'weapon', name: 'Sword' }],
++  bag: [{ name: 'Potion', count: 2 }],
++  skills: [{ name: 'Slash' }],
++  skillPool: [{ name: 'Guard' }],
++  hidden: 'must not be exposed or audited',
++};
++
++let userId;
++let characterId;
++
++test.before(() => {
++  userId = Number(DB.createUser(username, 'hash', 'salt'));
++  characterId = Number(DB.createCharacter(userId, characterData.name, characterData));
++});
++
++test.after(() => {
++  DB.db.prepare('DELETE FROM admin_sessions WHERE token LIKE ?').run(`${suffix}%`);
++  DB.db.prepare('DELETE FROM admin_audit_logs WHERE character_id = ?').run(characterId);
++  DB.db.prepare('DELETE FROM characters WHERE id = ?').run(characterId);
++  DB.db.prepare('DELETE FROM users WHERE id = ?').run(userId);
++});
++
++test('admin sessions expire after two hours and remove expired records when checked', () => {
++  const token = `${suffix}-token`;
++  const realNow = Date.now;
++  const createdAt = 1_000_000;
++
++  try {
++    Date.now = () => createdAt;
++    DB.createAdminSession(token);
++    assert.equal(DB.adminSessionValid(token), true);
++    const session = DB.db.prepare('SELECT created_at, expires_at FROM admin_sessions WHERE token = ?').get(token);
++    assert.equal(session.expires_at - session.created_at, 2 * 60 * 60 * 1000);
++
++    Date.now = () => createdAt + 2 * 60 * 60 * 1000;
++    assert.equal(DB.adminSessionValid(token), false);
++    assert.equal(DB.db.prepare('SELECT token FROM admin_sessions WHERE token = ?').get(token), undefined);
++  } finally {
++    Date.now = realNow;
++  }
++});
++
++test('admin player search returns only matching player and character summaries', () => {
++  const results = DB.searchPlayers(username);
++
++  assert.deepEqual(results, [{
++    userId,
++    username,
++    characterId,
++    characterName: characterData.name,
++  }]);
++  assert.deepEqual(DB.searchPlayers(characterData.name), results);
++});
++
++test('admin character lookup includes the owning username', () => {
++  const character = DB.getCharacterAdmin(characterId);
++
++  assert.equal(character.username, username);
++  assert.equal(character.id, characterId);
++  assert.deepEqual(character.data, characterData);
++});
++
++test('admin save updates a matching version and rejects an outdated version', () => {
++  const character = DB.getCharacterAdmin(characterId);
++  const changed = { ...character.data, level: 9, hidden: 'still forbidden' };
++
++  const saved = DB.saveCharacterAdmin(characterId, character.updated_at, changed);
++  assert.ok(saved);
++  assert.notEqual(saved.updated_at, character.updated_at);
++  assert.equal(DB.getCharacterAdmin(characterId).data.level, 9);
++  assert.equal(DB.getCharacterAdmin(characterId).data.hidden, characterData.hidden);
++
++  assert.equal(DB.saveCharacterAdmin(characterId, character.updated_at, changed), null);
++});
++
++test('admin audit logs retain only whitelisted before and after role snapshots', () => {
++  const before = { ...characterData, pass_hash: 'forbidden' };
++  const after = { ...characterData, level: 10, user_id: 999 };
++
++  DB.addAdminAuditLog({ characterId, userId, before, after });
++
++  const [log] = DB.getAdminAuditLogs(characterId);
++  assert.equal(log.characterId, characterId);
++  assert.equal(log.userId, userId);
++  assert.equal(log.before.name, characterData.name);
++  assert.equal(log.after.level, 10);
++  assert.equal(log.before.pass_hash, undefined);
++  assert.equal(log.after.user_id, undefined);
++});
