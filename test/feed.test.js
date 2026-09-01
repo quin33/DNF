@@ -275,6 +275,16 @@ test('websocket authentication resumes every running expedition for a viewer', (
   assert.doesNotMatch(auth, /if \(!member\) continue/);
 });
 
+test('active-run HTTP fallback also serves viewers who are not participants', () => {
+  const server = fs.readFileSync('server.js', 'utf8');
+  const route = server.slice(
+    server.indexOf("urlPath === '/api/expeditions/active'"),
+    server.indexOf("// 账号 / 角色 / 日志 / 房间 API（联机版）"),
+  );
+  assert.doesNotMatch(route, /\.filter\(run\s*=>/);
+  assert.match(route, /DB\.getActiveExpeditionRuns\(\)\.map/);
+});
+
 test('online client tracks remote running expeditions by server run id', () => {
   const online = fs.readFileSync('online.js', 'utf8');
   assert.match(online, /function findActiveRun\(runId\)/);

@@ -240,6 +240,7 @@
     }
     startPublicCharacterRefresh();
     connectWs();
+    scheduleActiveRunSync();
     const nn = $('#nav-nick');
     if (nn) nn.textContent = API.user ? (API.user.nickname || API.user.username) : '道友';
     const bal = $('#nav-balance');
@@ -576,9 +577,11 @@
      ============================================================ */
   let ws = null, wsReady = false;
   let wsReconnectTimer = null, wsReconnectAttempt = 0, wsIntentionalClose = false, wsHeartbeatTimer = null;
+  let wsLastPongAt = 0;
   let activeWsRun = null;   // 在线副本播放状态
   let startingRoom = null;  // 已点击开本、AI 尚未返回前的占位状态
   let publicRooms = [];
+  let activeRunSyncTimer = null, activeRunSyncInFlight = false;
 
   function setPublicRooms(rooms) {
     publicRooms = Array.isArray(rooms) ? rooms : [];
@@ -594,15 +597,54 @@
     if (!API.token) return;
     try {
       const body = await api('/api/expeditions/active');
-      for (const entry of Array.isArray(body && body.runs) ? body.runs : []) {
+      if (!API.token) return;
+      const runs = Array.isArray(body && body.runs) ? body.runs : [];
+      const remoteIds = new Set(runs.map(entry => String(entry && entry.runId || '')));
+      for (const entry of runs) {
         if (!entry || !entry.runId || !entry.snapshot) continue;
-        const dg = onRunResumed(entry.snapshot, entry.runId, entry.status);
-        if (dg && entry.status === 'waiting_ai' && dg.isMineRun) {
-          dg.status = 'waiting_ai';
-          try { renderSquadCard(); } catch (e) {}
+        onRunResumed(entry.snapshot, entry.runId, entry.status);
+      }
+      const knownRuns = (window.activeDungeons || []).slice();
+      let changed = false;
+      for (const run of knownRuns) {
+        const runId = String(run && (run.runId || run.id) || '');
+        if (!runId || remoteIds.has(runId)) continue;
+        const index = (window.activeDungeons || []).indexOf(run);
+        if (index >= 0) window.activeDungeons.splice(index, 1);
+        if (run === activeWsRun) {
+          activeWsRun = null;
+          window.matchQueue = null;
+          if (squadCardEl) {
+            try { squadCardEl.remove(); } catch (_) {}
+            squadCardEl = null;
+          }
         }
+        changed = true;
+      }
+      if (changed) {
+        try { renderParty(); } catch (_) {}
+        renderLogs();
+        void fetchServerLogs();
       }
     } catch (_) {}
+  }
+  function scheduleActiveRunSync() {
+    if (!API.token || activeRunSyncTimer) return;
+    const hasActiveRun = !!(window.activeDungeons && window.activeDungeons.length);
+    activeRunSyncTimer = setTimeout(async () => {
+      activeRunSyncTimer = null;
+      if (activeRunSyncInFlight) {
+        scheduleActiveRunSync();
+        return;
+      }
+      activeRunSyncInFlight = true;
+      try {
+        await syncActiveExpeditions();
+      } finally {
+        activeRunSyncInFlight = false;
+        scheduleActiveRunSync();
+      }
+    }, hasActiveRun ? 5000 : 15000);
   }
   function scheduleWsReconnect() {
     if (wsReconnectTimer || wsIntentionalClose || !API.token) return;
@@ -622,9 +664,20 @@
     socket.onopen = () => {
       if (ws !== socket) return;
       wsReady = true;
+      wsLastPongAt = Date.now();
       if (wsHeartbeatTimer) clearInterval(wsHeartbeatTimer);
       wsHeartbeatTimer = setInterval(() => {
-        if (wsReady && ws && ws.readyState === 1) wsSend({ type: 'ping', at: Date.now() });
+        if (!wsReady || !ws || ws.readyState !== 1) return;
+        wsSend({ type: 'ping', at: Date.now() });
+        if (Date.now() - wsLastPongAt > 75000) {
+          wsReady = false;
+          const stale = ws;
+          ws = null;
+          clearInterval(wsHeartbeatTimer);
+          wsHeartbeatTimer = null;
+          try { stale.close(); } catch (_) {}
+          scheduleWsReconnect();
+        }
       }, 30000);
       socket.send(JSON.stringify({ type: 'auth', token: API.token }));
     };
@@ -640,6 +693,8 @@
   }
   function closeWs() {
     wsIntentionalClose = true;
+    if (activeRunSyncTimer) { clearTimeout(activeRunSyncTimer); activeRunSyncTimer = null; }
+    activeRunSyncInFlight = false;
     if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null; }
     if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null; }
     try { if (ws) ws.close(); } catch (e) {}
@@ -654,7 +709,7 @@
         if (document.querySelector('#tab-party.active')) requestPublicRooms();
         void syncActiveExpeditions();
         break;
-      case 'pong': break;
+      case 'pong': wsLastPongAt = Date.now(); break;
       case 'rooms_updated': setPublicRooms(d.rooms); break;
       case 'room_state': break;
       case 'ai_companions_updated': {
@@ -1112,12 +1167,41 @@
   function onRunResumed(snapshot, runId, status) {
     const dg = onRunStarted(snapshot, runId);
     if (!dg) return;
-    dg.status = status || snapshot.status || dg.status;
-    dg.startedAt = snapshot.startedAt || dg.startedAt;
-    dg.steps = Array.isArray(snapshot.steps) ? snapshot.steps.slice() : [];
-    dg.totalStep = snapshot.totalStep || dg.steps.length;
-    if (dg.isMineRun) renderSquadCard(snapshot);
-    renderLogs();
+    const localSteps = Array.isArray(dg.steps) ? dg.steps : [];
+    const incomingSteps = Array.isArray(snapshot.steps) ? snapshot.steps : [];
+    const maxStepNo = steps => steps.reduce((max, item) => Math.max(max, Number(item && item.stepNo) || 0), 0);
+    const incomingMax = maxStepNo(incomingSteps);
+    const localMax = maxStepNo(localSteps);
+    const prevStatus = dg.status;
+    const prevStepCount = dg.steps.length;
+    const prevTotal = dg.totalStep;
+    if (incomingMax >= localMax) {
+      dg.status = status || snapshot.status || dg.status;
+      dg.startedAt = snapshot.startedAt || dg.startedAt;
+      dg.steps = incomingSteps.slice();
+      dg.totalStep = Math.max(Number(snapshot.totalStep) || 0, incomingSteps.length);
+      if (incomingMax > localMax && Array.isArray(snapshot.dgParty) && snapshot.dgParty.length) {
+        const byName = new Map(snapshot.dgParty.map(member => [member && member.name, member]));
+        dg.party = (dg.party || []).map(member => {
+          const remote = byName.get(member && member.name);
+          if (!remote) return member;
+          return {
+            ...member,
+            uid: remote.uid ?? member.uid,
+            charId: remote.charId ?? member.charId,
+            hp: remote.hp ?? member.hp,
+            max_hp: remote.max_hp || member.max_hp,
+            isNpc: !!remote.isNpc,
+            card: remote.card || member.card,
+          };
+        });
+      }
+    }
+    const changed = dg.status !== prevStatus || dg.steps.length !== prevStepCount || dg.totalStep !== prevTotal || incomingMax > localMax;
+    if (changed) {
+      if (dg.isMineRun) renderSquadCard(snapshot);
+      renderLogs();
+    }
   }
   function onWsStep(step, runId) {
     const run = findActiveRun(runId) || (runId == null ? activeWsRun : null);
@@ -1392,6 +1476,9 @@
   };
   window.matchTick = function matchTickOnline() { /* 服务端驱动，本地不再 tick */ };
   window.restoreRuns = function restoreRunsOnline() { /* 在线无本地恢复 */ };
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && API.token) void syncActiveExpeditions();
+  });
 
   /* ---------- 探险日志与服务器同步：先渲染本地数据，再后台单次拉取 ---------- */
   const __renderLogsOrig = window.renderLogs;

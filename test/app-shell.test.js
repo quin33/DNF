@@ -126,7 +126,20 @@ test('online reconnect resets only after auth and keeps waiting AI runs visible'
   assert.doesNotMatch(script, /function onRunWaitingAi[\s\S]{0,220}activeDungeons\.splice/);
   assert.match(script, /api\('\/api\/expeditions\/active'\)/);
   assert.match(script, /wsSend\(\{\s*type:\s*'ping'/);
-  assert.match(script, /case 'pong':\s*break/);
+  assert.match(script, /case 'pong':\s*wsLastPongAt\s*=\s*Date\.now\(\);\s*break/);
+});
+
+test('online client periodically reconciles active runs and forces a reconnect after stale pongs', () => {
+  const script = readAsset('online.js');
+  assert.match(script, /function scheduleActiveRunSync/);
+  assert.match(script, /activeRunSyncTimer\s*=\s*setTimeout\(async \(\)\s*=>/);
+  assert.match(script, /await syncActiveExpeditions\(\)/);
+  assert.match(script, /remoteIds\.has\(runId\)/);
+  assert.match(script, /void fetchServerLogs\(\)/);
+  assert.match(script, /hasActiveRun \? 5000 : 15000/);
+  assert.match(script, /Date\.now\(\)\s*-\s*wsLastPongAt\s*>\s*75000/);
+  assert.match(script, /visibilitychange/);
+  assert.match(script, /function onRunResumed[\s\S]{0,600}incomingMax\s*>=\s*localMax/);
 });
 
 test('online client shows an immediate starting card while AI setup is pending', () => {

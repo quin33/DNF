@@ -1938,12 +1938,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && urlPath === '/api/expeditions/active') {
     const u = authUser(req);
     if (!u) { sendJSON(res, 401, { error: '未登录' }); return true; }
-    const runs = DB.getActiveExpeditionRuns().filter(run => {
-      const room = run.snapshot && run.snapshot.room;
-      const party = room && Array.isArray(room.party) ? room.party : [];
-      const dgParty = room && room.dg && Array.isArray(room.dg.party) ? room.dg.party : [];
-      return [...party, ...dgParty].some(member => Number(member && member.uid) === Number(u.id));
-    }).map(run => ({
+    const runs = DB.getActiveExpeditionRuns().map(run => ({
       runId: run.runId,
       roomId: run.roomId,
       status: run.status,
