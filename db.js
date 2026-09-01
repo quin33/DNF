@@ -320,6 +320,50 @@ function findUserById(id) {
   const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
   return row || null;
 }
+function updateUserCredentials(id, passHash, salt) {
+  db.prepare('UPDATE users SET pass_hash = ?, salt = ? WHERE id = ?').run(passHash, salt, id);
+}
+
+/* ---------- 账号镜像（两个游戏共用账号） ----------
+   设置 ACCOUNT_MIRROR_DB 指向另一个游戏的 SQLite 库后，本库可读取那边的 users 表：
+   - 登录时本地没有该账号、或密码对不上，就在镜像库验证，匹配则补建/同步本地账号；
+   - 注册时用户名在两个库里都不能重复（全局唯一）。
+   只做只读 SELECT，绝不写镜像库；角色/日志等数据仍各自独立。 */
+let _mirrorDb = null;
+function mirrorDb() {
+  const p = String(process.env.ACCOUNT_MIRROR_DB || '').trim();
+  if (!p) return null;
+  if (_mirrorDb) return _mirrorDb;
+  try {
+    _mirrorDb = new DatabaseSync(p);
+  } catch (e) {
+    console.warn('[db] 打开账号镜像库失败：', String(e && e.message || e).slice(0, 120));
+    _mirrorDb = null;
+  }
+  return _mirrorDb;
+}
+/* 镜像库按用户名取账号；未配置或失败返回 null */
+function mirrorFindUser(username) {
+  const m = mirrorDb();
+  if (!m) return null;
+  try {
+    return m.prepare('SELECT username, pass_hash, salt, nickname FROM users WHERE username = ?').get(username) || null;
+  } catch (e) {
+    console.warn('[db] 账号镜像查询失败：', String(e && e.message || e).slice(0, 120));
+    return null;
+  }
+}
+/* 用户名是否已在镜像库占用；未配置返回 null，查询失败按已占用处理（保全局唯一） */
+function mirrorHasUsername(username) {
+  const m = mirrorDb();
+  if (!m) return null;
+  try {
+    return !!m.prepare('SELECT 1 FROM users WHERE username = ?').get(username);
+  } catch (e) {
+    console.warn('[db] 账号镜像查询失败：', String(e && e.message || e).slice(0, 120));
+    return true;
+  }
+}
 
 /* ---------- sessions ---------- */
 function createSession(userId, token) {
@@ -1233,7 +1277,8 @@ function deleteCharacter(characterId) {
 module.exports = {
   db,
   repairCorruptedText,
-  createUser, findUserByUsername, findUserById,
+  createUser, findUserByUsername, findUserById, updateUserCredentials,
+  mirrorFindUser, mirrorHasUsername,
   createSession, sessionUserId, deleteSession,
   createAdminSession, adminSessionValid, deleteAdminSession,
   createCharacter, characterNameExists, createCharacterIdempotent, getCharacters, getCharacter, saveCharacter, saveCharacterIfCurrent,

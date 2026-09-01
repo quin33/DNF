@@ -659,7 +659,7 @@ async function callLLM(userMsg, systemPrompt = SYSTEM_PROMPT, maxLength = 300) {
       }
       const text = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content || '').trim();
       if (!text) throw new Error('AI 返回空内容（思考过长被截断，重试中）');
-      if (text.includes(' ')) throw new Error('AI 返回乱码（重试中）');
+      if (text.includes('�')) throw new Error('AI 返回乱码（重试中）');
       // 字数控制：单步截断至 300 字（保留完整句子）
       if (maxLength && text.length > maxLength) {
         const cut = text.slice(0, maxLength);
@@ -1113,7 +1113,7 @@ function serveStatic(res, urlPath) {
     return;
   }
   if (p === '/admin') p = '/admin.html';
-  const publicAssets = new Set(['/index.html', '/style.css', '/data.js', '/online.js', '/game-engine.js', '/game-create.js', '/taixu-insight.js', '/ai-companions.js', '/loot-settlement.js']);
+  const publicAssets = new Set(['/index.html', '/style.css', '/data.js', '/online.js', '/game-engine.js', '/game-create.js', '/taixu-insight.js', '/ai-companions.js', '/loot-settlement.js', '/site-nav.js']);
   if (!publicAssets.has(p) && !adminPaths.has(p)) {
     res.writeHead(404);
     res.end('Not Found');
@@ -1141,7 +1141,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (username.length < 3 || username.length > 32) { sendJSON(res, 400, { error: '用户名需 3~32 字符' }); return true; }
     if (!/^[A-Za-z0-9_]+$/.test(username)) { sendJSON(res, 400, { error: '用户名仅限字母、数字、下划线' }); return true; }
     if (password.length < 6 || password.length > 64) { sendJSON(res, 400, { error: '密码需至少 6 位' }); return true; }
-    if (DB.findUserByUsername(username)) { sendJSON(res, 409, { error: '用户名已存在' }); return true; }
+    if (DB.findUserByUsername(username) || DB.mirrorHasUsername(username)) { sendJSON(res, 409, { error: '用户名已存在' }); return true; }
     const salt = makeSalt();
     const uid = DB.createUser(username, hashPassword(password, salt), salt, nickname);
     const token = DB.createSession(uid, newToken());
@@ -1153,7 +1153,21 @@ async function handleAuthAPI(req, res, urlPath) {
     const body = JSON.parse(await readBody(req));
     const username = String(body.username || '').trim();
     const password = String(body.password || '');
-    const u = DB.findUserByUsername(username);
+    let u = DB.findUserByUsername(username);
+    if (!u || hashPassword(password, u.salt) !== u.pass_hash) {
+      // 本地没有、或密码对不上：查镜像库（另一个游戏）。匹配则补建/同步本地账号，
+      // 这样注册一次两边都能登录，改密码也能双向传播。角色数据仍各自独立。
+      const mirror = DB.mirrorFindUser(username);
+      if (mirror && hashPassword(password, mirror.salt) === mirror.pass_hash) {
+        if (u) {
+          DB.updateUserCredentials(u.id, mirror.pass_hash, mirror.salt);
+          u = { ...u, pass_hash: mirror.pass_hash, salt: mirror.salt };
+        } else {
+          const uid = DB.createUser(username, mirror.pass_hash, mirror.salt, String(mirror.nickname || '').slice(0, 10));
+          u = DB.findUserById(uid);
+        }
+      }
+    }
     if (!u || hashPassword(password, u.salt) !== u.pass_hash) { sendJSON(res, 401, { error: '用户名或密码错误' }); return true; }
     const token = DB.createSession(u.id, newToken());
     sendJSON(res, 200, { token, user: { id: u.id, username: u.username, nickname: u.nickname || '' } });

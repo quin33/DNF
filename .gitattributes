@@ -7,5 +7,12 @@
 # 锁定 LF 可让任何人克隆本仓库后测试都能通过，无需改本机 git 配置。
 * text=auto eol=lf
 
+# Windows 批处理必须是 CRLF。cmd.exe 解析 LF-only 的 .bat 时会按字节错位，
+# 表现为每行吃掉一个字符后报错，例如 setlocal 被拆成 setloca + "'l' 不是内部
+# 或外部命令"、timeout 被拆成 t + "'imeout' ..."。上面的 eol=lf 会把这些脚本
+# 检出成 LF，因此必须单独钉死 CRLF。
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 # 二进制文件不做任何换行符转换（reference/ 下的截图）
 *.png binary

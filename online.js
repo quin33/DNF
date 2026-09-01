@@ -6,8 +6,8 @@
    ============================================================ */
 (function () {
   window.__onlineMode = true;
-  const TOKEN_KEY = 'xiuxian_online_token';
-  const ROLE_CACHE_KEY = 'xiuxian_role_cache_v1';
+  const TOKEN_KEY = 'dnf_online_token';
+  const ROLE_CACHE_KEY = 'dnf_role_cache_v1';
   // D 在首个 script 中是局部 const，需要暴露到 window 供 online overlay 使用
   if (!window.D) window.D = window.TAVERN_DATA;
   const API = { token: localStorage.getItem(TOKEN_KEY) || '', user: null, chars: [] };
@@ -257,7 +257,7 @@
     const role = window.D && window.D.my_adventurer;
     const notice = role && role.taixuInsightNotice;
     if (!notice || !notice.jobId) return;
-    const key = 'xiuxian_taixu_notice_' + notice.jobId;
+    const key = 'dnf_taixu_notice_' + notice.jobId;
     if (localStorage.getItem(key)) return;
     localStorage.setItem(key, '1');
     setTimeout(() => {
@@ -616,7 +616,8 @@
     if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
     wsIntentionalClose = false;
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(proto + '://' + location.host + '/ws');
+    // 页面头部的引导脚本已包装 fetch 补前缀，WebSocket 得自己带上。
+    const socket = new WebSocket(proto + '://' + location.host + (window.__basePath || '') + '/ws');
     ws = socket;
     socket.onopen = () => {
       if (ws !== socket) return;
@@ -1301,7 +1302,7 @@
     if (!confirm('确定删除当前角色，重新开始创建？')) return;
     try {
       await api('/api/character/' + role._char_db_id + '/delete', { method: 'POST' });
-      localStorage.removeItem('xiuxian_role');
+      localStorage.removeItem('dnf_role');
       window.D.adventurers = (window.D.adventurers || []).filter(a => Number(a._char_db_id || a.id) !== Number(role._char_db_id));
       window.D.my_adventurer = null;
       await loadOnlineRoles();

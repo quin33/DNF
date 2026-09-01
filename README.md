@@ -9,11 +9,18 @@
 
 | | 原游戏（xiuxian） | 本项目（DNF） |
 |---|---|---|
-| 网址 | https://xiuxiangame.dpdns.org | https://dnf.xiuxiangame.dpdns.org |
+| 网址 | https://xiuxiangame.dpdns.org/xiuxian/ | https://xiuxiangame.dpdns.org/dnf/ |
 | 游戏端口 | 8787 | 8788 |
 | 控制台端口 | 8790 | 8791 |
 | 数据库 | `tavern.db` | `dnf.db` |
-| 账号 | 各自独立，玩家需分别注册 | |
+| localStorage 前缀 | `xiuxian_` | `dnf_` |
+| 账号 | **两边共用同一账号**：注册一次，两个游戏都能登录；角色数据仍各自独立 | |
+
+两个游戏挂在同一个域名的两个子路径下，由站点网关（`site-gateway.js`，8786）剥掉前缀后转发；主域名 `https://xiuxiangame.dpdns.org` 是导航首页，页面左侧也有互跳导航。旧的 `https://dnf.xiuxiangame.dpdns.org` 仍可直连 DNF。
+
+同域名意味着 localStorage 是共享的（按源隔离，不按路径），所以两边的键各带前缀 —— 新增键时别忘了带上，否则会顶掉对方的登录态。
+
+**账号共用**由两侧的 `ACCOUNT_MIRROR_DB` 实现：登录时本地没有该账号，就去镜像库（另一个游戏的 SQLite 库）验证密码，匹配则自动在本地补建同名账号；注册时用户名在两个库里都不得重复；任一侧改密码会双向同步。两个游戏的角色、道具、日志仍各自独立，互不相通。
 
 两个仓库有共同的提交历史，修复可用 `git cherry-pick` 在两边互传。原游戏已配置为 `upstream` 远程：
 

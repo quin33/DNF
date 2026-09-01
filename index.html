@@ -18,6 +18,23 @@
   <div class="modal-box" id="modal-box"></div>
 </div>
 
+<script>
+/* 经站点网关时页面在 /dnf/ 下，而代码里的 /api/... 是绝对路径，会打到站点根目录。
+   这里统一包装 fetch 补上前缀，省去逐处改写，也覆盖以后新增的调用。
+   直接跑在 8788 上时 basePath 为空，行为不变。 */
+(() => {
+  const basePath = location.pathname.replace(/[^/]*$/, '').replace(/\/$/, '');
+  window.__basePath = basePath;
+  if (!basePath) return;
+  const origin = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    if (typeof input === 'string' && input.startsWith('/') && !input.startsWith('//')) {
+      return origin(basePath + input, init);
+    }
+    return origin(input, init);
+  };
+})();
+</script>
 <script src="data.js"></script>
 <script src="ai-companions.js"></script>
 <script src="loot-settlement.js"></script>
@@ -83,12 +100,12 @@ function applyTheme(t) {
   document.body.dataset.theme = t;
   const btn = $('#theme-toggle');
   if (btn) btn.textContent = t === 'light' ? '🌙' : '☀️';
-  localStorage.setItem('xiuxian_theme', t);
+  localStorage.setItem('dnf_theme', t);
 }
 function toggleTheme() {
   applyTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
 }
-applyTheme(localStorage.getItem('xiuxian_theme') || 'light');
+applyTheme(localStorage.getItem('dnf_theme') || 'light');
 
 /* ---------- 渲染主框架 ---------- */
 const root = $('#app-root');
@@ -474,7 +491,7 @@ const LIBRARY_BOOKS = [
   { code: 'yujian', name: '御剑术·初窥', type: '术法', elem: '金灵根', tier: '地阶', realm: '筑基期', price: 450, stock: 5, desc: '剑修入门秘录，御使飞剑千里取敌，初窥门径已非凡俗可比。' },
 ];
 function libStock() {
-  try { return JSON.parse(localStorage.getItem('xiuxian_library_stock') || '{}'); } catch (e) { return {}; }
+  try { return JSON.parse(localStorage.getItem('dnf_library_stock') || '{}'); } catch (e) { return {}; }
 }
 function openLibraryModal() {
   const role = D.my_adventurer;
@@ -542,7 +559,7 @@ function buyLibraryBook(code) {
   const left = stock[code] !== undefined ? stock[code] : b.stock;
   if (left <= 0) { toastMsg('已售罄'); return; }
   stock[code] = left - 1;
-  try { localStorage.setItem('xiuxian_library_stock', JSON.stringify(stock)); } catch (e) { /* 忽略 */ }
+  try { localStorage.setItem('dnf_library_stock', JSON.stringify(stock)); } catch (e) { /* 忽略 */ }
   role.gold = (role.gold || 0) - b.price;
   const sk = { name: b.name, type: b.type, elem: b.elem, tier: b.tier || '黄阶', desc: b.desc };
   if ((role.skills || []).length < MAX_SKILLS) {
@@ -758,7 +775,7 @@ let forgeMatSearch = '';
 function getForgeCD() {
   return 0;  // 测试阶段：已取消炼器冷却（FORGE_CD_MS 保留备用）
 }
-function setForgeCD() { localStorage.setItem('xiuxian_forge_cd', String(Date.now() + FORGE_CD_MS)); }
+function setForgeCD() { localStorage.setItem('dnf_forge_cd', String(Date.now() + FORGE_CD_MS)); }
 function fmtCD(ms) {
   const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
   return (h > 0 ? h + ' 小时 ' : '') + m + ' 分';
@@ -1075,7 +1092,7 @@ async function aiForge(materials) {
    我的
    ============================================================ */
 /* ---------- 最近动态：道具/灵石流水（真实记录 + 持久化） ---------- */
-const FEED_KEY = 'xiuxian_feed';
+const FEED_KEY = 'dnf_feed';
 const FEED_MAX = 100;
 function loadFeed() {
   try {
@@ -1427,7 +1444,7 @@ function createRole() {
     bag: [...charSel.items].map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind }; }),  // 储物袋（100 格）
     latest_score: 0, praise_count: 0, is_followed: false,
   };
-  localStorage.setItem('xiuxian_role', JSON.stringify(role));
+  localStorage.setItem('dnf_role', JSON.stringify(role));
   D.adventurers = [role];
   D.my_adventurer = role;
   D.my_feed = [];  // 新角色清空旧动态
@@ -1440,7 +1457,7 @@ function createRole() {
 }
 function deleteRole() {
   if (!confirm('确定删除当前角色，重新开始创建？')) return;
-  localStorage.removeItem('xiuxian_role');
+  localStorage.removeItem('dnf_role');
   D.adventurers = [];
   D.my_adventurer = null;
   renderMine();
@@ -1469,10 +1486,10 @@ function showDeathDialog(roleName, dungeonName, logId, deathSummary = '') {
 window.showDeathDialog = showDeathDialog;
 function loadRole() {
   try {
-    const r = JSON.parse(localStorage.getItem('xiuxian_role') || 'null');
+    const r = JSON.parse(localStorage.getItem('dnf_role') || 'null');
     if (r) {
       if ((Number(r.hp || 0) <= 0) || r.isDead) {
-        localStorage.removeItem('xiuxian_role');
+        localStorage.removeItem('dnf_role');
         window.__deadRoleName = r.name || '旧角色';
         return;
       }
@@ -1528,7 +1545,7 @@ loadFeed();  // 载入最近动态（道具/灵石流水）
 
 /* ---------- 储物袋 / 随身法宝 ---------- */
 function saveRole() {
-  if (D.my_adventurer) localStorage.setItem('xiuxian_role', JSON.stringify(D.my_adventurer));
+  if (D.my_adventurer) localStorage.setItem('dnf_role', JSON.stringify(D.my_adventurer));
 }
 function bagAdd(role, item) {
   if (!Array.isArray(role.bag)) role.bag = [];
@@ -1972,10 +1989,10 @@ const LOG_KEEP_MAX = 100;
 let logSeq = 0;
 function nextLogId() {
   if (!logSeq) {
-    try { logSeq = Number(localStorage.getItem('xiuxian_log_seq') || '0') || 0; } catch (e) { logSeq = 0; }
+    try { logSeq = Number(localStorage.getItem('dnf_log_seq') || '0') || 0; } catch (e) { logSeq = 0; }
   }
   logSeq++;
-  try { localStorage.setItem('xiuxian_log_seq', String(logSeq)); } catch (e) { /* 忽略 */ }
+  try { localStorage.setItem('dnf_log_seq', String(logSeq)); } catch (e) { /* 忽略 */ }
   return logSeq;
 }
 const fmtLogId = id => String(id).padStart(3, '0');
@@ -1989,11 +2006,11 @@ function saveLogs() {
     list = [...favs, ...others].slice(0, LOG_KEEP_MAX);
     D.logs.length = 0; D.logs.push(...list);
   }
-  try { localStorage.setItem('xiuxian_logs', JSON.stringify(list)); } catch (e) { /* 容量超限时放弃持久化 */ }
+  try { localStorage.setItem('dnf_logs', JSON.stringify(list)); } catch (e) { /* 容量超限时放弃持久化 */ }
 }
 function loadLogs() {
   try {
-    const arr = JSON.parse(localStorage.getItem('xiuxian_logs') || 'null');
+    const arr = JSON.parse(localStorage.getItem('dnf_logs') || 'null');
     if (Array.isArray(arr)) D.logs = arr;
   } catch (e) { /* 损坏存档忽略 */ }
 }
@@ -2432,7 +2449,7 @@ function memberStatusPanelHTML(s, logId) {
   const members = s.members || [];
   let likesDone = [];
   if (logId) {
-    try { likesDone = JSON.parse(localStorage.getItem('xiuxian_likes') || '{}')[String(logId)] || []; } catch (e) { likesDone = []; }
+    try { likesDone = JSON.parse(localStorage.getItem('dnf_likes') || '{}')[String(logId)] || []; } catch (e) { likesDone = []; }
   }
   return `
   <div class="member-status-panel">
@@ -2480,13 +2497,13 @@ function likeMember(logId, name) {
   const m = log.settlement.members.find(x => x.name === name);
   if (!m) return;
   let likes = {};
-  try { likes = JSON.parse(localStorage.getItem('xiuxian_likes') || '{}'); } catch (e) { likes = {}; }
+  try { likes = JSON.parse(localStorage.getItem('dnf_likes') || '{}'); } catch (e) { likes = {}; }
   const key = String(logId);
   const done = likes[key] || [];
   if (done.includes(name)) { toastMsg('本局已为「' + name + '」点过赞'); return; }
   done.push(name);
   likes[key] = done;
-  try { localStorage.setItem('xiuxian_likes', JSON.stringify(likes)); } catch (e) { /* 忽略 */ }
+  try { localStorage.setItem('dnf_likes', JSON.stringify(likes)); } catch (e) { /* 忽略 */ }
   m.praise = (m.praise || 0) + 1;
   const summary = (D.logs || []).find(x => logKey(x) === String(logId));
   const sm = summary && summary.settlement && summary.settlement.members ? summary.settlement.members.find(x => x.name === name) : null;
@@ -2767,7 +2784,7 @@ let pageClosing = false;  // 页面关闭/刷新中：AI 请求被中止不算�
 /* ============================================================
    进行中探险持久化：窗口关闭/刷新/崩溃后自动恢复，不再丢副本
    ============================================================ */
-const RUNS_KEY = 'xiuxian_runs';
+const RUNS_KEY = 'dnf_runs';
 function saveRuns() {
   try {
     if (!activeDungeons.length) { localStorage.removeItem(RUNS_KEY); return; }
@@ -3854,7 +3871,7 @@ async function finishRoleDeath(dg, role) {
   const dgIdx = activeDungeons.indexOf(dg);
   if (dgIdx >= 0) activeDungeons.splice(dgIdx, 1);
   saveRuns();
-  localStorage.removeItem('xiuxian_role');
+  localStorage.removeItem('dnf_role');
   D.adventurers = [];
   D.my_adventurer = null;
   renderMine();
@@ -4564,7 +4581,7 @@ const renderers = {
 function switchTab(tab) {
   $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   $$('.tab-content').forEach(t => t.classList.toggle('active', t.id === 'tab-' + tab));
-  try { sessionStorage.setItem('xiuxian_active_tab', tab); } catch (_) {}
+  try { sessionStorage.setItem('dnf_active_tab', tab); } catch (_) {}
   const renderer = tab === 'party' && typeof window.renderParty === 'function' ? window.renderParty : renderers[tab];
   (renderer || (() => {}))();
   void window.loadTabData?.(tab);
@@ -4574,9 +4591,9 @@ $$('.tab-btn').forEach(btn => {
 });
 
 /* 初始渲染 + hash 直达（如 #mine / #adventurers） */
-window.__onlineRoleLoading = !!localStorage.getItem('xiuxian_online_token');
+window.__onlineRoleLoading = !!localStorage.getItem('dnf_online_token');
 let savedTab = '';
-try { savedTab = sessionStorage.getItem('xiuxian_active_tab') || ''; } catch (_) {}
+try { savedTab = sessionStorage.getItem('dnf_active_tab') || ''; } catch (_) {}
 const hashTab = (location.hash || '').replace('#', '');
 const initTab = renderers[hashTab] ? hashTab : (renderers[savedTab] ? savedTab : 'mine');
 switchTab(renderers[initTab] ? initTab : 'tavern');
@@ -4614,5 +4631,6 @@ function injuryTick() {
 setInterval(injuryTick, 1000);
 </script>
 <script src="online.js?v=20260826-public-log-feed"></script>
+<script src="site-nav.js"></script>
 </body>
 </html>

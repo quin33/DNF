@@ -4,19 +4,39 @@
 
 本机同时跑着两个独立实例，端口、数据库、公网域名全部分开：
 
-| 项目 | 目录 | 游戏服务 | 控制台 | 统一控制台 | 数据库 | 公网域名 |
+| 项目 | 目录 | 游戏服务 | 控制台 | 统一控制台 | 数据库 | 公网地址 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 问道仙坊（原游戏） | `I:\DEEPSEEK\tavern_clone` | 8787 | 8790 | — | `tavern.db` | `xiuxiangame.dpdns.org` |
-| DNF（本项目） | `I:\DEEPSEEK\DNF` | **8788** | **8791** | — | `dnf.db` | `dnf.xiuxiangame.dpdns.org` |
+| 问道仙坊（原游戏） | `I:\DEEPSEEK\tavern_clone` | 8787 | 8790 | — | `tavern.db` | `xiuxiangame.dpdns.org/xiuxian/` |
+| DNF（本项目） | `I:\DEEPSEEK\DNF` | **8788** | **8791** | — | `dnf.db` | `xiuxiangame.dpdns.org/dnf/` |
+| **站点网关** | `I:\DEEPSEEK\DNF` | — | — | **8786** | — | `xiuxiangame.dpdns.org`（主域名指这里） |
 | **统一控制台** | `I:\DEEPSEEK\DNF` | — | — | **8792** | — | — |
 
-改端口时必须三处同步：本项目 `.env`、四个 `启动*.bat`、以及 `%USERPROFILE%\.cloudflared\config.yml` 的 ingress 规则。
+两个游戏现在挂在同一个域名的两个子路径下，由站点网关（`site-gateway.js`）分发：
+
+```
+xiuxiangame.dpdns.org/          → 导航首页（网关自己渲染）
+xiuxiangame.dpdns.org/xiuxian/  → 8787
+xiuxiangame.dpdns.org/dnf/      → 8788
+```
+
+网关的职责就是**剥掉 `/dnf` 这层前缀再转发**，所以两个游戏的 `server.js` 完全不用感知自己挂在哪个路径下。这一步只能由网关做 —— cloudflared 的 ingress 不支持重写路径。旧的 `dnf.xiuxiangame.dpdns.org` 仍保留直连 8788，老书签不会失效。
+
+同域名带来一个必须注意的后果：**localStorage 按源隔离，不按路径隔离。** 两个游戏在同一个域名下共享同一份 localStorage，所以 DNF 的 13 个键全部改成了 `dnf_` 前缀。往任一侧新增 localStorage 键时，键名必须带上各自的前缀，否则会互相顶掉对方的登录态和角色数据。
+
+**账号是两边共用的**（角色仍各自独立）：每个游戏的 `.env` 里 `ACCOUNT_MIRROR_DB` 指向另一个游戏的 SQLite 库。登录时本地没有该账号，就去镜像库验证密码并自动补建；注册时用户名在两个库里都不得重复；任一侧改密码会双向同步。镜像只做只读校验，绝不写对方的库。不想共用就把 `ACCOUNT_MIRROR_DB` 删掉，两边即退回各自注册。
+
+管理服务有两条路，按需选一条，不要同时开：
+
+- **统一控制台（8792）** —— 一个页面管两个游戏，自己拉起游戏服务。日常推荐，详见下文。
+- **各自的独立控制台（8790 / 8791）** —— 每个游戏一个页面，沿用原来的方式。
+
+改端口时必须三处同步：本项目 `.env`（含 `GATEWAY_PORT` 与 `GATEWAY_SITES`）、四个 `启动*.bat`、以及 `%USERPROFILE%\.cloudflared\config.yml` 的 ingress 规则。网关端口和游戏端口分别在 `.env` 与 ingress 里各出现一次，漏改一处主域名就会 502。
 
 三条注意事项：
 
 - **不要在同一个命令行窗口里先跑原游戏的脚本再跑 DNF 的脚本。** `server.js` 与 `control-panel.js` 读 `.env` 时只填补「尚未设置」的变量,系统环境变量优先级更高，所以窗口里残留的 `PORT` / `GAME_PORT` / `CONTROL_PANEL_PORT` 会盖掉 `.env`。DNF 的四个 `.bat` 已用 `setlocal` 隔离并显式钉死端口，双击运行不受影响；手工在同一窗口 `node server.js` 时才需留意。
 - **cloudflared 是两个项目共用的同一条隧道。** 不要为了 DNF 去 `net stop cloudflared` 或重装隧道，那会同时断掉原游戏的公网访问。
-- **统一控制台需要两个独立控制台都在运行才能正常工作。** 统一控制台只是聚合界面，通过 iframe 嵌入两个独立控制台（8790 和 8791），并通过各自的 REST API 实现批量操作。启动顺序：先启动两个独立控制台，再启动统一控制台。
+- **统一控制台自己会拉起两个游戏服务，不需要前置步骤。** 它在本进程内为每个游戏建一个 supervisor 直接管子进程，与 8790 / 8791 无关。因此不要同时再运行 `启动控制台.bat` 或 `启动游戏.bat`，那会启动第二个 DNF 游戏服务、抢同一个 8788 端口。两套二选一。
 
 ## 管理后台
 
@@ -46,45 +66,44 @@ node control-panel.js
 
 ### 统一控制台（同时管理问道仙坊和 DNF）
 
-如果你同时运行了问道仙坊和 DNF 两个游戏，可以使用统一控制台在一个页面中管理两个游戏的服务。
+一个页面管两个游戏，一个密码登录。双击 `启动统一控制台.bat` 即可，浏览器会自动打开 `http://127.0.0.1:8792`。
 
-**启动步骤：**
+没有前置步骤 —— 统一控制台在本进程内为每个游戏建一个 supervisor，直接把两个游戏服务拉起来。相应地，**不要同时再运行 `启动控制台.bat` / `启动游戏.bat`**，否则会有第二个 DNF 服务来抢 8788。
 
-1. 先启动问道仙坊控制台（8790）：
-   ```bash
-   cd I:\DEEPSEEK\tavern_clone
-   双击 启动控制台.bat
-   ```
+**密码**取自环境变量，按 `UNIFIED_PANEL_PASSWORD` → `CONTROL_PANEL_PASSWORD` 顺序回退。已经设过 `CONTROL_PANEL_PASSWORD` 就直接可用；两者都没设时进程拒绝启动。会话 8 小时。
 
-2. 再启动 DNF 控制台（8791）：
-   ```bash
-   cd I:\DEEPSEEK\DNF
-   双击 启动控制台.bat
-   ```
+**配置**全在 `.env`（系统环境变量优先，便于临时覆盖）：
 
-3. 最后启动统一控制台（8792）：
-   ```bash
-   cd I:\DEEPSEEK\DNF
-   双击 启动统一控制台.bat
-   ```
+| 变量 | 默认 | 说明 |
+| --- | --- | --- |
+| `UNIFIED_PANEL_PORT` | `8792` | 面板端口 |
+| `UNIFIED_PANEL_HOST` | `127.0.0.1` | 监听地址，保持本机 |
+| `UNIFIED_PANEL_PASSWORD` | — | 回退到 `CONTROL_PANEL_PASSWORD` |
+| `UNIFIED_AUTO_START` | `true` | 启动时自动拉起游戏服务 |
+| `UNIFIED_GAMES` | 问道仙坊 + DNF | 管哪几个游戏，单行 JSON 数组 |
+| `UNIFIED_GATEWAY` | `false` | 是否一并拉起站点网关 |
+| `GATEWAY_PORT` | `8786` | 网关端口，cloudflared 主域名指向它 |
+| `GATEWAY_HOST` | `127.0.0.1` | 网关监听地址 |
+| `GATEWAY_SITES` | 问道仙坊 + DNF | 路径前缀与后端端口，单行 JSON 数组 |
 
-浏览器会自动打开 `http://127.0.0.1:8792`，你可以：
-- **批量操作**：同时启动/重启/停止两个游戏的服务器
-- **独立控制**：每个游戏都嵌入了完整的独立控制台界面，可单独操作
-- **状态监控**：实时显示两个控制台的连接状态
+增删游戏或改路径只改 `UNIFIED_GAMES`，无需动代码。每项含 `id` / `name` / `dir` / `port`，可选 `entry`（默认 `server.js`）。目录不存在的游戏会在界面标出并禁用按钮，不影响其他游戏。
 
-详细使用说明见 [`统一控制台使用说明.md`](统一控制台使用说明.md)。
+功能：批量启动/重启/停止；每个游戏独立启停、独立 AI 开关、配置重载与连接自检；状态 5 秒一刷；日志按游戏筛选。详细说明见 [`统一控制台使用说明.md`](统一控制台使用说明.md)。
 
 **架构：**
 ```
-统一控制台 (8792)
-├─ iframe: 问道仙坊控制台 (8790)
-│   └─ 管理 问道仙坊游戏服务 (8787)
-└─ iframe: DNF 控制台 (8791)
-    └─ 管理 DNF 游戏服务 (8788)
+unified-panel.js (8792)
+├─ supervisor: 问道仙坊 → node server.js (8787)  cwd=tavern_clone
+├─ supervisor: DNF      → node server.js (8788)  cwd=DNF
+└─ supervisor: 站点网关  → node site-gateway.js (8786)   仅 UNIFIED_GATEWAY=true 时
+
+cloudflared ──→ 8786 网关 ──┬─ /xiuxian/ → 8787
+                            └─ /dnf/     → 8788
 ```
 
-批量操作通过直接调用各控制台的 REST API 实现（`/api/control/server/{action}`），不依赖 iframe 内部状态。
+网关和游戏一样受面板管，关掉面板会一并关掉。**`UNIFIED_GATEWAY` 默认关闭，而 cloudflared 的主域名指向 8786** —— 部署时这两处必须同时生效，只改一处的话主域名会 502。
+
+两个子进程各自用**干净的环境变量**启动，只注入 `PORT` 和自己的 `cwd`，各读自己目录里的 `.env`。这一点是必要的：`server.js` 只填补尚未设置的变量，继承来的值优先级更高，所以若把父进程环境整体传下去，DNF 的 `TAVERN_DB_PATH=./dnf.db` 会在问道仙坊的目录里解析，让它悄悄写进一个 `dnf.db`；`AI_API_KEY` 同理会串台。关掉统一控制台会一并关掉两个游戏服务。
 
 生产环境请在启动进程环境中设置配置，不要写入仓库：
 

@@ -85,8 +85,8 @@ test('refresh restores the selected tab and login keeps that active tab', () => 
   const html = readAsset('index.html');
   const online = readAsset('online.js');
   const afterLogin = online.slice(online.indexOf('async function afterLogin'), online.indexOf('async function loadOnlineRoles'));
-  assert.match(html, /sessionStorage\.setItem\('xiuxian_active_tab', tab\)/);
-  assert.match(html, /sessionStorage\.getItem\('xiuxian_active_tab'\)/);
+  assert.match(html, /sessionStorage\.setItem\('dnf_active_tab', tab\)/);
+  assert.match(html, /sessionStorage\.getItem\('dnf_active_tab'\)/);
   assert.doesNotMatch(afterLogin, /location\.hash\s*=\s*'mine'/);
   assert.doesNotMatch(afterLogin, /switchTab\('mine'\)/);
   assert.match(afterLogin, /renderActiveOnlineTab\(\)/);
@@ -98,7 +98,7 @@ test('online role bootstrap shows a loading state instead of the creation form b
   const mine = html.slice(html.indexOf('function renderMine'), html.indexOf('/* ============================================================\n   创建角色'));
   const afterLogin = online.slice(online.indexOf('async function afterLogin'), online.indexOf('async function loadOnlineRoles'));
 
-  assert.match(html, /window\.__onlineRoleLoading\s*=\s*!!localStorage\.getItem\('xiuxian_online_token'\)/);
+  assert.match(html, /window\.__onlineRoleLoading\s*=\s*!!localStorage\.getItem\('dnf_online_token'\)/);
   assert.match(mine, /if \(!me && window\.__onlineRoleLoading\)/);
   assert.match(mine, /mine-role-loading/);
   assert.match(afterLogin, /finally\s*\{\s*window\.__onlineRoleLoading\s*=\s*false;/);

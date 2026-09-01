@@ -1,5 +1,9 @@
 # Claude Code 本地配置（含机器特定的权限设置，不应共享）
 .claude/settings.local.json
+.claude/launch.json
+
+# 运行时状态（统一控制台写入的 AI 开关等，机器本地，不入库）
+runtime-state.json
 
 # 环境变量与密钥
 .env

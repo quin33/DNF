@@ -130,6 +130,21 @@
   </div>
 </div>
 
+<script>
+/* 与 index.html 同理：经站点网关时给 /api/... 补上 /dnf 前缀。 */
+(() => {
+  const basePath = location.pathname.replace(/[^/]*$/, '').replace(/\/$/, '');
+  window.__basePath = basePath;
+  if (!basePath) return;
+  const origin = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    if (typeof input === 'string' && input.startsWith('/') && !input.startsWith('//')) {
+      return origin(basePath + input, init);
+    }
+    return origin(input, init);
+  };
+})();
+</script>
 <script src="data.js"></script>
 <script>
 const D = window.TAVERN_DATA;
@@ -158,7 +173,7 @@ async function doAuth(action) {
   try {
     const j = await api('/api/auth/' + action, { method: 'POST', body: { username, password } });
     API.token = j.token; API.user = j.user;
-    localStorage.setItem('xiuxian_online_token', j.token);
+    localStorage.setItem('dnf_online_token', j.token);
     enterHall();
   } catch (e) { $('#auth-err').textContent = e.message; }
 }
@@ -172,7 +187,7 @@ async function enterHall() {
 async function logout() {
   try { await api('/api/auth/logout', { method: 'POST' }); } catch (e) {}
   API.token = null; API.user = null;
-  localStorage.removeItem('xiuxian_online_token');
+  localStorage.removeItem('dnf_online_token');
   showView('view-auth');
 }
 async function refreshChars() {
@@ -342,12 +357,13 @@ async function submitCreate() {
 /* ---------- 初始化（脚本在 body 末尾，DOM 已就绪） ---------- */
 /* ---------- 初始化（脚本在 body 末尾，DOM 已就绪） ---------- */
 (function init() {
-  const t = localStorage.getItem('xiuxian_online_token');
+  const t = localStorage.getItem('dnf_online_token');
   if (t) {
     API.token = t;
     api('/api/me').then(j => { API.user = j.user; enterHall(); }).catch(() => showView('view-auth'));
   } else showView('view-auth');
 })();
 </script>
+<script src="site-nav.js"></script>
 </body>
 </html>

@@ -46,6 +46,9 @@ function createServiceSupervisor(options = {}) {
   const host = options.host || '127.0.0.1';
   const port = Number(options.port || 8787);
   const spawnImpl = options.spawnImpl || spawn;
+  // 统一控制台在一个进程里监管多个游戏目录，必须让每个子进程拿到自己那份
+  // 环境（AI_API_KEY / TAVERN_DB_PATH 各游戏不同）。不传则沿用本进程环境。
+  const spawnEnv = options.spawnEnv || null;
   const healthCheck = options.healthCheck || (ctx => defaultHealthCheck(ctx));
   const findPortOwner = options.findPortOwner || defaultFindPortOwner;
   const healthAttempts = Number.isInteger(options.healthAttempts) ? options.healthAttempts : 30;
@@ -133,7 +136,7 @@ function createServiceSupervisor(options = {}) {
     setState('starting', { error: '', exitCode: null });
     const processHandle = spawnImpl(process.execPath, [serverScript], {
       cwd: rootDir,
-      env: { ...process.env, PORT: String(port) },
+      env: { ...(spawnEnv || process.env), PORT: String(port) },
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       windowsHide: true,
     });

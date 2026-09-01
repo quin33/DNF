@@ -3061,3 +3061,66 @@ button { font-family: var(--font); }
   .forge-result-item, .forge-result-reason, .forge-result-process { padding: 10px; font-size: 12px; }
   .forge-result-item strong { font-size: 17px; }
 }
+
+/* ============ 站点导航（两个游戏互跳） ============ */
+/* 固定在左侧，不参与 .advs1 的居中流，避免影响原有布局。
+   只有经站点网关访问（有路径前缀）时才注入，直连 8788 时不出现。 */
+.site-nav {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  z-index: 40;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 8px 6px;
+  border: 1px solid var(--color-border);
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 18%);
+}
+.site-nav-title {
+  padding: 0 4px 2px;
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  letter-spacing: .5px;
+}
+.site-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 104px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+.site-nav a:hover { border-color: var(--color-primary); background: var(--color-surface-raised); }
+.site-nav a[aria-current="page"] {
+  border-color: var(--color-primary);
+  background: var(--color-surface-raised);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.site-nav-icon { font-size: 16px; line-height: 1; }
+
+/* 窄屏改成顶部横排，别挡住正文 */
+@media (max-width: 900px) {
+  .site-nav {
+    top: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    justify-content: center;
+    transform: none;
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+  }
+  .site-nav-title { display: none; }
+  .site-nav a { min-width: 0; padding: 6px 12px; }
+}
