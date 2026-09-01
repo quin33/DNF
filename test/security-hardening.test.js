@@ -114,9 +114,9 @@ test('checked-in configuration and launch scripts contain no live/default creden
   }
 });
 
-test('game launcher does not start a duplicate server when port 8787 is already listening', () => {
+test('game launcher does not start a duplicate server when port 8788 is already listening', () => {
   const launcher = fs.readFileSync(path.join(ROOT, '启动游戏.bat'), 'utf8');
-  assert.match(launcher, /netstat\s+-ano[\s\S]*8787[\s\S]*LISTENING/i);
+  assert.match(launcher, /netstat\s+-ano[\s\S]*8788[\s\S]*LISTENING/i);
   assert.match(launcher, /if\s+not\s+"%[^%]*%"\s*==\s*""/i);
   assert.match(launcher, /node\s+server\.js/i);
 });

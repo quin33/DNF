@@ -1,8 +1,8 @@
 /* ============================================================
-   问道仙坊 · AI 探险日志服务（联机版：HTTP + WebSocket + SQLite）
+   DNF · AI 探险日志服务（联机版：HTTP + WebSocket + SQLite）
    ------------------------------------------------------------
    启动：  node server.js
-   访问：  http://localhost:8787        → 首页（首次弹登录，登录后联机游玩）
+   访问：  http://localhost:8788        → 首页（首次弹登录，登录后联机游玩）
    配置：  通过 AI_BASE_URL / AI_API_KEY / AI_MODEL 等环境变量注入
    依赖：  ws（WebSocket） + node:sqlite（内置）
    说明：  页面每次探险的每一步会调用 /api/ai/story，AI 生成该步叙事。
@@ -12,6 +12,27 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+
+// 本机部署可将密钥保存到项目根目录的 .env；系统环境变量优先。
+// 必须在下方 require('./db.js') 之前执行：db.js 在模块加载时就会按
+// TAVERN_DB_PATH 打开数据库，同理 PORT 等常量也在模块顶层固化。
+// 若放在 require 之后，.env 里的 TAVERN_DB_PATH / PORT 都不会生效。
+function loadLocalEnv() {
+  try {
+    const text = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+      if (!match || process.env[match[1]]) continue;
+      let value = match[2];
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+      process.env[match[1]] = value;
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') console.warn('[env] 无法读取 .env：', error.message);
+  }
+}
+if (process.env.TAVERN_LOAD_ENV !== '0') loadLocalEnv();
+
 const { WebSocketServer } = require('ws');
 const DB = require('./db.js');
 const GC = require('./game-create.js');
@@ -36,23 +57,6 @@ const {
 
 const PORT = process.env.PORT || 8787;
 const ROOT = __dirname;
-
-// 本机部署可将密钥保存到项目根目录的 .env；系统环境变量优先。
-function loadLocalEnv() {
-  try {
-    const text = fs.readFileSync(path.join(ROOT, '.env'), 'utf8');
-    for (const line of text.split(/\r?\n/)) {
-      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-      if (!match || process.env[match[1]]) continue;
-      let value = match[2];
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-      process.env[match[1]] = value;
-    }
-  } catch (error) {
-    if (error.code !== 'ENOENT') console.warn('[env] 无法读取 .env：', error.message);
-  }
-}
-if (process.env.TAVERN_LOAD_ENV !== '0') loadLocalEnv();
 
 function envNumber(name, fallback) {
   const value = Number(process.env[name]);
@@ -3468,7 +3472,7 @@ module.exports = {
 
 server.listen(PORT, () => {
   console.log('==========================================');
-  console.log('  问道仙坊 · AI 探险日志服务已启动（联机版）');
+  console.log('  DNF · AI 探险日志服务已启动（联机版）');
   console.log('  页面：  http://localhost:' + PORT);
   console.log('  AI 配置：' + (isConfigured ? CONFIG.model + ' @ ' + CONFIG.baseURL : '未配置（将使用本地叙事引擎）'));
   console.log('==========================================');
