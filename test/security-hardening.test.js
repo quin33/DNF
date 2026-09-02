@@ -147,6 +147,36 @@ test('AI requests are rate limited per client IP', async t => {
   assert.equal(provider.hits, 30);
 });
 
+test('AI rate limit keys on socket address and ignores spoofed X-Forwarded-For by default', async t => {
+  const provider = await startProvider();
+  const { child, base } = await startServer({ AI_BASE_URL: provider.baseURL, AI_API_KEY: 'test-key', AI_MODEL: 'test-model' });
+  t.after(async () => { await stopServer(child); await new Promise(resolve => provider.provider.close(resolve)); });
+  const token = await login(base);
+  let last;
+  for (let i = 0; i < 31; i++) {
+    last = await fetch(`${base}/api/ai/story`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'x-forwarded-for': `10.0.0.${i % 256}` },
+      body: '{}',
+    });
+  }
+  assert.equal(last.status, 429);
+  assert.equal(provider.hits, 30);
+});
+
+test('auth login endpoint rate limits repeated failed attempts per account', async t => {
+  const { child, base } = await startServer();
+  t.after(() => stopServer(child));
+  const username = `u${Math.random().toString(36).slice(2, 9)}`;
+  const reg = await fetch(`${base}/api/auth/register`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, password: 'password123' }) });
+  assert.equal(reg.status, 200);
+  let last;
+  for (let i = 0; i < 16; i++) {
+    last = await fetch(`${base}/api/auth/login`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username, password: 'wrongpass' }) });
+  }
+  assert.equal(last.status, 429);
+});
+
 test('AI requests are capped by global concurrency', async t => {
   const provider = await startProvider({ delay: 250 });
   const { child, base } = await startServer({ AI_BASE_URL: provider.baseURL, AI_API_KEY: 'test-key', AI_MODEL: 'test-model' });

@@ -127,8 +127,48 @@ const AI_MAX_BODY_BYTES = 512 * 1024;
 const AI_RATE_WINDOW_MS = 60 * 1000;
 const AI_RATE_LIMIT = 30;
 const AI_MAX_IN_FLIGHT = 4;
-const aiRateBuckets = new Map();
+const AUTH_RATE_WINDOW_MS = 60 * 1000;
+const AUTH_RATE_LIMIT = 60;
+const LOGIN_USER_RATE_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_USER_RATE_LIMIT = 15;
 let aiInFlight = 0;
+
+/* 通用限流器：按 key 计数滑窗，定时清理过期条目并限制总桶数，避免内存无限增长 */
+function createRateLimiter({ windowMs, max, name = 'limiter', maxBuckets = 20000 }) {
+  const buckets = new Map();
+  const cleanupMs = Math.max(1000, Math.floor(windowMs / 4));
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, rest] of buckets) {
+      if (now - rest.startedAt >= windowMs) buckets.delete(key);
+    }
+    if (buckets.size > maxBuckets) {
+      const entries = Array.from(buckets.entries()).sort((a, b) => a[1].startedAt - b[1].startedAt);
+      const excess = buckets.size - maxBuckets;
+      for (let i = 0; i < excess; i++) buckets.delete(entries[i][0]);
+    }
+  }, cleanupMs);
+  if (typeof timer.unref === 'function') timer.unref();
+  return {
+    name,
+    check(key) {
+      const now = Date.now();
+      let bucket = buckets.get(key);
+      if (!bucket || now - bucket.startedAt >= windowMs) {
+        bucket = { startedAt: now, count: 0 };
+        buckets.set(key, bucket);
+      }
+      bucket.count++;
+      const allowed = bucket.count <= max;
+      const retryAfter = allowed ? 0 : Math.max(0, bucket.startedAt + windowMs - now);
+      return { allowed, count: bucket.count, retryAfter };
+    },
+    size() { return buckets.size; },
+  };
+}
+const aiLimiter = createRateLimiter({ windowMs: AI_RATE_WINDOW_MS, max: AI_RATE_LIMIT, name: 'ai', maxBuckets: 20000 });
+const authIpLimiter = createRateLimiter({ windowMs: AUTH_RATE_WINDOW_MS, max: AUTH_RATE_LIMIT, name: 'auth-ip', maxBuckets: 20000 });
+const loginUserLimiter = createRateLimiter({ windowMs: LOGIN_USER_RATE_WINDOW_MS, max: LOGIN_USER_RATE_LIMIT, name: 'login-user', maxBuckets: 20000 });
 const TAIXU_INSIGHT_DURATION_MS = 60 * 60 * 1000;
 const TAIXU_JOB_TTL_MS = 2 * 60 * 60 * 1000;
 const taixuInsightJobs = new Map();
@@ -168,6 +208,12 @@ function hashPassword(password, salt) {
   return crypto.scryptSync(String(password), String(salt), 64).toString('hex');
 }
 function makeSalt() { return crypto.randomBytes(16).toString('hex'); }
+/* 常量时间比较两段 hex 哈希，避免侧信道 */
+function hashEquals(a, b) {
+  const left = Buffer.from(String(a || ''), 'hex');
+  const right = Buffer.from(String(b || ''), 'hex');
+  return left.length === right.length && left.length > 0 && crypto.timingSafeEqual(left, right);
+}
 function newToken() { return crypto.randomBytes(24).toString('hex'); }
 /* 从 Authorization: Bearer xxx 取 token */
 function bearerToken(req) {
@@ -181,7 +227,11 @@ function authUser(req) {
 }
 
 function clientAddress(req) {
-  return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown').split(',')[0].trim();
+  const trustProxy = /^(1|true|yes)$/i.test(String(process.env.TRUST_PROXY || ''));
+  const raw = trustProxy && req.headers['x-forwarded-for']
+    ? String(req.headers['x-forwarded-for']).split(',')[0].trim()
+    : (req.socket && req.socket.remoteAddress) || '';
+  return String(raw).replace(/^::ffff:/, '') || 'unknown';
 }
 
 function requireAiAccess(req, res) {
@@ -194,16 +244,8 @@ function requireAiAccess(req, res) {
     sendJSON(res, 413, { error: 'AI 请求体过大' });
     return false;
   }
-  const now = Date.now();
-  const key = clientAddress(req);
-  const bucket = aiRateBuckets.get(key) || { startedAt: now, count: 0 };
-  if (now - bucket.startedAt >= AI_RATE_WINDOW_MS) {
-    bucket.startedAt = now;
-    bucket.count = 0;
-  }
-  bucket.count++;
-  aiRateBuckets.set(key, bucket);
-  if (bucket.count > AI_RATE_LIMIT) {
+  const rate = aiLimiter.check(clientAddress(req));
+  if (!rate.allowed) {
     sendJSON(res, 429, { error: 'AI 请求过于频繁，请稍后重试' });
     return false;
   }
@@ -1138,6 +1180,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const username = String(body.username || '').trim();
     const password = String(body.password || '');
     const nickname = String(body.nickname || '').trim().slice(0, 10);
+    if (!authIpLimiter.check('register:' + clientAddress(req)).allowed) { sendJSON(res, 429, { error: '注册请求过于频繁，请稍后重试' }); return true; }
     if (username.length < 3 || username.length > 32) { sendJSON(res, 400, { error: '用户名需 3~32 字符' }); return true; }
     if (!/^[A-Za-z0-9_]+$/.test(username)) { sendJSON(res, 400, { error: '用户名仅限字母、数字、下划线' }); return true; }
     if (password.length < 6 || password.length > 64) { sendJSON(res, 400, { error: '密码需至少 6 位' }); return true; }
@@ -1153,12 +1196,16 @@ async function handleAuthAPI(req, res, urlPath) {
     const body = JSON.parse(await readBody(req));
     const username = String(body.username || '').trim();
     const password = String(body.password || '');
+    const loginKey = clientAddress(req);
+    const loginIpOk = authIpLimiter.check('login:' + loginKey).allowed;
+    const loginUserOk = loginUserLimiter.check('login:' + loginKey + ':' + username.toLowerCase()).allowed;
+    if (!loginIpOk || !loginUserOk) { sendJSON(res, 429, { error: '登录尝试过于频繁，请稍后重试' }); return true; }
     let u = DB.findUserByUsername(username);
-    if (!u || hashPassword(password, u.salt) !== u.pass_hash) {
+    if (!u || !hashEquals(hashPassword(password, u.salt), u.pass_hash)) {
       // 本地没有、或密码对不上：查镜像库（另一个游戏）。匹配则补建/同步本地账号，
       // 这样注册一次两边都能登录，改密码也能双向传播。角色数据仍各自独立。
       const mirror = DB.mirrorFindUser(username);
-      if (mirror && hashPassword(password, mirror.salt) === mirror.pass_hash) {
+      if (mirror && hashEquals(hashPassword(password, mirror.salt), mirror.pass_hash)) {
         if (u) {
           DB.updateUserCredentials(u.id, mirror.pass_hash, mirror.salt);
           u = { ...u, pass_hash: mirror.pass_hash, salt: mirror.salt };
@@ -1168,7 +1215,7 @@ async function handleAuthAPI(req, res, urlPath) {
         }
       }
     }
-    if (!u || hashPassword(password, u.salt) !== u.pass_hash) { sendJSON(res, 401, { error: '用户名或密码错误' }); return true; }
+    if (!u || !hashEquals(hashPassword(password, u.salt), u.pass_hash)) { sendJSON(res, 401, { error: '用户名或密码错误' }); return true; }
     const token = DB.createSession(u.id, newToken());
     sendJSON(res, 200, { token, user: { id: u.id, username: u.username, nickname: u.nickname || '' } });
     return true;

@@ -153,10 +153,13 @@ node server.js
        proxy_set_header Connection "upgrade";
        proxy_set_header Host $host;
        proxy_set_header X-Real-IP $remote_addr;
+       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
      }
    }
    ```
    HTTPS 证书可用 Let's Encrypt（certbot）。前端 WS 会自动走 `wss://`（代码按 `location.protocol` 自动选 ws/wss）。
+   在可信反向代理之后，请在 `.env`（或进程环境）设置 `TRUST_PROXY=true`，服务才会读取 `X-Forwarded-For` 以按真实客户端 IP 限流；直连（未走代理）或代理不可信时保持 `false`（默认），此时忽略该请求头，防止伪造 IP 绕过限流。
+
 
 4. 后台常驻运行（生产）：
    - **Windows 服务器**：用 `pm2-windows-startup` 或 NSSM 把 `node server.js` 注册为系统服务开机自启。
