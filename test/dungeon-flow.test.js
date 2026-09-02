@@ -73,7 +73,7 @@ test('active encounter cannot resolve and jump to loot in the same AI decision',
 test('dynamic payload stage label follows current phase instead of legacy plan index', () => {
   const dg = createDg({ level: 1, exp: 0, name: '测试修士' }, { choice: '枯骨林' });
   dg.phase = 'boss';
-  dg.party = [{ name: '测试修士', traits: [], equipment: [], skills: [] }];
+  dg.party = [{ name: '测试修士', equipment: [], skills: [] }];
   dg.focusPlan = [{ mode: 'focus', focusStep: 1, windowSize: 1 }];
   const payload = aiStoryPayload(dg, 'boss', dg.party[0], null, null, 'strength', 10, 0, 10, null, null);
   assert.equal(payload.stageLabel, '首领');
@@ -318,8 +318,8 @@ test('loan parsing treats character and item names as literal text', () => {
 
 test('payload lists only actor-owned and explicitly loaned available items', () => {
   const dg = createDg({ level: 1, exp: 0, name: '甲' }, { choice: '枯骨林' });
-  const actor = { id: 'a', name: '甲', traits: [], skills: [], equipment: [], bag: [{ name: '聚气丹', kind: 'pill', qty: 1 }] };
-  const other = { id: 'b', name: '乙', traits: [], skills: [], equipment: [{ name: '铁剑', kind: 'weapon', qty: 1 }], bag: [] };
+  const actor = { id: 'a', name: '甲', skills: [], equipment: [], bag: [{ name: '聚气丹', kind: 'pill', qty: 1 }] };
+  const other = { id: 'b', name: '乙', skills: [], equipment: [{ name: '铁剑', kind: 'weapon', qty: 1 }], bag: [] };
   dg.party = [actor, other];
   dg.focusPlan = [{ mode: 'focus', focusStep: 1, windowSize: 1 }];
   const payload = aiStoryPayload(dg, 'explore', actor, null, null, 'luck', 10, 0, 10, null, null);

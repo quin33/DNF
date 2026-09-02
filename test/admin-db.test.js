@@ -19,7 +19,6 @@ const characterData = {
   luck: 4,
   gold: 123,
   exp: 456,
-  traits: [{ name: 'Steady' }],
   equipment: [{ slot: 'weapon', name: 'Sword' }],
   bag: [{ name: 'Potion', count: 2 }],
   skills: [{ name: 'Slash' }],

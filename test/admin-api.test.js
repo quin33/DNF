@@ -273,13 +273,13 @@ test('cultivation start charges upfront and character reads settle completed hal
   assert.equal(second.body.character.exp, 100);
 });
 
-test('public character data exposes root, personality, and current state fields', async () => {
+test('public character data exposes class, personality, and current state fields', async () => {
   const response = await request('GET', '/api/public/characters', { token: secondPlayerToken });
   assert.equal(response.status, 200);
   const character = response.body.characters.find(entry => entry.id === pushCharacterId);
   assert.deepEqual(
     {
-      root: character.root,
+      character_class: character.character_class,
       personality: character.personality,
       hp: character.hp,
       max_hp: character.max_hp,
@@ -287,7 +287,7 @@ test('public character data exposes root, personality, and current state fields'
       max_stamina: character.max_stamina,
       status: character.status,
     },
-    { root: '金灵根', personality: '重诺', hp: 20, max_hp: 50, stamina: 12, max_stamina: 20, status: 'resting' },
+    { character_class: 'Warrior', personality: '重诺', hp: 20, max_hp: 50, stamina: 12, max_stamina: 20, status: 'resting' },
   );
 });
 
@@ -295,7 +295,9 @@ test('public character data matches the complete role profile used by my page', 
   const response = await request('GET', '/api/public/characters', { token: secondPlayerToken });
   assert.equal(response.status, 200);
   const character = response.body.characters.find(entry => entry.id === pushCharacterId);
-  assert.deepEqual(character.traits, originalCharacter.traits);
+  assert.equal(character.traits, undefined);
+  assert.equal(character.traitDescs, undefined);
+  assert.equal(character.root, undefined);
   assert.deepEqual(character.skills, originalCharacter.skills);
   assert.deepEqual(character.bag, originalCharacter.bag);
   assert.deepEqual(character.equipment, originalCharacter.equipment);
@@ -813,7 +815,7 @@ test('admin save updates only submitted whitelist fields and records safe audit 
   const before = DB.getCharacterAdmin(characterId);
   const response = await adminRequest('PUT', `/api/admin/characters/${characterId}`, {
     updated_at: before.updated_at,
-    character: { name: 'Updated Fixture', hp: 45, traits: ['Steady', 'Focused'] },
+    character: { name: 'Updated Fixture', hp: 45, strength: 20 },
   });
 
   assert.equal(response.status, 200);
@@ -903,7 +905,7 @@ test('admin can list, edit, and reset fixed AI companion cards', async () => {
     'name', 'title', 'gender', 'personality', 'character_class', 'title_frame',
     'level', 'exp', 'gold', 'hp', 'max_hp', 'stamina', 'max_stamina',
     'strength', 'agility', 'intelligence', 'luck', 'status', 'bio',
-    'traits', 'traitDescs', 'equipment', 'bag', 'skills', 'skillPool',
+    'equipment', 'bag', 'skills', 'skillPool',
   ];
   const pick = (data, fields) => Object.fromEntries(fields.filter(field => data[field] !== undefined).map(field => [field, data[field]]));
   const cardPayload = pick(moChen.data, companionFields);

@@ -56,7 +56,7 @@ function createRoomRunner(dependencies) {
     dungeon.party = buildDungeonParty(room, hostCharacter);
     dungeon.party.forEach(member => {
       const id = member.uid || member.id;
-      dungeon.memberGains[id] = { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+      dungeon.memberGains[id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
     });
     dungeon.focusPlan = dungeon.flowMode === 'dynamic' ? [] : GE.buildNarrativeFocusPlan(dungeon);
     room.dg = dungeon;

@@ -98,8 +98,8 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
   const html = fs.readFileSync('index.html', 'utf8');
   const tick = html.slice(html.indexOf('async function dungeonTick'), html.indexOf('function itemBonus'));
   const step = html.slice(html.indexOf('async function generateStep'), html.indexOf('/* ---------- 阶段效果'));
-  const settlement = html.slice(html.indexOf('async function settleDungeon'), html.indexOf('function realmForLevel'));
-  const extract = html.slice(html.indexOf('async function aiExtractLoot'), html.indexOf('async function aiGrantTrait'));
+  const settlement = html.slice(html.indexOf('async function settleDungeon'), html.indexOf('function applyLocalLevelGrowth'));
+  const extract = html.slice(html.indexOf('async function aiExtractLoot'), html.indexOf('async function aiScroll'));
 
   assert.doesNotMatch(tick, /rollD20|itemUseCheck|skillUseCheck/);
   assert.match(tick, /outcome = gs\.outcome/);
@@ -109,8 +109,8 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
   assert.match(step, /outcome: step\.outcome, damage: step\.damage/);
   assert.doesNotMatch(settlement, /pickRarity|traitPlan|scrollPromise/);
   assert.match(settlement, /aiVerdict\.statBuffs/);
-  assert.match(settlement, /aiVerdict\.traits/);
   assert.match(settlement, /aiVerdict\.scroll/);
+  assert.doesNotMatch(settlement, /aiVerdict\.traits/);
   assert.match(extract, /qty: Math\.max\(1, Math\.round/);
   assert.doesNotMatch(extract, /Math\.min\(99/);
   assert.match(settlement, /LootSettlement\.normalizeLootItems/);

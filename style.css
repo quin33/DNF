@@ -2024,6 +2024,23 @@ button { font-family: var(--font); }
 }
 .skill-card .skill-name { font-weight: 800; font-size: 13px; }
 .skill-card .skill-desc { font-size: 11px; }
+.starter-equip { margin-top: 12px; }
+.starter-equip-title { font-size: 12px; font-weight: 700; color: var(--color-text-secondary); margin-bottom: 6px; }
+.starter-equip-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.equip-card {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, var(--color-border));
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg));
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.equip-card .equip-name { font-weight: 800; font-size: 13px; }
+.equip-card .equip-kind { font-size: 10px; color: var(--color-text-secondary); }
+.equip-card .equip-desc { font-size: 11px; }
 .bag-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

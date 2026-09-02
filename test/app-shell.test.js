@@ -64,9 +64,11 @@ test('the current player is selected from the authenticated account characters',
   assert.match(script, /D\.my_adventurer\s*=\s*chars\[0\]\s*\|\|\s*null/);
 });
 
-test('public character data includes a root field for other players', () => {
+test('public character data exposes class and injury without a fabricated trait list', () => {
   const script = readAsset('online.js');
-  assert.match(script, /traits:\s*Array\.isArray\(publicChar\.traits\)/);
+  assert.match(script, /publicCharacterViewModel/);
+  assert.match(script, /_char_db_id:\s*publicChar\.id/);
+  assert.doesNotMatch(script, /traits:\s*Array\.isArray\(publicChar\.traits\)/);
 });
 
 test('online character creation can read the selected root from shared form state', () => {

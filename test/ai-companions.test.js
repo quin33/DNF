@@ -19,7 +19,9 @@ test('preset companion library ships twelve complete cards matching the fixed NP
     assert.ok(card.name, 'card name is present');
     assert.ok(card.bio && card.bio.length > 0, `${card.name} has a biography`);
     assert.ok(card.personality, `${card.name} has a personality`);
-    assert.ok(card.traits.length >= 2, `${card.name} has a root and a trait`);
+    assert.equal(card.traits, undefined, `${card.name} no longer ships a traits array`);
+    assert.equal(card.traitDescs, undefined, `${card.name} no longer ships traitDescs`);
+    assert.ok(card.character_class, `${card.name} has a character class`);
     assert.ok(card.skills.length >= 1, `${card.name} has skills`);
     assert.ok(card.bag.length >= 1, `${card.name} has a bag`);
     for (const attr of ['strength', 'agility', 'intelligence', 'luck']) {

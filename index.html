@@ -175,7 +175,6 @@ function normalizeAdvCardData(raw) {
     max_stamina: Number.isFinite(Number(adv.max_stamina)) && Number(adv.max_stamina) > 0 ? Number(adv.max_stamina) : 100,
     strength: Number(adv.strength || 0), agility: Number(adv.agility || 0),
     intelligence: Number(adv.intelligence || 0), luck: Number(adv.luck || 0),
-    traits: Array.isArray(adv.traits) ? adv.traits : [],
     equipment: Array.isArray(adv.equipment) ? adv.equipment : [],
     bag: Array.isArray(adv.bag) ? adv.bag : [],
     skills: Array.isArray(adv.skills) ? adv.skills : [],
@@ -198,8 +197,6 @@ function advCardHTML(adv) {
   const frame = adv.title_frame ? ` title-frame--${adv.title_frame}` : '';
   const mine = adv.is_mine ? ' mine' : '';
   const dead = adv.status === 'dead' ? ' dead' : '';
-  let traits = (adv.traits || []).slice(0, 4);
-  if (adv.injury && adv.injury.name && !traits.includes(adv.injury.name)) traits = [adv.injury.name, ...traits].slice(0, 4);
   const equips = (adv.equipment || []).slice(0, 4);
   return `
   <div class="adv-card${frame}${mine}${dead}${statusClass}" style="--adv-accent:${accent}" data-adv-id="${adv.id}" onclick="openAdvDetail(${advIdArg(adv.id)})">
@@ -220,12 +217,12 @@ function advCardHTML(adv) {
       <span>幸运 ${adv.luck}</span>
     </div>
     <div class="adv-row secondary">
-      <span>${esc((adv.traits && adv.traits[0]) || '—')}</span>
+      <span>${esc((adv.injury && adv.injury.name) || '—')}</span>
       <span>${esc(adv.personality || '')}</span>
       <span>💰 ${Number(adv.gold || 0).toFixed(0)} 金币</span>
     </div>
-    ${traits.length ? `<div class="adv-tags">${traits.map(t => `<span class="tag-badge${adv.injury && adv.injury.name === t ? ' injury-tag' : ''}">${esc(t)}${adv.injury && adv.injury.name === t ? `<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span>` : ''}</span>`).join('')}${(adv.traits||[]).length > 4 ? `<span class="tag-badge empty">+${(adv.traits||[]).length - 4}</span>` : ''}</div>` : ''}
-    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge st-${s.type === '物理技' ? 'gongfa' : 'shufa'}" style="color:${skillTierColor(s)};border-color:${skillTierColor(s)}66">${esc(s.name)}<em class="sb-tier">${skillTier(s)}</em></span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
+    ${adv.injury && adv.injury.name ? `<div class="adv-tags"><span class="tag-badge injury-tag">${esc(adv.injury.name)}<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span></span></div>` : ''}
+    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge st-${s.type === '物理技' ? 'gongfa' : 'shufa'}">${esc(s.name)}</span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
     <div class="adv-tags">
       ${adv.is_mine && (adv.bag && adv.bag.length) ? `<span class="equip-badge">🎒 背包 ${adv.bag.length}/100</span>` : ''}
       ${equips.map(e => `<span class="equip-badge" style="color:${itemColor(e)};border-color:${itemColor(e)}55">${esc(e.name)}${e.qty > 1 ? ` ×${e.qty}` : ''}</span>`).join('')}
@@ -478,17 +475,17 @@ function renderBuilding() {
    技能导师馆（仿军需店布局）：出售物理技与魔法技技能书
    ============================================================ */
 const LIBRARY_BOOKS = [
-  { code: 'tuna', name: '里鬼剑术', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
-  { code: 'yufeng', name: '银弹', type: '魔法技', elem: '无', tier: '普通', level: 'Lv.1+', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
-  { code: 'wood_shield', name: '圣光十字', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
-  { code: 'fireball', name: '火球术', type: '魔法技', elem: '无', tier: '普通', level: 'Lv.1+', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
-  { code: 'water_arrow', name: '冰霜雪人', type: '魔法技', elem: '无', tier: '高级', level: 'Lv.1+', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
-  { code: 'gold_blade', name: '崩拳', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
-  { code: 'lianxi', name: '三段斩', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
-  { code: 'qingmu', name: '治愈术', type: '魔法技', elem: '无', tier: '高级', level: 'Lv.1+', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
-  { code: 'xuanbing', name: '鬼斩', type: '物理技', elem: '无', tier: '稀有', level: 'Lv.11+', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
-  { code: 'zixiao', name: '浮空弹', type: '物理技', elem: '无', tier: '普通', level: 'Lv.11+', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
-  { code: 'yujian', name: '加特林扫射', type: '物理技', elem: '无', tier: '稀有', level: 'Lv.11+', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
+  { code: 'tuna', name: '里鬼剑术', type: '物理技', elem: '无', level: 'Lv.1+', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
+  { code: 'yufeng', name: '银弹', type: '魔法技', elem: '无', level: 'Lv.1+', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+  { code: 'wood_shield', name: '圣光十字', type: '物理技', elem: '无', level: 'Lv.1+', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
+  { code: 'fireball', name: '火球术', type: '魔法技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+  { code: 'water_arrow', name: '冰霜雪人', type: '魔法技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
+  { code: 'gold_blade', name: '崩拳', type: '物理技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
+  { code: 'lianxi', name: '三段斩', type: '物理技', elem: '无', level: 'Lv.1+', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+  { code: 'qingmu', name: '治愈术', type: '魔法技', elem: '无', level: 'Lv.1+', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+  { code: 'xuanbing', name: '鬼斩', type: '物理技', elem: '无', level: 'Lv.11+', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
+  { code: 'zixiao', name: '浮空弹', type: '物理技', elem: '无', level: 'Lv.11+', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
+  { code: 'yujian', name: '加特林扫射', type: '物理技', elem: '无', level: 'Lv.11+', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
 ];
 function libStock() {
   try { return JSON.parse(localStorage.getItem('dnf_library_stock') || '{}'); } catch (e) { return {}; }
@@ -519,10 +516,9 @@ function renderLibraryModal() {
       return `
       <div class="lib-item">
         <div class="li-head">
-          <span class="li-name" style="color:${skillTierColor(b)}">${esc(b.name)}</span>
-          ${tierTag(b)}
+          <span class="li-name">${esc(b.name)}</span>
           <span class="li-tag st-${b.type === '物理技' ? 'physical' : 'magic'}">${esc(b.type)}</span>
-          <span class="li-realm ${b.tier === '稀有' || b.tier === '神器' ? 'high' : ''}">${esc(b.level)}</span>
+          <span class="li-realm">${esc(b.level)}</span>
         </div>
         <div class="li-desc">${esc(b.desc)}</div>
         <div class="li-foot">
@@ -545,7 +541,7 @@ function buyLibraryBook(code) {
       renderLibraryModal(); renderMine(); renderAdventurers();
       addFeedBatch('📖', '技能导师馆', `领悟《${book.name}》`, [
         { delta: `-${book.price} 金币`, color: '#ffc107' },
-        { delta: `+1 ${book.name}`, color: book.tier ? SKILL_TIER_COLOR[book.tier] : '' },
+        { delta: `+1 ${book.name}`, color: '' },
       ]);
       toastMsg(result.character.skills.some(s => s.name === book.name) ? '📖 领悟成功！已装备入技能栏' : '📖 领悟成功！已存入技能库');
     }).catch(e => toastMsg(e.message || '领悟失败'));
@@ -561,7 +557,7 @@ function buyLibraryBook(code) {
   stock[code] = left - 1;
   try { localStorage.setItem('dnf_library_stock', JSON.stringify(stock)); } catch (e) { /* 忽略 */ }
   role.gold = (role.gold || 0) - b.price;
-  const sk = { name: b.name, type: b.type, elem: b.elem, tier: b.tier || '普通', desc: b.desc };
+  const sk = { name: b.name, type: b.type, elem: b.elem, desc: b.desc };
   if ((role.skills || []).length < MAX_SKILLS) {
     if (!role.skills) role.skills = [];
     role.skills.push(sk);   // 栏位有空 → 自动装备
@@ -570,7 +566,7 @@ function buyLibraryBook(code) {
     renderMine(); renderAdventurers();
     addFeedBatch('📖', '技能导师馆', `领悟《${b.name}》`, [
       { delta: `-${b.price} 金币`, color: '#ffc107' },
-      { delta: `+1 ${b.name}`, color: b.tier ? SKILL_TIER_COLOR[b.tier] : '' },
+      { delta: `+1 ${b.name}`, color: '' },
     ]);
     toastMsg('📖 领悟《' + b.name + '》成功！已自动装备入技能栏');
   } else {
@@ -581,7 +577,7 @@ function buyLibraryBook(code) {
     renderMine(); renderAdventurers();
     addFeedBatch('📖', '技能导师馆', `领悟《${b.name}》`, [
       { delta: `-${b.price} 金币`, color: '#ffc107' },
-      { delta: `+1 ${b.name}`, color: b.tier ? SKILL_TIER_COLOR[b.tier] : '' },
+      { delta: `+1 ${b.name}`, color: '' },
     ]);
     toastMsg('📖 领悟《' + b.name + '》成功！技能栏已满，已存入技能库（档案页可装备）');
   }
@@ -701,10 +697,9 @@ function renderTaixuInsightResult(result) {
   const target = $('#taixu-result');
   if (!target || !result || !result.skill) return;
   const skill = result.skill;
-  const color = skillTierColor(skill);
   const storageText = result.storage === 'equipped' ? '已装备至技能栏' : '已存入技能库';
-  target.innerHTML = `<div class="taixu-result-inner" style="border-left-color:${color}">
-    <div class="taixu-result-head"><strong style="color:${color}">${esc(skill.name)}</strong><span style="color:${color};border-color:${color}">${esc(skill.tier)}</span></div>
+  target.innerHTML = `<div class="taixu-result-inner">
+    <div class="taixu-result-head"><strong>${esc(skill.name)}</strong></div>
     <div class="taixu-result-meta">${esc(skill.type)} · ${esc(skill.elem || '无属性')} · ${esc(storageText)}</div>
     <p>${esc(skill.desc)}</p>
   </div>`;
@@ -712,7 +707,6 @@ function renderTaixuInsightResult(result) {
 function renderTaixuInsightSuccess(result) {
   if (!result || !result.skill) return;
   const skill = result.skill;
-  const color = skillTierColor(skill);
   const storageText = result.storage === 'equipped' ? '已装备至技能栏' : '技能栏已满，已存入技能库';
   const box = $('#modal-box');
   box.classList.remove('log-modal', 'forge-modal-box');
@@ -723,14 +717,13 @@ function renderTaixuInsightSuccess(result) {
         <span class="taixu-success-kicker">觉醒祭坛 · 领悟完成</span>
         <h2 class="modal-title" id="taixu-success-title">${esc(skill.name)}</h2>
       </div>
-      <span class="taixu-success-tier" style="color:${color};border-color:${color}">${esc(skill.tier)}</span>
     </div>
     <div class="taixu-success-meta">${esc(skill.type)} · ${esc(skill.elem || '无属性')}</div>
     <section class="taixu-success-description">
       <div class="taixu-success-label">技能描述</div>
       <p>${esc(skill.desc)}</p>
     </section>
-    <div class="taixu-success-storage" style="--taixu-success-accent:${color}"><span aria-hidden="true">✓</span>${esc(storageText)}</div>
+    <div class="taixu-success-storage"><span aria-hidden="true">✓</span>${esc(storageText)}</div>
     <button class="btn btn-primary taixu-success-close" type="button" onclick="closeModal()">确认</button>
   </div>`;
   showModal();
@@ -750,9 +743,8 @@ async function submitTaixuInsight() {
   target.innerHTML = '<div class="taixu-loading">正在观想觉醒万象…</div>';
   try {
     const result = await window.taixuInsight(taixuType, goal);
-    addFeedItem('◎', result.skill.name, `觉醒祭坛 · 领悟${result.skill.type}`, result.storage === 'equipped' ? '技能栏' : '技能库', SKILL_TIER_COLOR[result.skill.tier] || '', {
+    addFeedItem('◎', result.skill.name, `觉醒祭坛 · 领悟${result.skill.type}`, result.storage === 'equipped' ? '技能栏' : '技能库', '', {
       kind: 'insight',
-      tier: result.skill.tier,
       description: result.skill.desc,
     });
     renderTaixuInsightSuccess(result);
@@ -1220,6 +1212,7 @@ function renderMine() {
       ${createCharFormHTML()}
       <div class="hall-hint">创建后角色将保存在本浏览器（localStorage），刷新不丢失。创建后即可组队探索地下城。</div>`;
     renderSkillGrant();
+    renderStarterEquip();
     return;
   }
   html += `<div class="mine-page-head"><h3 class="col-title mine-page-title">我的冒险者</h3><div class="mine-actions">
@@ -1240,7 +1233,7 @@ function renderMine() {
             <div class="feed-main">
               <div class="feed-line"><strong class="feed-title" style="${f.color ? feedDeltaColor({ delta: f.title, color: f.color }) : ''}">${esc(f.title)}</strong>${feedIsItemEntry(f) && RARITY_NAME[f.color] ? `<span class="feed-rarity" style="color:${RARITY_COLOR[f.color]};border-color:${RARITY_COLOR[f.color]}">${esc(RARITY_NAME[f.color])}</span>` : ''}${feedIsItemEntry(f) ? `<span class="feed-item-qty ${String(f.delta || '').startsWith('-') ? 'minus' : ''}">${esc(f.delta || '')}</span>` : ''}${feedIsCurrencyEntry(f) ? `<span class="feed-currency-qty ${String(f.delta || '').startsWith('-') ? 'minus' : ''}">${esc(f.delta || '')}</span>` : ''}<span class="feed-sub feed-source">${esc(f.sub || '')}</span></div>
               ${f.kind === 'forge' ? `<div class="feed-forge-recipe">${(Array.isArray(f.forgeMaterials) ? f.forgeMaterials : String(f.forgeMaterials || '').split(' + ').filter(Boolean).map(name => ({ name, rarity: 'common' }))).map(m => `<span style="color:${itemColor(m)}">${esc(m.name)}</span>`).join(' + ')} → ${(() => { const r = typeof f.forgeResult === 'object' ? f.forgeResult : { name: f.forgeResult || f.title, rarity: 'common' }; return `<strong style="color:${itemColor(r)}">${esc(r.name)}</strong>`; })()}</div>${f.description ? `<div class="feed-forge-desc">${esc(f.description)}</div>` : ''}` : ''}
-              ${f.kind === 'insight' ? `<div class="feed-insight-meta"><span style="color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'};border-color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'}">${esc(f.tier || '普通')}</span><strong>${esc(f.delta || '')}</strong></div>${f.description ? `<div class="feed-insight-desc">${esc(f.description)}</div>` : ''}` : ''}
+              ${f.kind === 'insight' ? `<div class="feed-insight-meta"><strong>${esc(f.delta || '')}</strong></div>${f.description ? `<div class="feed-insight-desc">${esc(f.description)}</div>` : ''}` : ''}
             </div>
             ${f.kind === 'insight' || feedIsItemEntry(f) || feedIsCurrencyEntry(f) ? '' : `<span class="feed-delta">${feedEntryChanges(f).map(c => `<span class="${c.delta.startsWith('-') ? 'minus' : ''}" style="${feedDeltaColor(c)}">${esc(c.delta)}</span>`).join(' ')}</span>`}
             <span class="feed-time">${esc(f.time)}</span>
@@ -1282,17 +1275,10 @@ const PERS_LIST = ['重诺', '好奇', '莽撞', '明哲', '高傲', '仗义', '
 /* 技能体系：每人可携带最多 5 种；创建角色时按职业发放 2 门初始技能 */
 const MAX_SKILLS = 5;
 const HP_REGEN_MS = 3 * 60 * 1000;
-/* ---------- 技能稀有度（普通 < 高级 < 稀有 < 神器） ---------- */
-const SKILL_TIERS = ['普通', '高级', '稀有', '神器'];
-const SKILL_TIER_COLOR = { 普通: '#8b949e', 高级: '#58a6ff', 稀有: '#a371f7', 神器: '#f0883e' };
-const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '普通';  // 兼容旧存档默认普通
-const skillTierColor = s => SKILL_TIER_COLOR[skillTier(s)] || '#8b949e';
-const tierTag = s => `<span class="skill-tier" style="color:${skillTierColor(s)};border-color:${skillTierColor(s)}">${skillTier(s)}</span>`;
 const skillListItemHTML = (sk, actionHTML = '') => `
   <div class="skill-pool-item" title="${esc(sk.desc || '')}">
     <div class="spi-head">
-      <span class="skill-name" style="color:${skillTierColor(sk)}">${esc(sk.name)}</span>
-      ${tierTag(sk)}
+      <span class="skill-name">${esc(sk.name)}</span>
       <span class="skill-tag st-${sk.type === '物理技' ? 'physical' : 'magic'}">${esc(sk.type || '物理技')}</span>
       ${actionHTML}
     </div>
@@ -1300,26 +1286,40 @@ const skillListItemHTML = (sk, actionHTML = '') => `
   </div>`;
 const ROOT_SKILLS = {
   slayer: [
-    { name: '里鬼剑术', type: '物理技', elem: '', tier: '普通', desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
-    { name: '三段斩', type: '物理技', elem: '', tier: '普通', desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+    { name: '上挑', type: '物理技', elem: '', desc: '向上挥剑挑击，命中后把敌人挑至浮空，趁其离地衔接连击，是鬼剑士最常用的起手式。' },
+    { name: '三段斩', type: '物理技', elem: '', desc: '向前连续挥砍三刀，每段命中独立判定，最后一击力道最重，能把射程内的敌人一起震退。' },
+    { name: '鬼斩', type: '物理技', elem: '', desc: '蓄鬼气于剑锋，向前斩出暗色剑气，命中可使敌人短暂僵直，是输出与控场兼顾的一击。' },
+    { name: '裂波斩', type: '物理技', elem: '', desc: '挥剑斩出波动剑气，向前扩散撕开近身魔物护甲，范围虽窄出手极快，适合贴身拼刀。' },
   ],
   fighter: [
-    { name: '崩拳', type: '物理技', elem: '', tier: '普通', desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
-    { name: '背摔', type: '物理技', elem: '', tier: '普通', desc: '贴身擒抱，借力把敌人掼向地面，土石四溅。' },
+    { name: '上勾拳', type: '物理技', elem: '', desc: '沉腰挥出上勾拳，命中后把敌人挑离地面浮空，可接空中连击，是格斗家的主力起手技。' },
+    { name: '前踢', type: '物理技', elem: '', desc: '正面蹬出势大力沉的直踢，攻击距离远、命中把敌人踢退数步，拉开身位或起动连招皆宜。' },
+    { name: '下段踢', type: '物理技', elem: '', desc: '放低重心贴地横扫，命中使敌人下盘失衡踉跄不稳，能在对方起手时打断其攻击。' },
+    { name: '背摔', type: '物理技', elem: '', desc: '贴身擒抱住敌人，借力一拧将其过肩摔向地面，落地造成伤害并顺势压制，衔接地面连击。' },
   ],
   gunner: [
-    { name: '加特林扫射', type: '物理技', elem: '', tier: '高级', desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
-    { name: '银弹', type: '魔法技', elem: '', tier: '普通', desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+    { name: '瞬踢', type: '物理技', elem: '', desc: '近身快速一记侧踢，出脚快得难以捕捉，命中把敌人踢得后退，用来摆脱贴身缠斗。' },
+    { name: '浮空弹', type: '物理技', elem: '', desc: '抬枪朝敌人脚下射击，弹着冲击把人抬离地面浮空，为后续连射或连招留出稳定输出窗口。' },
+    { name: '加特林机枪', type: '物理技', elem: '', desc: '架起加特林向前持续扫射，弹幕密集覆盖一线，能把掩体后的敌人压得抬不起头。' },
+    { name: '膝撞', type: '物理技', elem: '', desc: '近身屈膝向上猛顶，命中把人顶得倒退并短暂僵直，趁对方弯腰僵直的功夫补上一枪。' },
   ],
   mage: [
-    { name: '魔力弹', type: '魔法技', elem: '', tier: '普通', desc: '指尖凝出一颗刺目的魔力弹，折线扑向敌人。' },
-    { name: '火球术', type: '魔法技', elem: '', tier: '普通', desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+    { name: '魔法星弹', type: '魔法技', elem: '', desc: '凝聚魔力射出一枚星形弹丸，碰到目标炸开星屑灼伤周围敌人，消耗少、出手快。' },
+    { name: '杰克爆弹', type: '魔法技', elem: '', desc: '向前掷出杰克南瓜炸弹，落地引爆火焰吞噬范围敌人，冷却短伤害足，清理成片的小怪。' },
+    { name: '冰霜雪人', type: '魔法技', elem: '', desc: '召唤冰霜雪人扑向敌人，撞碎时寒气四散，能让范围内的敌人减速并造成冰属性伤害。' },
+    { name: '魔力护盾', type: '魔法技', elem: '', desc: '张开一面魔力护盾，正面来的一部分伤害会被吸收，护盾碎裂瞬间把近身敌人震开。' },
   ],
   priest: [
-    { name: '圣光十字', type: '物理技', elem: '', tier: '普通', desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
-    { name: '治愈术', type: '魔法技', elem: '', tier: '高级', desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+    { name: '圣光十字', type: '物理技', elem: '', desc: '挥动十字架划出圣光正面扫落，圣光所过之处魔气消散，对黑暗系魔物格外克制。' },
+    { name: '治愈术', type: '魔法技', elem: '', desc: '引导圣光治愈同伴伤势，肉眼可见愈合，战斗中为前排持续回血，是圣职者的续航核心。' },
+    { name: '直拳冲击', type: '物理技', elem: '', desc: '把圣光凝聚在拳头上正拳轰出，命中造成可观伤害，并顺势击退敌人、震散其护体效果。' },
+    { name: '净化', type: '魔法技', elem: '', desc: '释放圣光涤荡体表，驱散诅咒毒素等异常，救急时能清空身上负面状态，稳住局面。' },
   ],
 };
+/* 每个职业固定的初始新手武器（对应 ITEM_CHOICES 的 weapon 项） */
+const ROOT_WEAPON = { slayer: 'sword', fighter: 'gauntlet', gunner: 'gun', mage: 'staff', priest: 'cross' };
+/* 初始治疗药水：3 瓶，与职业武器一起放入随身装备 */
+const STARTER_POTION = { name: '治疗药水', kind: 'pill', qty: 3, desc: '恢复药剂，饮下能愈合伤口。' };
 const ITEM_CHOICES = [
   { key: 'sword', name: '新手长刀', kind: 'weapon', desc: '刀鞘做旧，刃口还带着崩口，是初入阿拉德的冒险家最顺手的家伙。' },
   { key: 'gauntlet', name: '格斗护拳', kind: 'weapon', desc: '缠着旧布条的护拳，护腕磨得发亮，一拳下去颇为有力。' },
@@ -1341,7 +1341,7 @@ const KIND_ACTION = {
   tool:     { hold: '握着', use: '催动', role: '微微发亮' },
   misc:     { hold: '带着', use: '取出', role: '微微一亮' },
 };
-let charSel = { root: 'slayer', pers: '重诺', gender: '男', items: new Set() };
+let charSel = { root: 'slayer', pers: '重诺', gender: '男', skills: new Set() };
 window.charSel = charSel;
 
 function createCharFormHTML() {
@@ -1362,6 +1362,8 @@ function createCharFormHTML() {
           </button>`).join('')}
       </div>
       <div class="skill-grant" id="rc-skill-grant"></div>
+      <span class="char-count" id="skill-count">已选 0 / 2</span>
+      <div class="starter-equip" id="rc-equip"></div>
     </div>
     <div class="form-row">
       <label>性别</label>
@@ -1376,18 +1378,6 @@ function createCharFormHTML() {
         ${PERS_LIST.map((p, i) => `<button type="button" class="filter-chip ${i === 0 ? 'active' : ''}" data-pers="${p}" onclick="selectPers(this, '${p}')">${p}</button>`).join('')}
       </div>
     </div>
-    <div class="hall-hint" style="margin:0">初始四维（力量 / 敏捷 / 智力 / 幸运）由系统随机决定，各在 1~20 之间，无需手动分配。</div>
-    <div class="form-row">
-      <label>初始装备 / 道具（任选两件，不提供属性，仅作故事道具）</label>
-      <div class="item-select" id="rc-items">
-        ${ITEM_CHOICES.map(v => `
-          <button type="button" class="item-card" data-item="${v.key}" onclick="toggleItem(this, '${v.key}')">
-            <span class="i-name">${v.name}</span>
-            <span class="i-desc">${v.desc}</span>
-          </button>`).join('')}
-      </div>
-      <span class="char-count" id="item-count">已选 0 / 2</span>
-    </div>
     <div class="form-row">
       <button class="btn btn-primary" style="padding:8px 26px;font-size:14px" onclick="createRole()">✨ 成为冒险家</button>
     </div>
@@ -1398,20 +1388,41 @@ function selectRoot(btn, key) {
   $$('.root-card').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   charSel.root = key;
+  charSel.skills = new Set();
   renderSkillGrant();
+  renderStarterEquip();
 }
 function renderSkillGrant() {
   const el = $('#rc-skill-grant');
   if (!el) return;
   const sk = ROOT_SKILLS[charSel.root] || [];
-  el.innerHTML = `<div class="skill-grant-title">📜 将获得（携带上限 ${MAX_SKILLS} 门）：</div>
+  el.innerHTML = `<div class="skill-grant-title">📜 候选技能（携带上限 ${MAX_SKILLS} 门，请选 2 门）：</div>
     <div class="skill-grant-list">
-      ${sk.map(s => `<div class="skill-card">
-        <span class="skill-name" style="color:${skillTierColor(s)}">${esc(s.name)}</span>
-        ${tierTag(s)}
-        <span class="skill-tag st-${s.type === '物理技' ? 'physical' : 'magic'}">${s.type}</span>
+      ${sk.map((s, i) => `<button type="button" class="skill-card ${charSel.skills.has(s.name) ? 'active' : ''}" data-idx="${i}" onclick="toggleSkill(this, ${i})">
+        <span class="skill-name">${esc(s.name)}</span>
         <span class="skill-desc">${esc(s.desc)}</span>
-      </div>`).join('')}
+      </button>`).join('')}
+    </div>`;
+  const c = $('#skill-count');
+  if (c) c.textContent = `已选 ${charSel.skills.size} / 2`;
+}
+function renderStarterEquip() {
+  const el = $('#rc-equip');
+  if (!el) return;
+  const wKey = ROOT_WEAPON[charSel.root] || ROOT_WEAPON.slayer;
+  const wItem = ITEM_CHOICES.find(i => i.key === wKey) || ITEM_CHOICES[0];
+  el.innerHTML = `<div class="starter-equip-title">🎒 初始装备 · 创建后直接放入随身装备</div>
+    <div class="starter-equip-list">
+      <div class="equip-card">
+        <span class="equip-name">${esc(wItem.name)}</span>
+        <span class="equip-kind">${wItem.kind === 'weapon' ? '武器' : '道具'}</span>
+        <span class="equip-desc">${esc(wItem.desc)}</span>
+      </div>
+      <div class="equip-card">
+        <span class="equip-name">${esc(STARTER_POTION.name)} ×${STARTER_POTION.qty}</span>
+        <span class="equip-kind">药剂</span>
+        <span class="equip-desc">${esc(STARTER_POTION.desc)}</span>
+      </div>
     </div>`;
 }
 function selectGender(btn, g) {
@@ -1424,39 +1435,42 @@ function selectPers(btn, p) {
   btn.classList.add('active');
   charSel.pers = p;
 }
-function toggleItem(btn, key) {
-  if (charSel.items.has(key)) {
-    charSel.items.delete(key);
+function toggleSkill(btn, idx) {
+  const sk = (ROOT_SKILLS[charSel.root] || [])[idx];
+  if (!sk) return;
+  if (charSel.skills.has(sk.name)) {
+    charSel.skills.delete(sk.name);
     btn.classList.remove('active');
   } else {
-    if (charSel.items.size >= 2) {
-      toastMsg('只能选择两件装备 / 道具');
+    if (charSel.skills.size >= 2) {
+      toastMsg('只能选择两门初始技能');
       return;
     }
-    charSel.items.add(key);
+    charSel.skills.add(sk.name);
     btn.classList.add('active');
   }
-  const c = $('#item-count');
-  if (c) c.textContent = `已选 ${charSel.items.size} / 2`;
+  const c = $('#skill-count');
+  if (c) c.textContent = `已选 ${charSel.skills.size} / 2`;
 }
 function createRole() {
   const name = ($('#rc-name')?.value || '').trim();
   if (!name) { toastMsg('请输入角色名'); return; }
   if (name.length > 20) { toastMsg('角色名不能超过 20 字'); return; }
   if ((D.adventurers || []).some(a => a && a.name === name)) { toastMsg('角色名重复'); return; }
-  if (charSel.items.size !== 2) { toastMsg('请选择两件初始装备 / 道具'); return; }
+  if (charSel.skills.size !== 2) { toastMsg('请选择两门初始技能'); return; }
   const root = ROOT_KEYS[charSel.root];
+  const wKey = ROOT_WEAPON[charSel.root] || ROOT_WEAPON.slayer;
+  const wItem = ITEM_CHOICES.find(i => i.key === wKey) || ITEM_CHOICES[0];
   const rand = () => 1 + Math.floor(Math.random() * 20);
   const role = {
     id: Date.now(), name, title: '', status: 'resting', is_mine: true, gender: charSel.gender || '男',
     hp: 100, max_hp: 100, stamina: 100, max_stamina: 100, level: 1, staminaTs: Date.now(), hpTs: Date.now(),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 100, character_class: root.label, classTitle: null, personality: charSel.pers,
-    traits: ['初入阿拉德'],
-    skills: ROOT_SKILLS[charSel.root].map(s => ({ ...s })),  // 技能栏（最多 5 门，创建发放 2 门）
+    skills: ROOT_SKILLS[charSel.root].filter(s => charSel.skills.has(s.name)).map(s => ({ ...s })),  // 技能栏：所选 2 门（最多 5 门）
     skillPool: [],          // 技能库（已学未装备，可随时装卸）
-    equipment: [],           // 随身装备（最多 5 件）
-    bag: [...charSel.items].map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind }; }),  // 背包（100 格）
+    equipment: [{ name: wItem.name, desc: wItem.desc, qty: 1, kind: wItem.kind }, { ...STARTER_POTION }],  // 随身装备：职业新手武器 + 3 瓶治疗药水
+    bag: [],  // 背包（100 格）
     latest_score: 0, praise_count: 0, is_followed: false,
   };
   localStorage.setItem('dnf_role', JSON.stringify(role));
@@ -1512,7 +1526,7 @@ function loadRole() {
       if (!Array.isArray(r.bag)) r.bag = [];
       if (!Array.isArray(r.equipment)) r.equipment = [];
       if (!Array.isArray(r.skills)) {
-        const rootKey = Object.keys(ROOT_KEYS).find(k => (r.traits || []).includes(ROOT_KEYS[k].label)) || 'jin';
+        const rootKey = Object.keys(ROOT_KEYS).find(k => ROOT_KEYS[k].label === r.character_class) || 'jin';
         r.skills = ROOT_SKILLS[rootKey].map(s => ({ ...s }));
       }
       // 兼容旧存档：无性别字段默认男
@@ -1523,18 +1537,9 @@ function loadRole() {
       if (!r.staminaTs) r.staminaTs = Date.now();
       // 兼容旧存档：气血回复时间戳
       if (!r.hpTs) r.hpTs = Date.now();
-      // 兼容旧存档：技能阶位回填（按名称匹配初始技能/技能导师馆，匹配不到默认普通）
-      const tierByName = {};
-      Object.values(ROOT_SKILLS).flat().forEach(s => { if (s.tier) tierByName[s.name] = s.tier; });
-      LIBRARY_BOOKS.forEach(b => { if (b.tier) tierByName[b.name] = b.tier; });
-      let tierPatched = false;
-      [...(r.skills || []), ...(r.skillPool || [])].forEach(s => {
-        if (s && !SKILL_TIERS.includes(s.tier)) { s.tier = tierByName[s.name] || '普通'; tierPatched = true; }
-      });
       D.adventurers = [r];
       D.my_adventurer = r;
-      if (tierPatched) saveRole();  // 回填后持久化，避免每次加载重复处理
-      // 重伤倒计时：载入时清理已过期的受伤特质
+      // 重伤倒计时：载入时清理已过期的受伤状态
       if (clearExpiredInjury(r)) saveRole();
     }
   } catch (e) { /* 忽略损坏存档 */ }
@@ -1551,7 +1556,7 @@ if (window.__deadRoleName) {
     special_event_theme: '', items_used: [], death: true, death_role: deadName,
     summary_text: `角色「${deadName}」因气血归零被永久删除。`,
     dg_snapshot: { icon: '⚔️', name: '旧存档', steps: [], party: [{ name: deadName, is_mine: true }] },
-    settlement: { exp: 0, items: [], traits: [], damage: 0, levelUp: [], members: [{ name: deadName, is_mine: true, fate: '阵亡', score: 0, gold: 0, loot: [], newTraits: [], praise: 0 }], consumed: [] },
+    settlement: { exp: 0, items: [], damage: 0, levelUp: [], members: [{ name: deadName, is_mine: true, fate: '阵亡', score: 0, gold: 0, loot: [], newTraits: [], praise: 0 }], consumed: [] },
   });
   saveLogs();
   window.__deadRoleName = null;
@@ -2482,7 +2487,6 @@ function memberStatusPanelHTML(s, logId) {
             ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 金币</span>` : ''}
             ${(m.statBuffs || []).map(b => `<span class="msc-buff">${esc(b)}</span>`).join('')}
           </div>
-          ${m.newTraits && m.newTraits.length ? `<div class="msc-traits"><span class="msc-loot-label">新特质：</span>${m.newTraits.map(t => `<span class="msc-trait" title="${esc(t.desc || '')}">${esc(t.name || t)}</span>`).join('')}</div>` : ''}
           ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)} · ${esc(skill.type)}${skill.storage === 'pool' ? '（技能库）' : ''}</span>`).join('')}</div>` : ''}
           ${m.fate === '阵亡' && m.death_reason ? `<div class="msc-death">☠ ${esc(m.death_reason)}</div>` : ''}
           ${m.loot && m.loot.length ? `<div class="msc-loot"><span class="msc-loot-label">新装备：</span>${m.loot.map(it => `<span class="msc-loot-item" title="${esc(it.desc || '')}"><span style="color:${itemColor(it)}">${esc(it.name)}</span> ×${it.qty || 1} <span class="rarity-tag" style="color:${RARITY_COLOR[it.rarity]};border-color:${RARITY_COLOR[it.rarity]}">${RARITY_NAME[it.rarity] || it.rarity}</span></span>`).join('')}</div>` : ''}
@@ -2825,7 +2829,7 @@ function restoreRuns() {
       // 重新绑定我的角色为活动对象，保证结算写回真实角色
       s.party = s.party.map(m => (m && m.is_mine && role) ? role : m);
       if (!s.memberGains) s.memberGains = {};
-      s.party.forEach(m => { if (m && !s.memberGains[m.id]) s.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 }; });
+      s.party.forEach(m => { if (m && !s.memberGains[m.id]) s.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 }; });
       s.status = 'running';
       s.timer = null;
       activeDungeons.push(s);
@@ -2893,7 +2897,6 @@ function genNpc(name) {
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 0, character_class: ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, personality: PERS_LIST[Math.floor(Math.random() * PERS_LIST.length)],
-    traits: [ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, '初入阿拉德'],
     equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i),
     latest_score: 0, praise_count: 0, is_followed: false,
   };
@@ -3019,7 +3022,7 @@ async function startDungeon(role, npcs, choice) {
   const party = [role, ...npcs];
   const dg = { id: dungeonSeq++, dungeon, party, plan: buildPlan(isHidden, enemies.length, specialEvent, breakthrough), planIdx: 0, stepIdx: 0, totalStep: 0, steps: [], damage: 0, deaths: [], status: 'running', startedAt: Date.now(), timer: null, memberGains: {}, bossDrops: [], _curEnemy: null };
   dg.focusPlan = buildNarrativeFocusPlan(dg);
-  dg.party.forEach(m => { dg.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 }; });
+  dg.party.forEach(m => { dg.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 }; });
   role.stamina = Math.max(0, (role.stamina || 0) - 10);  // 进入副本消耗 10 精力
   role.hpTs = Date.now();  // 进入副本重置气血计时（探险中不回复，从结算时刻重新起算）
   role.status = 'adventuring';
@@ -3076,7 +3079,7 @@ function resolveAiSkillUse(actor, entry) {
   if (!entry || !entry.name) return null;
   const skill = (actor.skills || []).find(s => s && s.name === entry.name);
   if (!skill) return null;
-  return { name: skill.name, type: skill.type || '物理技', tier: skillTier(skill), elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
+  return { name: skill.name, type: skill.type || '物理技', elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
 }
 /* AI 单步掉落登记：合并数量与稀有度，并同步写入 gainedLoot */
 function recordAiLoot(dg, actor, entries) {
@@ -3162,7 +3165,7 @@ async function dungeonTick(dg) {
   }
   // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier || '普通', elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
   applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
@@ -3188,16 +3191,6 @@ function itemBonus(dg, stage) {
     if (hit) b += hit.mod;
   }));
   return Math.min(b, 4);
-}
-function traitBonus(actor) {
-  let b = 0;
-  (actor.traits || []).forEach(t => {
-    if (t.includes('明察') || t.includes('夜视') || t.includes('听风')) b += 1;
-    if (t.includes('心狠') || t.includes('老练')) b += 1;
-    if (t.includes('寻宝') || t.includes('好运')) b += 1;
-    if (t.includes('胆大心细')) b += 1;
-  });
-  return Math.min(b, 2);
 }
 /* 等级加成：每 2 级 +1（封顶 +9） */
 function realmBonus(actor) {
@@ -3527,9 +3520,9 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
         ownedItems: collectClientOwnedItems(dg),
         skillUse: null,
         party: dg.party.map(m => ({
-          name: m.name, gender: m.gender || '男', level: Number(m.level) || 1, realm: m.character_class || '', root: (m.traits && m.traits[0]) || '',
-          personality: m.personality || '', traits: m.traits || [],
-          skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', tier: skillTier(s), desc: s.desc || '' })),
+          name: m.name, gender: m.gender || '男', level: Number(m.level) || 1, realm: m.character_class || '',
+          personality: m.personality || '',
+          skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', desc: s.desc || '' })),
           equipment: (m.equipment || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
           bag: (m.bag || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
           items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
@@ -3580,31 +3573,18 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
   if (stageKey === 'explore' && outcome === 'fumble') hurt();
   if (stageKey === 'loot' && outcome === 'fumble') hurt();
 }
-function addTrait(role, t) {
-  if (!role.traits) role.traits = [];
-  if (!role.traits.includes(t)) role.traits.push(t);
-}
 /* ---------- 重伤体系 ----------
-   结算时玩家气血 <= 10% 才进入重伤候选，由 AI 低频判断是否添加受伤特质。
-   特质带现实时间 3 小时倒计时（role.injury = { name, desc, expiresAt }），
-   到期自动移除（角色自身 traits 里同名特质一并清除）。 */
+   结算时玩家气血 <= 10% 才进入重伤候选，由 AI 低频判断是否授予。
+   受伤为独立状态（role.injury = { name, desc, expiresAt }），带有 3 小时倒计时，
+   到期自动清除；与 traits 完全解耦。 */
 const INJURY_DURATION_MS = 3 * 3600 * 1000;
 function addInjury(role, name, desc) {
   if (!role) return;
   role.injury = { name, desc, expiresAt: Date.now() + INJURY_DURATION_MS };
-  if (!role.traits) role.traits = [];
-  if (!role.traits.includes(name)) role.traits.push(name);
-  if (!role.traitDescs) role.traitDescs = {};
-  role.traitDescs[name] = desc;
 }
 function clearExpiredInjury(role) {
   if (!role || !role.injury) return false;
   if (role.injury.expiresAt > Date.now()) return false;
-  const injuryName = role.injury.name;
-  if (Array.isArray(role.traits)) {
-    role.traits = role.traits.filter(name => name !== injuryName);
-  }
-  if (role.traitDescs && typeof role.traitDescs === 'object') delete role.traitDescs[injuryName];
   role.injury = null;
   return true;
 }
@@ -3713,7 +3693,6 @@ async function aiOutcome(logText, party) {
           name: member.name,
           hp: member.hp,
           max_hp: member.max_hp,
-          traits: Array.isArray(member.traits) ? member.traits : [],
         })),
       }),
     });
@@ -3724,7 +3703,6 @@ async function aiOutcome(logText, party) {
         ok: j.ok,
         reason: j.reason || '',
         statBuffs: Array.isArray(j.statBuffs) ? j.statBuffs : [],
-        traits: Array.isArray(j.traits) ? j.traits : [],
         injury: j.injury || null,
         scroll: j.scroll || null,
       };
@@ -3757,28 +3735,6 @@ async function aiExtractLoot(logText) {
     throw new Error('AI 战利品格式无效');
   } catch (e) { throw new Error('AI 战利品提取失败：' + (e && e.message ? e.message : e)); }
 }
-/* AI 结合剧情颁发新特质（名字 + 描述）；失败中止结算，不回退固定池 */
-async function aiGrantTrait(logText, member, existing) {
-  try {
-    const r = await fetch('/api/ai/trait', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ log: String(logText || '').slice(0, 12000), member, existing: existing || [] }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(j.error || 'AI 特质生成失败');
-    if (j && j.name && j.desc) return { name: String(j.name), desc: String(j.desc) };
-    throw new Error('AI 未返回完整特质');
-  } catch (e) { throw new Error('AI 特质生成失败：' + (e && e.message ? e.message : e)); }
-}
-/* 特质入角色：traits 存名字，traitDescs 存描述（旧特质无描述） */
-function addTraitWithDesc(role, t) {
-  if (!role.traits) role.traits = [];
-  if (!role.traits.includes(t.name)) role.traits.push(t.name);
-  if (t.desc) {
-    if (!role.traitDescs) role.traitDescs = {};
-    role.traitDescs[t.name] = t.desc;
-  }
-}
 /* 物理技/魔法技技能书：10% 概率的稀有战利品，AI 起名并写描述；AI 失败中止结算 */
 async function aiScroll(type) {
   try {
@@ -3789,8 +3745,7 @@ async function aiScroll(type) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'AI 卷轴生成失败');
     if (j && j.name && j.desc) {
-      const tier = ['普通', '高级', '稀有', '神器'].includes(j.tier) ? j.tier : '普通';
-      return { name: String(j.name), desc: String(j.desc), tier };
+      return { name: String(j.name), desc: String(j.desc) };
     }
     throw new Error('AI 未返回完整卷轴');
   } catch (e) { throw new Error('AI 卷轴生成失败：' + (e && e.message ? e.message : e)); }
@@ -3839,7 +3794,7 @@ async function cancelDungeon(dg, reason, errDetail) {
 
 /* 气血归零：永久删除角色、保留死亡日志并回到创建角色界面 */
 async function finishRoleDeath(dg, role) {
-  const myGains = dg.memberGains[role.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+  const myGains = dg.memberGains[role.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
   const fullText = dg.steps.map(s => s.text || s.rawText || '').join('');
   const storyText = LootSettlement.formatStorySteps(dg.steps);
   const deadNames = dg.party.filter(m => (m.hp || 0) <= 0 || m.isDead).map(m => m.name).filter(Boolean);
@@ -3852,7 +3807,7 @@ async function finishRoleDeath(dg, role) {
   }
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [String(entry.name || '').trim(), String(entry.reason || '').trim().slice(0, 100)]));
   const members = dg.party.map(m => {
-    const mg = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+    const mg = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
     return {
       name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: mg.acts, rolls: mg.rolls,
       damage: mg.damage, score: 0, gold: 0, loot: [], crits: mg.crits, fumbles: mg.fumbles,
@@ -3867,7 +3822,7 @@ async function finishRoleDeath(dg, role) {
     death: true, death_role: role.name,
     summary_text: '', death_summary: deathSummary.overall,
     dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, desc: dg.dungeon.desc, steps: dg.steps, party: dg.party.map(m => ({ name: m.name, is_mine: !!m.is_mine })) },
-    settlement: { exp: 0, items: [], traits: [], damage: myGains.damage, levelUp: [], members, consumed: [] },
+    settlement: { exp: 0, items: [], damage: myGains.damage, levelUp: [], members, consumed: [] },
   };
   D.logs.unshift(deathLog);
   saveLogs();
@@ -3899,7 +3854,7 @@ async function settleDungeon(dg) {
   dg.status = 'settling';
   const rolls = dg.steps.filter(s => s.total).map(s => s.total);
   const avg = rolls.length ? rolls.reduce((a, b) => a + b, 0) / rolls.length : 10;
-  const myGains = dg.memberGains[role.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+  const myGains = dg.memberGains[role.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
   const exp = Math.max(15, Math.round(30 + (avg - 10) * 3 + myGains.loot.length * 12));
   const expMul = dg.dungeon.specialEvent ? 1.5 : 1;  // 特殊事件：经验 +50%
   const expFinal = Math.round(exp * expMul);
@@ -3940,32 +3895,11 @@ async function settleDungeon(dg) {
     cancelDungeon(dg, '', e && e.message ? e.message : e);
     return;
   }
-  // 特质发放结果全部来自 AI 判定
-  const newTraits = [];  // 结算 traits（字符串，供结算面板/弹窗显示）
-  const traitMap = {};  // memberId -> { name, desc }
-  const traitByMember = new Map();
-  (Array.isArray(aiVerdict.traits) ? aiVerdict.traits : []).forEach(entry => {
-    const memberName = String(entry && entry.member || '').trim();
-    const name = String(entry && entry.name || '').trim().slice(0, 12);
-    if (memberName && name) traitByMember.set(memberName, { name, desc: String(entry && entry.desc || '').trim().slice(0, 60) });
-  });
-  dg.party.forEach(m => {
-    const t = traitByMember.get(m.name);
-    if (!t) return;
-    if (m.is_mine) {
-      if (!(role.traits || []).includes(t.name)) {
-        addTraitWithDesc(role, t);
-        newTraits.push(t.name);
-      }
-    } else {
-      addTraitWithDesc(m, t);
-    }
-    traitMap[m.id] = t;
-  });
+  // 特质已整体移除：结算不再产生特质
   if (scrollItem) allLoot.push({ ...scrollItem, qty: 1, rarity: 'rare' });
   // ===== 按功劳分配战利品：每位成员按贡献权重获得道具（为多人游戏做准备，每人收获独立入账） =====
   const meritScores = dg.party.map(m => {
-    const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+    const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
     const avgR = g.rolls.length ? g.rolls.reduce((a, b) => a + b, 0) / g.rolls.length : 10;
     const merit = Math.max(1, (g.acts || 0) + (avgR - 10) * 0.4 + (g.crits || 0) * 2 - (g.fumbles || 0) * 1.5 + (g.damage || 0) / 30);
     return { m, g, merit };
@@ -4011,13 +3945,12 @@ async function settleDungeon(dg) {
     // 转职流水
     addFeed('⚡', role.name, `转职${sub}`, `转职成功 · ${sub}`, '#f0883e');
   }
-  // 临时受伤特质只接受 AI 对重伤候选人的低频明确授予。
+  // 临时受伤状态只接受 AI 对重伤候选人的低频明确授予（独立状态，不与 traits 耦合）。
   if ((role.hp || 0) > 0
     && (role.hp || 0) <= Math.floor((role.max_hp || 100) * 0.1)
     && aiVerdict.injury
     && aiVerdict.injury.member === role.name) {
     addInjury(role, aiVerdict.injury.name, aiVerdict.injury.desc);
-    if (!newTraits.includes(aiVerdict.injury.name)) newTraits.push(aiVerdict.injury.name);
   }
   role.status = 'resting';
   role.stamina = Math.min(role.max_stamina || 100, (role.stamina || 0) + 30);
@@ -4042,7 +3975,7 @@ async function settleDungeon(dg) {
   });
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [String(entry.name || '').trim(), String(entry.reason || '').trim().slice(0, 100)]));
   const members = dg.party.map(m => {
-    const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+    const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
     const avgR = g.rolls.length ? g.rolls.reduce((a, b) => a + b, 0) / g.rolls.length : 10;
     const score = Math.max(5, Math.min(9.5, +(5 + avgR * 0.16 + g.crits * 0.3 - g.fumbles * 0.5).toFixed(1)));
         // 金币：统计整篇剧情的明确获得数量后由全队平分；没有明确获得时为 0。
@@ -4057,16 +3990,9 @@ async function settleDungeon(dg) {
       statBuffs.push((ATTR_NAME[statAttr] || statAttr) + '+1');
     }
     if (m.is_mine && gold > 0) role.gold = (role.gold || 0) + gold;
-    // 本局获得的新特质（含 AI 描述）：玩家含结算特质与重伤；队友取 traitMap
-    let memberNewTraits = [];
-    if (m.is_mine) {
-      memberNewTraits = newTraits.map(n => ({ name: n, desc: (role.traitDescs || {})[n] || '' }));
-    } else if (traitMap[m.id]) {
-      memberNewTraits = [traitMap[m.id]];
-    }
     // 点赞数：初始为历史累积（5~150）
     const praise = 5 + Math.floor(Math.random() * 146);
-    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, newTraits: memberNewTraits, praise };
+    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, praise };
   });
   saveRole();
   const log = {
@@ -4082,7 +4008,6 @@ async function settleDungeon(dg) {
       spiritStoneEvents,
       lootAudit,
       items: gainedItems,
-      traits: newTraits,
       damage: myGains.damage,
       levelUp,
       members,
@@ -4165,10 +4090,6 @@ function showSettlement(log) {
         <div class="st2-my-box">
           <div class="st2-my-k">获得道具（已入背包）</div>
           <div class="st2-my-v">${s.items.length ? s.items.map(i => `<span class="st2-item" style="color:${itemColor(i)}">${esc(i.name)}<em>${RARITY_NAME[i.rarity] || i.rarity}</em></span>`).join('') : '<span class="st2-none">无</span>'}</div>
-        </div>
-        <div class="st2-my-box">
-          <div class="st2-my-k">获得特质</div>
-          <div class="st2-my-v">${s.traits.length ? s.traits.map(t => `<span class="st2-trait">${esc(t)}</span>`).join('') : '<span class="st2-none">无</span>'}</div>
         </div>
         ${s.consumed && s.consumed.length ? `<div class="st2-my-box">
           <div class="st2-my-k">剧情消耗（已扣除）</div>
@@ -4421,7 +4342,7 @@ function advTabProfile(adv) {
     <h4>基础属性</h4>
     <div class="stat-grid">
       <div class="stat-box"><div class="k">职业</div><div class="v" style="font-size:13px">${esc(adv.character_class || '—')}${adv.classTitle ? ` · ${esc(adv.classTitle)}` : ''}</div></div>
-      <div class="stat-box"><div class="k">特长</div><div class="v" style="font-size:13px">${esc((adv.traits && adv.traits[0]) || '-')}</div></div>
+      <div class="stat-box"><div class="k">特长</div><div class="v" style="font-size:13px">${esc((adv.injury && adv.injury.name) || '-')}</div></div>
       <div class="stat-box"><div class="k">性格</div><div class="v" style="font-size:13px">${esc(adv.personality || '-')}</div></div>
       <div class="stat-box"><div class="k">金币</div><div class="v" style="font-size:13px">${Number(adv.gold || 0).toFixed(0)}</div></div>
       <div class="stat-box"><div class="k">力量</div><div class="v">${adv.strength}</div></div>
@@ -4445,9 +4366,9 @@ function advTabProfile(adv) {
     ${adv.is_mine ? `<div class="skill-hint">技能库中的技能不参与探险，装备后方可施展；卸下后仍保留在技能库。</div>` : ''}
   </div>
   <div class="modal-section">
-    <h4>特质 / 经历</h4>
-    <div class="detail-traits">
-      ${(adv.traits || []).map(t => `<span class="tag-badge${adv.injury && adv.injury.name === t ? ' injury-tag' : ''}" title="${esc((adv.traitDescs || {})[t] || '')}">${esc(t)}${adv.injury && adv.injury.name === t ? `<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span>` : ''}</span>`).join('') || '<span class="tag-badge empty">无特质</span>'}
+    <h4>受伤状态</h4>
+    <div class="detail-injury">
+      ${adv.injury && adv.injury.name ? `<span class="tag-badge injury-tag">${esc(adv.injury.name)}<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span></span>` : '<span class="tag-badge empty">无受伤状态</span>'}
     </div>
   </div>`;
 }
@@ -4501,7 +4422,7 @@ function advTabAssets(adv) {
       <div class="stat-box"><div class="k">💰 金币</div><div class="v" style="font-size:14px">${Number(adv.gold || 0).toFixed(0)}</div></div>
       <div class="stat-box"><div class="k">最新评分</div><div class="v" style="font-size:14px">${adv.latest_score ? Number(adv.latest_score).toFixed(1) : '-'}</div></div>
       <div class="stat-box"><div class="k">点赞</div><div class="v" style="font-size:14px">${adv.praise_count || 0}</div></div>
-      <div class="stat-box"><div class="k">探险总评</div><div class="v" style="font-size:14px">${(adv.traits || []).length} 特质</div></div>
+      <div class="stat-box"><div class="k">探险总评</div><div class="v" style="font-size:14px">${adv.injury && adv.injury.name ? '受伤中' : '状态良好'}</div></div>
     </div>
   </div>
   ${adv.is_mine ? `<div class="modal-section">
@@ -4509,7 +4430,6 @@ function advTabAssets(adv) {
     ${scrolls.length ? `<div class="scroll-list">${scrolls.map(i => `
       <div class="scroll-card">
         <span class="sc-name" style="color:${itemColor(i)}">📜 ${esc(i.name)}</span>
-        ${i.tier ? `<span class="skill-tier" style="color:${SKILL_TIER_COLOR[i.tier] || '#8b949e'};border-color:${SKILL_TIER_COLOR[i.tier] || '#8b949e'}">${i.tier}</span>` : ''}
         <span class="rarity-tag" style="color:${RARITY_COLOR[i.rarity || 'common']};border-color:${RARITY_COLOR[i.rarity || 'common']}">${RARITY_NAME[i.rarity || 'common'] || i.rarity}</span>
         <div class="sc-desc">${esc(i.desc || '')}</div>
       </div>`).join('')}</div>` : '<div class="ad-empty">未持有技能书（探险结算有 10% 概率获得）</div>'}
@@ -4605,7 +4525,7 @@ window.addEventListener('hashchange', () => {
   if (renderers[t]) switchTab(t);
 });
 
-/* ---------- 重伤倒计时：每秒刷新 .injury-cd 徽章，到期自动清除受伤特质 ---------- */
+/* ---------- 重伤倒计时：每秒刷新 .injury-cd 徽章，到期自动清除受伤状态 ---------- */
 function injuryTick() {
   let expired = false;
   document.querySelectorAll('.injury-cd').forEach(el => {
@@ -4619,7 +4539,7 @@ function injuryTick() {
   });
   if (expired) {
     [D.my_adventurer, ...(D.adventurers || [])].forEach(r => {
-      if (r && clearExpiredInjury(r)) toastMsg(`「${r.name}」伤势已恢复，受伤特质消失`);
+      if (r && clearExpiredInjury(r)) toastMsg(`「${r.name}」伤势已恢复`);
     });
     if (!window.__onlineMode) saveRole();
     renderMine(); renderAdventurers(); renderTavern(); renderParty(); renderLogs();

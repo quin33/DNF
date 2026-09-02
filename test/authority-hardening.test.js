@@ -97,11 +97,12 @@ test('authoritative actions mutate only server-owned inventory and skill state',
   assert.equal(boughtBody.character.gold, current.character.gold - 50);
   assert.ok(boughtBody.character.skills.some(skill => skill.name === '里鬼剑术'));
   current = boughtBody;
-  const equipped = await fetch(`${base}/api/character/${id}/action`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ action: 'inventory_equip', index: 0, updated_at: current.updated_at }) });
-  assert.equal(equipped.status, 200);
-  const equippedBody = await equipped.json();
-  assert.equal(equippedBody.character.equipment.length, 1);
-  assert.equal(equippedBody.character.bag.length, 1);
+  // 初始装备即入随身装备（职业武器+治疗药水），背包为空；此处把第一件从装备栏卸入背包
+  const unequipped = await fetch(`${base}/api/character/${id}/action`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ action: 'inventory_unequip', index: 0, updated_at: current.updated_at }) });
+  assert.equal(unequipped.status, 200);
+  const unequippedBody = await unequipped.json();
+  assert.equal(unequippedBody.character.equipment.length, 1);
+  assert.equal(unequippedBody.character.bag.length, 1);
   const stale = await fetch(`${base}/api/character/${id}/action`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ action: 'inventory_unequip', index: 0, updated_at: current.updated_at }) });
   assert.equal(stale.status, 409);
 });

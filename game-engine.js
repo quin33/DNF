@@ -5,16 +5,13 @@
    ============================================================ */
 const GC = require('./game-create.js');
 const AI_COMPANIONS = require('./ai-companions.js');
-const { normalizeTraitGrant, normalizeInjuryGrant, clearExpiredInjury } = require('./trait-system.js');
+const { normalizeInjuryGrant, clearExpiredInjury } = require('./trait-system.js');
 const LootSettlement = require('./loot-settlement.js');
 
 const MAX_SKILLS = 5;
 const STAGE_ATTR = { explore: ['intelligence', 'luck'], battle: ['strength', 'agility'], boss: ['strength', 'agility', 'luck'], loot: ['luck', 'intelligence'], breakthrough: ['luck', 'intelligence'] };
 const ATTR_NAME = { strength: '力量', agility: '敏捷', intelligence: '智力', luck: '幸运' };
 const QI_LAYER = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-const SKILL_TIERS = ['普通', '高级', '稀有', '神器'];
-const SKILL_TIER_COLOR = { 普通: '#8b949e', 高级: '#58a6ff', 稀有: '#a371f7', 神器: '#f0883e' };
-const BAD_TRAIT_POOL = ['重伤未愈', '惊吓过度', '中了猛毒', '心有余悸'];
 const NPC_NAME_POOL = AI_COMPANIONS.NPC_NAME_POOL;
 const BREAKTHROUGH_EXP = 2000;
 
@@ -101,7 +98,6 @@ const DUNGEON_POOL = [
 
 const rollD20 = () => 1 + Math.floor(Math.random() * 20);
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '普通';
 
 /* 敌人强度换算：优先读取数值等级，兼容 "Lv.N" 字符串与旧数值（不保留修仙境界词）。 */
 function realmWordToLevel(text) {
@@ -123,12 +119,9 @@ function actorRealmVal(actor) { const lv = Number(actor && actor.level); return 
 function realmDiffMod(actor, enemy) { if (!enemy) return 0; const ev = enemyRealmVal(enemy); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
 function realmBonus(actor) { return Math.min(9, Math.floor(((actor.level || 1) - 1) / 2)); }
 function elemMatchMod(actor, sk) {
-  const root = ((actor.traits || [])[0] || '');
-  const elem = (sk && sk.elem) || '';
-  if (!elem || elem === '无' || !root) return 0;
-  return elem === root ? 2 : 0;
+  // DNF60：技能无五行属性、角色无特质，元素契合恒为 0；保留签名以最小化调用处改动。
+  return 0;
 }
-function traitBonus(actor) { let b = 0; (actor.traits || []).forEach(t => { if (/灵觉|夜视|听风/.test(t)) b += 1; if (/心狠|老练/.test(t)) b += 1; if (/寻宝|气运/.test(t)) b += 1; if (/胆大心细/.test(t)) b += 1; }); return Math.min(b, 2); }
 
 const ITEM_BONUS = [
   { kw: '火把', stage: 'explore', mod: 2 }, { kw: '寻宝图', stage: 'explore', mod: 2 }, { kw: '布甲', stage: 'explore', mod: 1 },
@@ -540,7 +533,7 @@ function skillUseCheck(dg, stageKey, actor) {
   else if (stageKey === 'explore') { const physical = skills.filter(s => s.type === '物理技'); if (physical.length && Math.random() < 0.6) pool = physical; }
   const sk = pick(pool); const elemMod = elemMatchMod(actor, sk); const roll = rollD20();
   const total = roll + (sk.type === '魔法技' ? 3 : 2) + elemMod;
-  return { name: sk.name, type: sk.type || '物理技', tier: skillTier(sk), elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
+  return { name: sk.name, type: sk.type || '物理技', elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
 }
 /* 解析剧情【获得：…】标记 */
 function parseLootMarkers(text) {
@@ -661,7 +654,6 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
   if (stageKey === 'loot' && outcome === 'fumble') hurt(6);
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
 }
-function addTrait(role, t) { if (!role) return; role.traits = role.traits || []; if (!role.traits.includes(t)) role.traits.push(t); }
 
 function regenerateHp(role, now = Date.now()) {
   if (!role) return false;
@@ -746,18 +738,16 @@ function parseLearnedSkills(raw) {
   } catch (_) { return []; }
   if (!Array.isArray(parsed)) return [];
   const validTypes = new Set(['物理技', '魔法技']);
-  const validTiers = new Set(SKILL_TIERS);
   const seen = new Set();
   return parsed.flatMap(item => {
     const member = String(item && item.member || '').trim();
     const name = String(item && item.name || '').trim();
     const type = String(item && item.type || '').trim();
-    const tier = String(item && item.tier || '').trim();
     const desc = String(item && item.desc || '').trim();
     const key = member + '\u0000' + name;
-    if (!member || member.includes('�') || member.length > 20 || !name || name.includes('�') || name.length > 20 || !validTypes.has(type) || !validTiers.has(tier) || !desc || desc.includes('�') || desc.length > 120 || seen.has(key)) return [];
+    if (!member || member.includes('�') || member.length > 20 || !name || name.includes('�') || name.length > 20 || !validTypes.has(type) || !desc || desc.includes('�') || desc.length > 120 || seen.has(key)) return [];
     seen.add(key);
-    return [{ member, name, type, tier, desc }];
+    return [{ member, name, type, desc }];
   });
 }
 
@@ -769,7 +759,7 @@ function applyLearnedSkills(role, learned) {
   const granted = [];
   for (const skill of learned) {
     if (!skill || !skill.name || known.has(skill.name)) continue;
-    const saved = { name: skill.name, type: skill.type, tier: skill.tier, desc: skill.desc };
+    const saved = { name: skill.name, type: skill.type, desc: skill.desc };
     const storage = role.skills.length < MAX_SKILLS ? 'equipped' : 'pool';
     (storage === 'equipped' ? role.skills : role.skillPool).push(saved);
     known.add(saved.name);
@@ -874,7 +864,7 @@ function genNpc(name, card) {
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 0, character_class: pick(Object.values(GC.ROOT_KEYS)).label,
-    personality: pick(GC.PERS_LIST), traits: ['初入阿拉德'], equipment: [], bag: [], skills: [],
+    personality: pick(GC.PERS_LIST), equipment: [], bag: [], skills: [],
     exp: 0, status: 'idle',
   };
 }
@@ -933,9 +923,9 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
     ownedItems: collectOwnedItems(dg),
     skillUse: null,
     party: dg.party.map(m => ({
-      name: m.name, gender: m.gender || '男', realm: m.character_class || '', level: Number(m.level) || 1, root: '',
-      personality: m.personality || '', traits: m.traits || [],
-      skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', tier: skillTier(s), desc: s.desc || '' })),
+      name: m.name, gender: m.gender || '男', realm: m.character_class || '', level: Number(m.level) || 1,
+      personality: m.personality || '',
+      skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', desc: s.desc || '' })),
       items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: memberIdentity(m), ownerName: m.name || '' })),
     })),
     context: dg.steps.slice(-5).map(s => s.text).join('\n'),
@@ -943,13 +933,13 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
 }
 
 module.exports = {
-  DUNGEON_POOL, STAGE_ATTR, ATTR_NAME, QI_LAYER, SKILL_TIERS, MAX_SKILLS, NPC_NAME_POOL, BREAKTHROUGH_EXP, STEP_OUTCOMES,
-  rollD20, pick, skillTier, itemBonus, traitBonus, realmBonus, realmDiffMod, elemMatchMod,
+  DUNGEON_POOL, STAGE_ATTR, ATTR_NAME, QI_LAYER, MAX_SKILLS, NPC_NAME_POOL, BREAKTHROUGH_EXP, STEP_OUTCOMES,
+  rollD20, pick, itemBonus, realmBonus, realmDiffMod, elemMatchMod,
   rollEnemies, pickDungeon, buildPlan, buildNarrativeFocusPlan, dynamicNarrativeFocus, appendDynamicNarrativeFocus, itemUseCheck, recordItemLoan, recordItemLoansFromText, collectItemLoansFromText, itemUseExplicitInText, consumeItemUse, settleItemLoans, availableItemsForActor, skillUseCheck, parseLootMarkers, extractGold,
   registerLootOwnership, validateStepItemUsage, itemGuardFeedback,
-  applyStageEffects, genNpc, createDg, aiStoryPayload, addTrait, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,
+  applyStageEffects, genNpc, createDg, aiStoryPayload, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,
   applyLevelGrowth, applyExperience, parseLearnedSkills, applyLearnedSkills,
-  normalizeTraitGrant, normalizeInjuryGrant, clearExpiredInjury,
+  normalizeInjuryGrant, clearExpiredInjury,
   normalizeAiDecision, canEnterClosing, resolveNextPhase, applyAiDecision,
   normalizeAiStepResult, recordAiLoot, applyDungeonSetup,
 };

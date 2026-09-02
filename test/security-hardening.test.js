@@ -93,7 +93,7 @@ test('AI routes reject unauthenticated requests before provider access', async t
   const { child, base } = await startServer();
   t.after(() => stopServer(child));
 
-  for (const route of ['/api/ai/story', '/api/ai/summary', '/api/ai/death-summary', '/api/ai/outcome', '/api/ai/extract_loot', '/api/ai/trait', '/api/ai/scroll', '/api/ai/forge']) {
+  for (const route of ['/api/ai/story', '/api/ai/summary', '/api/ai/death-summary', '/api/ai/outcome', '/api/ai/extract_loot', '/api/ai/scroll', '/api/ai/forge']) {
     const response = await fetch(`${base}${route}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

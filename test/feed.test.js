@@ -428,7 +428,7 @@ test('settlement does not fabricate summary or outcome when AI settlement calls 
 
 test('single-player settlement never falls back to local summary outcome loot or traits', () => {
   const html = fs.readFileSync('index.html', 'utf8');
-  const settlement = html.slice(html.indexOf('async function settleDungeon'), html.indexOf('function realmForLevel'));
+  const settlement = html.slice(html.indexOf('async function settleDungeon'), html.indexOf('function applyLocalLevelGrowth'));
   assert.match(html, /const AI_MODE\s*=\s*'remote'/);
   assert.doesNotMatch(settlement, /aiOutcome\(storyText\)\.catch\(\(\) => null\)/);
   assert.doesNotMatch(settlement, /aiExtractLoot\(storyText\)[\s\S]{0,500}else\s*\{/);
@@ -440,24 +440,24 @@ test('single-player settlement never falls back to local summary outcome loot or
 
 test('single-player AI settlement helpers reject invalid AI responses instead of returning local defaults', () => {
   const html = fs.readFileSync('index.html', 'utf8');
-  const helpers = html.slice(html.indexOf('async function aiLootDescs'), html.indexOf('function addTraitWithDesc'));
+  const helpers = html.slice(html.indexOf('async function aiLootDescs'), html.indexOf('async function aiSummary'));
   assert.match(helpers, /throw new Error/);
   assert.doesNotMatch(helpers, /return null;[\s\S]*AI 不可用/);
 });
 
 test('empty AI loot arrays are valid while malformed loot items are rejected', () => {
   const server = fs.readFileSync('server.js', 'utf8');
-  const route = server.slice(server.indexOf("urlPath === '/api/ai/extract_loot'"), server.indexOf("urlPath === '/api/ai/trait'"));
+  const route = server.slice(server.indexOf("urlPath === '/api/ai/extract_loot'"), server.indexOf("urlPath === '/api/ai/scroll'"));
   assert.doesNotMatch(route, /!Array\.isArray\(parsed\) \|\| !parsed\.length/);
   const html = fs.readFileSync('index.html', 'utf8');
-  const helper = html.slice(html.indexOf('async function aiExtractLoot'), html.indexOf('async function aiGrantTrait'));
+  const helper = html.slice(html.indexOf('async function aiExtractLoot'), html.indexOf('async function aiScroll'));
   assert.match(helper, /if \(!item\.name \|\| !item\.desc\) throw/);
 });
 
 test('loot extraction uses a structured-response length limit instead of the 300-character story limit', () => {
   const server = fs.readFileSync('server.js', 'utf8');
   const settlement = server.slice(server.indexOf('async function settleRoom'), server.indexOf('function leaveRoomCleanup'));
-  const route = server.slice(server.indexOf("urlPath === '/api/ai/extract_loot'"), server.indexOf("urlPath === '/api/ai/trait'"));
+  const route = server.slice(server.indexOf("urlPath === '/api/ai/extract_loot'"), server.indexOf("urlPath === '/api/ai/scroll'"));
   assert.match(settlement, /EXTRACT_LOOT_PROMPT,\s*2000/);
   assert.match(route, /EXTRACT_LOOT_PROMPT,\s*2000/);
 });

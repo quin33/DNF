@@ -266,26 +266,25 @@ function requireAiAccess(req, res) {
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'traits', 'equipment', 'bag', 'skills', 'skillPool',
+  'equipment', 'bag', 'skills', 'skillPool',
 ]);
 const ADMIN_NUMERIC_FIELDS = new Set([
   'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
 ]);
 const ADMIN_TEXT_FIELDS = new Set(['name', 'character_class']);
-const ADMIN_ARRAY_FIELDS = new Set(['traits', 'equipment', 'bag', 'skills', 'skillPool']);
+const ADMIN_ARRAY_FIELDS = new Set(['equipment', 'bag', 'skills', 'skillPool']);
 const ADMIN_TEXT_MAX_LENGTH = 1000;
 const ADMIN_IDENTITY_MAX_LENGTH = 100;
 const ADMIN_ARRAY_MAX_ITEMS = 100;
 
 const COMPANION_FIELDS = new Set([
   ...ADMIN_CHARACTER_FIELDS,
-  'gender', 'personality', 'title', 'title_frame', 'bio', 'traitDescs', 'status',
+  'gender', 'personality', 'title', 'title_frame', 'bio', 'status',
 ]);
 const COMPANION_TEXT_FIELDS = new Set([
   'name', 'character_class', 'gender', 'personality', 'title', 'title_frame', 'bio',
 ]);
-const COMPANION_OBJECT_FIELDS = new Set(['traitDescs']);
 
 // 玩家自动保存只允许提交非经济、非战斗的资料字段；资源与状态必须由服务端领域操作修改。
 const PLAYER_MUTABLE_CHARACTER_FIELDS = new Set([
@@ -296,17 +295,17 @@ const AUTHORITATIVE_CHARACTER_FIELDS = new Set([
   'intelligence', 'luck', 'gold', 'exp', 'breakthroughBonus', 'injury',
 ]);
 const SERVER_LIBRARY_BOOKS = new Map([
-  ['tuna', { name: '里鬼剑术', type: '物理技', elem: '无', tier: '普通', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' }],
-  ['yufeng', { name: '银弹', type: '魔法技', elem: '无', tier: '普通', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' }],
-  ['wood_shield', { name: '圣光十字', type: '物理技', elem: '无', tier: '普通', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' }],
-  ['fireball', { name: '火球术', type: '魔法技', elem: '无', tier: '普通', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' }],
-  ['water_arrow', { name: '冰霜雪人', type: '魔法技', elem: '无', tier: '高级', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' }],
-  ['gold_blade', { name: '崩拳', type: '物理技', elem: '无', tier: '普通', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' }],
-  ['lianxi', { name: '三段斩', type: '物理技', elem: '无', tier: '普通', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' }],
-  ['qingmu', { name: '治愈术', type: '魔法技', elem: '无', tier: '高级', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' }],
-  ['xuanbing', { name: '鬼斩', type: '物理技', elem: '无', tier: '稀有', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' }],
-  ['zixiao', { name: '浮空弹', type: '物理技', elem: '无', tier: '普通', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
-  ['yujian', { name: '加特林扫射', type: '物理技', elem: '无', tier: '稀有', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
+  ['tuna', { name: '里鬼剑术', type: '物理技', elem: '无', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' }],
+  ['yufeng', { name: '银弹', type: '魔法技', elem: '无', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' }],
+  ['wood_shield', { name: '圣光十字', type: '物理技', elem: '无', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' }],
+  ['fireball', { name: '火球术', type: '魔法技', elem: '无', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' }],
+  ['water_arrow', { name: '冰霜雪人', type: '魔法技', elem: '无', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' }],
+  ['gold_blade', { name: '崩拳', type: '物理技', elem: '无', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' }],
+  ['lianxi', { name: '三段斩', type: '物理技', elem: '无', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' }],
+  ['qingmu', { name: '治愈术', type: '魔法技', elem: '无', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' }],
+  ['xuanbing', { name: '鬼斩', type: '物理技', elem: '无', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' }],
+  ['zixiao', { name: '浮空弹', type: '物理技', elem: '无', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
+  ['yujian', { name: '加特林扫射', type: '物理技', elem: '无', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
 ]);
 const serverLibraryStock = new Map([...SERVER_LIBRARY_BOOKS].map(([code, book]) => [code, book.stock]));
 
@@ -477,9 +476,8 @@ function sanitizeAdminCharacter(input, existing) {
         throw new AdminInputError('角色数组无效');
       }
       value.forEach(item => {
-        const validTrait = field === 'traits' && typeof item === 'string' && item.trim();
         const validObject = isPlainObject(item) && typeof item.name === 'string' && item.name.trim();
-        if (!validTrait && !validObject) throw new AdminInputError('角色数组项目无效');
+        if (!validObject) throw new AdminInputError('角色数组项目无效');
         validateAdminNestedValue(item);
       });
     }
@@ -505,7 +503,7 @@ function sanitizeAdminCompanion(input, existing) {
     if (COMPANION_TEXT_FIELDS.has(field)) {
       if (typeof value !== 'string') throw new AdminInputError('名片文本无效');
       if (field === 'gender' && !['男', '女'].includes(value)) throw new AdminInputError('性别仅支持男/女');
-      if (field !== 'bio' && field !== 'traitDescs') {
+      if (field !== 'bio') {
         if (!value.trim()) throw new AdminInputError('名片文本不能为空');
         if (value.length > (field === 'character_class' ? ADMIN_IDENTITY_MAX_LENGTH : 200)) {
           throw new AdminInputError('名片文本过长');
@@ -522,14 +520,10 @@ function sanitizeAdminCompanion(input, existing) {
         throw new AdminInputError('名片数组无效');
       }
       value.forEach(item => {
-        const validTrait = field === 'traits' && typeof item === 'string' && item.trim();
         const validObject = isPlainObject(item) && typeof item.name === 'string' && item.name.trim();
-        if (!validTrait && !validObject) throw new AdminInputError('名片数组项目无效');
+        if (!validObject) throw new AdminInputError('名片数组项目无效');
         validateAdminNestedValue(item);
       });
-    } else if (COMPANION_OBJECT_FIELDS.has(field)) {
-      if (!isPlainObject(value)) throw new AdminInputError('名片对象字段无效');
-      validateAdminNestedValue(value);
     }
     next[field] = value;
   }
@@ -554,16 +548,15 @@ const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险�
 叙事规则：
 1. 使用 DNF 风味冒险笔法（兼具白话叙事与画面感），节奏张弛有度，可写出地下城的阴森、怪物的狰狞与冒险家间的默契。
 2. 战斗描写要符合职业与等级特性，避免一刀清场或无脑碾压；若敌人等级高于队伍，需体现苦战、智取或撤退。
-3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、职业、等级、特质体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含老兄/姑娘/前辈等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化，每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
-4. **特质即经历与能力依据**：每名角色的特质是过往经历凝成的能力，**生成剧情时必须在合适时机让特质因果性地发挥作用**——不是偶然提一句，而是"因有某特质→事件随之发生"：如「夜视之眼」者在地下城黑暗中先察觉危险与伏击；「寻宝直觉/气运缠身」者更易发现暗格秘藏；「老练猎手」者能辨足迹、寻猎物；「百毒不侵」者出入瘴毒之地更有底气；「胆大心细」者看着莽撞却总能稳住局面。特质未直接相关的场景不必强用，但特质相关的机会要明显增多。
-5. **队伍差异化**：四名队员必须有差异化的表现：依据其性格、职业和技能分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成"特质/技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果"的完整因果链，不能只写"参与攻击"或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
-6. **技能优先**：角色的物理技/魔法技是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制），物理技偏硬桥硬马的压制与格挡，魔法技偏元素爆发与治愈；判定成功则写得势如破竹、光焰迸发，判定失败则如实写施法受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
-7. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
-7b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
-8. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
-9. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
-10. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主凶威、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
-11. **晋级/转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职**关隘。**本阶段必须围绕该角色（主角）安排一场转职试炼**：可写技能觉醒、职业之魂考验、心魔问心等（贴合其职业与技能路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业真意，晋升子职业，如「鬼剑士·剑魂」）；失败则功亏一篑（受伤、受创，等级仍留 Lv.10，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
+3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、职业、等级体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含老兄/姑娘/前辈等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化，每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
+4. **队伍差异化**：四名队员必须有差异化的表现：依据其性格、职业和技能分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成"技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果"的完整因果链，不能只写"参与攻击"或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
+5. **技能优先**：角色的物理技/魔法技是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制），物理技偏硬桥硬马的压制与格挡，魔法技偏元素爆发与治愈；判定成功则写得势如破竹、光焰迸发，判定失败则如实写施法受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
+6. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
+6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
+7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
+8. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
+9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主凶威、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
+10. **晋级/转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职**关隘。**本阶段必须围绕该角色（主角）安排一场转职试炼**：可写技能觉醒、职业之魂考验、心魔问心等（贴合其职业与技能路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业真意，晋升子职业，如「鬼剑士·剑魂」）；失败则功亏一篑（受伤、受创，等级仍留 Lv.10，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
 
 阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出"依据 → 行动 → 结果"，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或归途步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
 
@@ -577,9 +570,9 @@ function buildUserMessage(b) {
   if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.level != null ? 'Lv.' + x.level : (x.realm || '等级不明')) + '）：' + x.desc).join('；')}`);
   lines.push('【队伍】');
   (b.party || []).forEach(m => {
-    const sk = (m.skills || []).map(s => `${s.name}（${s.tier || '普通'}·${s.type || '物理技'}：${s.desc || '无描述'}）`).join('、') || '无';
+    const sk = (m.skills || []).map(s => `${s.name}（${s.type || '物理技'}：${s.desc || '无描述'}）`).join('、') || '无';
     const items = (m.items || []).map(i => `${i.name}（${i.kind || '杂物'}：${i.desc || '无描述'}，持有人：${i.ownerName || m.name || '未知'}）`).join('，') || '无';
-    lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·性格${m.personality}）｜特质：${(m.traits || []).join('、')}｜技能：${sk}｜携带：${items}`);
+    lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·性格${m.personality}）｜技能：${sk}｜携带：${items}`);
   });
   if (Array.isArray(b.ownedItems) && b.ownedItems.length) {
     lines.push(`【物品归属】${b.ownedItems.map(item => `${item.name}（${item.ownerName || '未知'}持有）`).join('；')}`);
@@ -604,7 +597,7 @@ function buildUserMessage(b) {
   } else {
     lines.push(`【当前进度】第 ${b.stepNo} 步 / 共 ${b.totalSteps} 步 · 叙事倾向：${b.stageLabel || b.stage}（仅供参考，可与相邻事件自然融合）`);
   }
-  if (b.focus) lines.push(`【本段叙事焦点】${b.focus.actor || b.actor || '当前角色'}（连续焦点第 ${b.focus.step || 1}/${b.focus.size || 1} 步）${b.focus.highlight ? '；本步为高光收束：必须写出“特质/技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果”' : '；保持该角色的内心、判断与行动连续，不得无理由切换到其他角色的主视角'}`);
+  if (b.focus) lines.push(`【本段叙事焦点】${b.focus.actor || b.actor || '当前角色'}（连续焦点第 ${b.focus.step || 1}/${b.focus.size || 1} 步）${b.focus.highlight ? '；本步为高光收束：必须写出“技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果”' : '；保持该角色的内心、判断与行动连续，不得无理由切换到其他角色的主视角'}`);
   if (b.allowedCharacters && b.allowedCharacters.length) lines.push(`【本步允许出场】${b.allowedCharacters.join('、')}`);
   if (b.forbiddenCharacters && b.forbiddenCharacters.length) lines.push(`【本步禁止主动出场】${b.forbiddenCharacters.join('、')}`);
   if (b.stage === 'breakthrough' || b.stageLabel === '晋级') lines.push('【突破试炼】本步为转职试炼（Lv.10 → 转职）：围绕主角安排转职关隘（技能觉醒/职业之魂考验等），成败按本步判定（success 见【检定】）自然收束。');
@@ -612,13 +605,11 @@ function buildUserMessage(b) {
   if (b.enemy) lines.push(`【当前敌人】${b.enemy.name}：${b.enemy.desc || ''}`);
   if (b.actor) {
     const actorInfo = (b.party || []).find(member => member.name === b.actor) || (b.party || [])[0];
-    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}（${s.tier || '普通'}·${s.type || '物理技'}）`).join('、');
+    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}（${s.type || '物理技'}）`).join('、');
     if (skillList) lines.push(`【本步可用技能】${skillList}`);
   }
   if (b.skillUse) {
-    const em = b.skillUse.elemMod || 0;
-    const emTxt = em > 0 ? '此技能与施法者特质契合，施展得心应手、威力增益' : '';
-    lines.push(`【本步技能】${b.skillUse.name}（${b.skillUse.type}）：是否使用及成败由你直接判定${emTxt ? '（' + emTxt + '）' : ''}。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
+    lines.push(`【本步技能】${b.skillUse.name}（${b.skillUse.type}）：是否使用及成败由你直接判定。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
   }
   if (b.itemUse) {
     lines.push(`【装备判定】${b.itemUse.name}（${b.itemUse.kind}）${b.itemUse.loaned ? `由${b.itemUse.ownerName || '原持有人'}明确借给${b.itemUse.userName || b.actor || '使用者'}` : `由${b.itemUse.ownerName || b.actor || '使用者'}本人持有`}：是否使用及成败由你直接判定，不使用或失败则正文如实写未能奏效。`);
@@ -645,7 +636,7 @@ function buildUserMessage(b) {
 function fastRoomLlmResponse(systemPrompt) {
   if (systemPrompt === SETUP_PROMPT) return JSON.stringify({ hidden: false, specialEvent: false, breakthrough: false, enemies: [] });
   if (systemPrompt === SUMMARY_PROMPT) return '众冒险家稳步穿过险地，勘明路径后平安归返。';
-  if (systemPrompt === OUTCOME_PROMPT) return JSON.stringify({ ok: true, reason: '队伍完成探索并安全返回', statBuffs: [], traits: [], injury: null, scroll: null });
+  if (systemPrompt === OUTCOME_PROMPT) return JSON.stringify({ ok: true, reason: '队伍完成探索并安全返回', statBuffs: [], injury: null, scroll: null });
   if (systemPrompt === EXTRACT_LOOT_PROMPT || systemPrompt === LEARNED_SKILL_PROMPT) return '[]';
   if (systemPrompt === DEATH_SUMMARY_PROMPT) return JSON.stringify({ overall: '', roles: [] });
   return null;
@@ -1355,7 +1346,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (DB.getCharacters(u.id).length >= 6) { sendJSON(res, 400, { error: '角色数量已达上限（6）' }); return true; }
     const char = GC.createCharacterObject({
       name, rootKey: body.root, gender: body.gender, pers: body.pers,
-      itemKeys: Array.isArray(body.items) ? body.items : [],
+      skills: Array.isArray(body.skills) ? body.skills : [],
     });
     const result = DB.createCharacterIdempotent(u.id, requestId, char.name, char);
     if (result.status === 'invalid_request_id') { sendJSON(res, 400, { error: '创建请求编号无效' }); return true; }
@@ -1681,7 +1672,7 @@ async function handleAuthAPI(req, res, urlPath) {
       const stock = Number(serverLibraryStock.get(code) || 0);
       if (stock <= 0) { sendJSON(res, 400, { error: '已售罄' }); return true; }
       if (Number(role.gold || 0) < book.price) { sendJSON(res, 400, { error: '金币不足' }); return true; }
-      const skill = { name: book.name, type: book.type, elem: book.elem, tier: book.tier, desc: book.desc };
+      const skill = { name: book.name, type: book.type, elem: book.elem, desc: book.desc };
       role.gold = Number(role.gold || 0) - book.price;
       (role.skills.length < 5 ? role.skills : role.skillPool).push(skill);
       serverLibraryStock.set(code, stock - 1);
@@ -1810,13 +1801,12 @@ const OUTCOME_PROMPT = `你是《地下城与勇士》的公会执事。阅读�
 注意：仅凭单次受挫、一次大失败、或某段描写凶险，不构成失败；必须以全文的最终结局为准。
 同时决定本局结算中的成长与机缘：
 1. statBuffs：依据每位成员在本局中的实际表现，自行决定是否获得 1 点属性成长以及加在哪一项（力量/敏捷/智力/幸运）；没有则留空数组。不要随机补发，成员必须有明确的成长理由。
-2. traits：依据剧情中的实际表现（断后、临危、寻宝、苦战等）自行决定是否授予永久特质；没有充分叙事依据就留空数组，不要为了奖励而补发。特质名必须为 6~12 字，描述必须为 20~100 字且同时详细说明获取经历与未来探险中的具体效果，不得与已有特质重复。
-3. injury：只能从输入列出的“重伤候选”中选择至多一人判断是否获得临时受伤特质。通常不要授予，仅在剧情明确支持且伤势会形成持续影响的少数情况下低概率授予；不授予时为 null。授予时 grant 必须为 true，名称必须为 6~12 字，描述必须为 20~100 字并详细说明受伤经历与伤势效果。
-4. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出 {type} 与名称。
+2. injury：只能从输入列出的“重伤候选”中选择至多一人判断是否获得临时受伤状态。通常不要授予，仅在剧情明确支持且伤势会形成持续影响的少数情况下低概率授予；不授予时为 null。授予时 grant 必须为 true，名称必须为 6~12 字，描述必须为 20~100 字并详细说明受伤经历与伤势效果。
+3. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出 {type} 与名称。
 严格只输出一个 JSON 对象，不要任何解释或标记：
-{"ok":true,"reason":"简短理由","statBuffs":[{"member":"角色完整姓名","attribute":"力量"}],"traits":[{"member":"角色完整姓名","name":"绝境守心如铁","desc":"包含获取经历与具体效果的详细描述"}],"injury":{"member":"重伤候选中的角色完整姓名","grant":true,"name":"筋骨震裂未愈","desc":"包含受伤经历与具体效果的详细描述"},"scroll":null}
+{"ok":true,"reason":"简短理由","statBuffs":[{"member":"角色完整姓名","attribute":"力量"}],"injury":{"member":"重伤候选中的角色完整姓名","grant":true,"name":"筋骨震裂未愈","desc":"包含受伤经历与具体效果的详细描述"},"scroll":null}
 或
-{"ok":false,"reason":"简短理由","statBuffs":[],"traits":[],"injury":null,"scroll":null}`;
+{"ok":false,"reason":"简短理由","statBuffs":[],"injury":null,"scroll":null}`;
 
 /* 技能书/传承卷轴生成：10% 概率的稀有战利品（严格 JSON 输出） */
 const SCROLL_PROMPT = `你是《地下城与勇士》的导师大厅执事。创作一部{type}技能书——不是技能本身，而是记载战斗之法的技能书/传承卷轴（拓本/残卷/秘录皆可）。要求：
@@ -1853,16 +1843,10 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 {"name":"精铁短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
 兼容要求：旧格式的 name/desc/qty/rarity 仍可使用。没有获得任何道具时输出 []。`;
 
-/* 特质颁发：AI 结合剧情为成员颁发新特质（名字 + 描述） */
-const TRAIT_PROMPT = `你是《地下城与勇士》的公会执事。冒险家「{member}」刚完成一次地下城探险，请根据他/她在剧情中的实际表现（英勇断后、临危不乱、中毒负伤、寻宝发现、击杀强敌、辨识机关等）为其颁发一个新特质：
-1. 特质名 6~12 字，可带熟练度后缀（初级/中级/高级），如"辨别机关（初级）""绝境断后英杰""百毒侵身不倒""临危守心不乱""地下城猎宝直觉"，要贴合剧情行为，不要与已有特质重复（已有：{existing}）；
-2. 写一段 20~100 字的详细描述：必须同时说明因何具体经历获得、体现何种能力，以及未来探险中该特质会如何发挥具体效果。
-严格只输出一个 JSON 对象，不要任何解释或标记：{"name":"绝境守心如铁","desc":"在本次探险中独自断后并护住同伴，因此今后遭遇强敌时更能稳住心神并提高防守表现。"}`;
-
-const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的物理技/魔法技。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名、物理技或魔法技类型、普通/高级/稀有/神器品阶与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","type":"物理技","tier":"普通","desc":"技能描述"}]`;
+const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的物理技/魔法技。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名、物理技或魔法技类型与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","type":"物理技","desc":"技能描述"}]`;
 
 /* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级 */
-const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色特质，决定本次探险的局势：
+const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色状态，决定本次探险的局势：
 1. hidden：是否触发隐藏凶地（首领盘踞、名称改变、凶险加倍）；normal：false。
 2. specialEvent：是否触发特殊异象（整体难度与机缘上调）；normal：false。
 3. breakthrough：仅当队伍中有 Lv.10 圆满的角色时可为 true，否则必须 false。
@@ -2247,13 +2231,11 @@ const server = http.createServer(async (req, res) => {
         name: String(member && member.name || '').trim(),
         hp: Number(member && member.hp || 0),
         max_hp: Math.max(1, Number(member && member.max_hp || 100)),
-        traits: Array.isArray(member && member.traits) ? member.traits.map(String) : [],
       })).filter(member => member.name);
-      const memberNames = party.map(member => member.name);
       const severeInjuryCandidates = party
         .filter(member => member.hp > 0 && member.hp <= Math.floor(member.max_hp * 0.1))
         .map(member => member.name);
-      const rosterText = party.map(member => `${member.name}（已有特质：${member.traits.join('、') || '无'}）`).join('；') || '未提供';
+      const rosterText = party.map(member => member.name).join('；') || '未提供';
       const raw = await callLLM(
         `队伍成员：${rosterText}\n重伤候选：${severeInjuryCandidates.join('、') || '无'}\n\n探险日志全文：\n${logText}`,
         OUTCOME_PROMPT,
@@ -2264,26 +2246,10 @@ const server = http.createServer(async (req, res) => {
       if (st >= 0 && en > st) jsonStr = jsonStr.slice(st, en + 1);
       const parsed = JSON.parse(jsonStr);
       if (typeof parsed.ok !== 'boolean') throw new Error('AI 未返回可用的判定');
-      const traits = [];
-      const grantedMembers = new Set();
-      const grantedNames = new Set();
-      for (const entry of Array.isArray(parsed.traits) ? parsed.traits : []) {
-        const member = party.find(candidate => candidate.name === String(entry && entry.member || '').trim());
-        const normalized = GE.normalizeTraitGrant(entry, memberNames, member ? member.traits : []);
-        if (!normalized || grantedMembers.has(normalized.member) || grantedNames.has(normalized.name)) continue;
-        traits.push(normalized);
-        grantedMembers.add(normalized.member);
-        grantedNames.add(normalized.name);
-      }
-      const injuryMember = party.find(member => member.name === String(parsed.injury && parsed.injury.member || '').trim());
-      const injuryExisting = injuryMember
-        ? [...injuryMember.traits, ...traits.filter(trait => trait.member === injuryMember.name).map(trait => trait.name)]
-        : [];
-      const injury = GE.normalizeInjuryGrant(parsed.injury, severeInjuryCandidates, injuryExisting);
+      const injury = GE.normalizeInjuryGrant(parsed.injury, severeInjuryCandidates);
       sendJSON(res, 200, {
         ok: parsed.ok, reason: String(parsed.reason || '').slice(0, 120),
         statBuffs: Array.isArray(parsed.statBuffs) ? parsed.statBuffs : [],
-        traits,
         injury,
         scroll: parsed.scroll || null,
       });
@@ -2306,27 +2272,6 @@ const server = http.createServer(async (req, res) => {
       sendJSON(res, 200, { items: out });
     } catch (e) {
       console.error('[ai/extract_loot]', e.message);
-      sendJSON(res, 500, { error: String(e.message || e) });
-    }
-    return;
-  }
-  if (req.method === 'POST' && urlPath === '/api/ai/trait') {
-    if (!requireAiAccess(req, res)) return;
-    try {
-      const body = JSON.parse(await readBody(req));
-      const member = String(body.member || '冒险家').slice(0, 20);
-      const logText = String(body.log || '').slice(0, 12000);
-      const existing = Array.isArray(body.existing) ? body.existing.map(String) : [];
-      const raw = await callLLM('探险日志全文：\n' + logText, TRAIT_PROMPT.replace('{member}', member).replace('{existing}', existing.join('、') || '无'));
-      let jsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const st = jsonStr.indexOf('{'), en = jsonStr.lastIndexOf('}');
-      if (st >= 0 && en > st) jsonStr = jsonStr.slice(st, en + 1);
-      const parsed = JSON.parse(jsonStr);
-      const trait = GE.normalizeTraitGrant({ ...parsed, member }, [member], existing);
-      if (!trait) throw new Error('AI 未返回符合规则的特质');
-      sendJSON(res, 200, { name: trait.name, desc: trait.desc });
-    } catch (e) {
-      console.error('[ai/trait]', e.message);
       sendJSON(res, 500, { error: String(e.message || e) });
     }
     return;
@@ -2757,7 +2702,7 @@ async function failRoomRun(room, error) {
         is_favorited: false, death: diedAny,
         summary_text: '', death_summary: diedAny ? deathFallback.overall : '', cancel_reason: message,
         dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, steps: dg.steps, party: dg.party.map(x => ({ name: x.name, is_mine: !x.isNpc })) },
-        settlement: { exp: 0, items: [], traits: [], damage: dg.damage || 0, levelUp: [], consumed: [], returned: [], members: (dg.party || []).map(m => ({ name: m.name, is_mine: !m.isNpc, fate: (Number(m.hp || 0) <= 0 || m.isDead) ? '阵亡' : '健康', death_reason: (Number(m.hp || 0) <= 0 || m.isDead) ? (deathFallback.roles.find(x => x.name === m.name) || {}).reason || '' : '', score: 0, gold: 0, damage: (dg.memberGains[m.uid || m.id] || {}).damage || 0, loot: [], newTraits: [], newSkills: [], praise: 0 })) },
+        settlement: { exp: 0, items: [], damage: dg.damage || 0, levelUp: [], consumed: [], returned: [], members: (dg.party || []).map(m => ({ name: m.name, is_mine: !m.isNpc, fate: (Number(m.hp || 0) <= 0 || m.isDead) ? '阵亡' : '健康', death_reason: (Number(m.hp || 0) <= 0 || m.isDead) ? (deathFallback.roles.find(x => x.name === m.name) || {}).reason || '' : '', score: 0, gold: 0, damage: (dg.memberGains[m.uid || m.id] || {}).damage || 0, loot: [], newTraits: [], newSkills: [], praise: 0 })) },
       } : null,
     });
     if (failure.status === 'failed') {
@@ -2801,7 +2746,7 @@ async function dungeonStep(room) {
     if (!entry || !entry.name) return null;
     const skill = (actor.skills || []).find(s => s.name === entry.name);
     if (!skill) return null;
-    return { name: skill.name, type: skill.type || '物理技', tier: GE.skillTier(skill), elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
+    return { name: skill.name, type: skill.type || '物理技', elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
   };
   let dynamicFocusAdded = false;
   if (dynamic) {
@@ -2843,7 +2788,7 @@ async function dungeonStep(room) {
       stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
       stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
-      skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
+      skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
     };
   } catch (error) {
     if (dynamicFocusAdded) dg.focusPlan.pop();
@@ -3058,15 +3003,13 @@ async function settleRoom(room) {
     .filter(Boolean);
   const settlementMembers = (dg.party || []).map(member => ({
     name: String(member.name || '').trim(),
-    traits: Array.isArray(member.traits) ? member.traits.map(String) : [],
   })).filter(member => member.name);
-  const settlementMemberNames = settlementMembers.map(member => member.name);
   const severeInjuryCandidates = (dg.party || [])
     .filter(member => !member.isNpc && !member.isDead && Number(member.hp || 0) > 0
       && Number(member.hp || 0) <= Math.floor(Number(member.max_hp || 100) * 0.1))
     .map(member => member.name);
   const outcomeRoster = settlementMembers
-    .map(member => `${member.name}（已有特质：${member.traits.join('、') || '无'}）`)
+    .map(member => member.name)
     .join('；');
   // 并行的 AI 结算（对齐单机版 Promise.all）：总结 + 成败判定 + 战利品提取
   const [summaryRaw, outcomeRaw, lootRaw, learnedSkillsRaw, deathSummary] = await Promise.all([
@@ -3141,19 +3084,7 @@ async function settleRoom(room) {
     const attribute = ATTR_KEYS[String(entry && entry.attribute || '').trim()];
     if (memberName && attribute) statBuffsByMember.set(memberName, attribute);
   });
-  const traitByMember = new Map();
-  (Array.isArray(outcomeParsed && outcomeParsed.traits) ? outcomeParsed.traits : []).forEach(entry => {
-    const memberName = String(entry && entry.member || '').trim();
-    const member = settlementMembers.find(candidate => candidate.name === memberName);
-    const normalized = GE.normalizeTraitGrant(entry, settlementMemberNames, member ? member.traits : []);
-    if (normalized && !traitByMember.has(normalized.member)) traitByMember.set(normalized.member, normalized);
-  });
-  const injuryMemberName = String(outcomeParsed && outcomeParsed.injury && outcomeParsed.injury.member || '').trim();
-  const injuryMember = settlementMembers.find(member => member.name === injuryMemberName);
-  const injuryExisting = injuryMember
-    ? [...injuryMember.traits, ...(traitByMember.has(injuryMemberName) ? [traitByMember.get(injuryMemberName).name] : [])]
-    : [];
-  const aiInjury = GE.normalizeInjuryGrant(outcomeParsed && outcomeParsed.injury, severeInjuryCandidates, injuryExisting);
+  const aiInjury = GE.normalizeInjuryGrant(outcomeParsed && outcomeParsed.injury, severeInjuryCandidates);
   // 每件战利品只分配给一名成员；按行动、判定、暴击和伤害计算贡献权重。
   const lootMembers = dg.party.map(m => {
     const g = dg.memberGains[m.uid || m.id] || {};
@@ -3224,14 +3155,6 @@ async function settleRoom(room) {
       role[statAttr] = Number(role[statAttr] || 10) + 1;
       memberRes.statBuffs = [ATTR_LABELS[statAttr] + '+1'];
     }
-    const aiTrait = traitByMember.get(m.name);
-    if (aiTrait && !(role.traits || []).includes(aiTrait.name)) {
-      role.traits = role.traits || [];
-      role.traitDescs = role.traitDescs || {};
-      role.traits.push(aiTrait.name);
-      role.traitDescs[aiTrait.name] = aiTrait.desc;
-      memberRes.newTraits = [aiTrait];
-    }
     // 道具消耗已在整队结算前按原持有人扣除；此处沿用同一对象保存。
     let leveledUp = false;
     memberRes.newSkills = GE.applyLearnedSkills(role, learnedSkillsByMember.get(m.name) || []);
@@ -3258,14 +3181,9 @@ async function settleRoom(room) {
     memberRes.exp = exp;
     memberRes.gold = goldGain;
     memberRes.score = Math.max(5, Math.min(9.5, +(5 + (g.rolls && g.rolls.length ? g.rolls.reduce((a,b)=>a+b,0)/g.rolls.length * 0.16 : 0) + (g.crits||0) * 0.3 - (g.fumbles||0) * 0.5).toFixed(1)));
-    // 临时受伤特质只接受 AI 对重伤候选人的低频明确授予，持续 3 小时。
+    // 临时受伤状态只接受 AI 对重伤候选人的低频明确授予，持续 3 小时（独立状态，不与 traits 耦合）。
     if (aiInjury && aiInjury.member === m.name) {
       role.injury = { name: aiInjury.name, desc: aiInjury.desc, expiresAt: Date.now() + 3 * 3600 * 1000 };
-      role.traits = Array.isArray(role.traits) ? role.traits : [];
-      role.traitDescs = role.traitDescs && typeof role.traitDescs === 'object' ? role.traitDescs : {};
-      if (!role.traits.includes(aiInjury.name)) role.traits.push(aiInjury.name);
-      role.traitDescs[aiInjury.name] = aiInjury.desc;
-      memberRes.newTraits.push(aiInjury);
     }
     // 结算完成：状态恢复为休息，精力回复 +30（封顶上限），气血/精力时间戳复位（与单机版一致）
     role.status = 'resting';

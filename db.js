@@ -296,7 +296,7 @@ const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'traits', 'equipment', 'bag', 'skills', 'skillPool',
+  'equipment', 'bag', 'skills', 'skillPool',
 ]);
 
 function adminCharacterSnapshot(data) {
@@ -1134,7 +1134,7 @@ function publicCharacterData(row) {
   const data = hydrated.data;
   // 公共角色卡片与“我的”使用同一套完整角色字段；不再单独维护容易漏字段的白名单。
   // 角色数据本身不包含密码、令牌等账号认证信息，可安全用于公开角色展示。
-  return {
+  const result = {
       ...data,
       id: row.id,
       name: row.name,
@@ -1150,12 +1150,9 @@ function publicCharacterData(row) {
       intelligence: data.intelligence,
       luck: data.luck,
       gold: data.gold,
-      root: Array.isArray(data.traits) && data.traits.length ? data.traits[0] : '',
       personality: data.personality || '',
       status: data.status,
       cultivation: data.cultivation,
-      traits: Array.isArray(data.traits) ? data.traits : [],
-      traitDescs: data.traitDescs && typeof data.traitDescs === 'object' ? data.traitDescs : {},
       injury: data.injury || null,
       title_frame: data.title_frame || '',
       latest_score: data.latest_score,
@@ -1167,6 +1164,11 @@ function publicCharacterData(row) {
       equippedItems: Array.isArray(data.equippedItems) ? data.equippedItems : [],
       updated_at: row.updated_at,
   };
+  // DNF60：特质属性已整体移除，公共角色不再携带 traits/traitDescs/root
+  delete result.traits;
+  delete result.traitDescs;
+  delete result.root;
+  return result;
 }
 function getPublicCharacters() {
   return db.prepare('SELECT id, user_id, name, data, updated_at FROM characters ORDER BY updated_at DESC').all().map(publicCharacterData).filter(Boolean);

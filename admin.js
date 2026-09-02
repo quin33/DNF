@@ -7,7 +7,7 @@
     'level', 'exp', 'gold', 'hp', 'max_hp', 'stamina', 'max_stamina',
     'strength', 'agility', 'intelligence', 'luck',
   ];
-  const ARRAY_FIELDS = ['traits', 'equipment', 'bag', 'skills', 'skillPool'];
+  const ARRAY_FIELDS = ['equipment', 'bag', 'skills', 'skillPool'];
   const FIELD_LABELS = {
     name: '角色名',
     character_class: '职业',
@@ -22,7 +22,6 @@
     agility: '敏捷',
     intelligence: '智力',
     luck: '幸运',
-    traits: '特质',
     equipment: '随身装备',
     bag: '背包',
     skills: '已学技能',
@@ -33,8 +32,8 @@
     'level', 'exp', 'gold', 'hp', 'max_hp', 'stamina', 'max_stamina',
     'strength', 'agility', 'intelligence', 'luck',
   ];
-  const COMPANION_ARRAY_FIELDS = ['traits', 'equipment', 'bag', 'skills', 'skillPool'];
-  const COMPANION_JSON_FIELDS = ['traitDescs'];
+  const COMPANION_ARRAY_FIELDS = ['equipment', 'bag', 'skills', 'skillPool'];
+  const COMPANION_JSON_FIELDS = [];
   const COMPANION_LONG_TEXT_FIELDS = ['bio', 'status'];
   const COMPANION_FIELD_LABELS = {
     ...FIELD_LABELS,
@@ -44,7 +43,6 @@
     title_frame: '卡框变体',
     status: '状态',
     bio: '人物小传',
-    traitDescs: '特质描述',
   };
 
   const elements = {

@@ -364,7 +364,6 @@
     if (mine) return { ...publicChar, ...mine, is_mine: true };
     return {
       ...publicChar,
-      traits: Array.isArray(publicChar.traits) ? publicChar.traits : (publicChar.root ? [publicChar.root] : []),
       _char_db_id: publicChar.id,
       _char_updated_at: publicChar.updated_at,
       is_mine: false,
@@ -1258,7 +1257,7 @@
       outcome: (step.success !== false ? 'good' : 'bad'), text: step.text || '', stepNo: step.no,
       enemy: step.enemy || '', realmB: step.realmB || 0, src: 'ai',
       itemUse: step.itemUse || null,
-      skillUse: step.skillUse ? { name: step.skillUse.name, type: step.skillUse.type, tier: step.skillUse.tier, elemMod: step.skillUse.elemMod || 0, success: step.skillUse.success, roll: step.roll, total: step.total } : null,
+      skillUse: step.skillUse ? { name: step.skillUse.name, type: step.skillUse.type, elemMod: step.skillUse.elemMod || 0, success: step.skillUse.success, roll: step.roll, total: step.total } : null,
     };
     run.steps.push(st);
     run.totalStep++;

@@ -2,10 +2,11 @@
    game-create.js · 在线版角色创建（服务端权威生成）
    常量与数据与单机版 index.html 保持一致（避免依赖拆分改动）
    —— DNF60：职业系统（五大初始职业 + Lv10 转职），技能二分类
-      物理技/魔法技 + 四档稀有度；字段名兼容旧结构（roots/rootKey）。
+      物理技/魔法技（已取消稀有度）；初始装备固定为
+      「职业新手武器 + 3 瓶治疗药水」，创建后放入随身装备。
    ============================================================ */
 
-// 五大初始职业（key 供前端选择；label=职业名；skills=初始 2 门技能）
+// 五大初始职业（key 供前端选择；label=职业名；skills=初始候选 4 门技能）
 const ROOT_KEYS = {
   slayer: { label: '鬼剑士', desc: '以刀剑为伴，斩尽地下城的魔物，出手凌厉，战意冲天。' },
   fighter: { label: '格斗家', desc: '拳拳到肉的近身斗士，身法矫健，信奉硬桥硬马的力量。' },
@@ -15,30 +16,46 @@ const ROOT_KEYS = {
 };
 const PERS_LIST = ['重诺', '好奇', '莽撞', '明哲', '高傲', '仗义', '孤僻', '狡诈'];
 const MAX_SKILLS = 5;
-const SKILL_TIERS = ['普通', '高级', '稀有', '神器'];
 
+/* 初始技能：参考 DNF 未转职角色基础技能，每职业 4 门候选，创建时由玩家 4 选 2。
+   技能不再携带稀有度（tier），仅保留 名称/类型/描述。 */
 const ROOT_SKILLS = {
   slayer: [
-    { name: '里鬼剑术', type: '物理技', elem: '', tier: '普通', desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
-    { name: '三段斩', type: '物理技', elem: '', tier: '普通', desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+    { name: '上挑', type: '物理技', elem: '', desc: '向上挥剑挑击，命中后把敌人挑至浮空，趁其离地衔接连击，是鬼剑士最常用的起手式。' },
+    { name: '三段斩', type: '物理技', elem: '', desc: '向前连续挥砍三刀，每段命中独立判定，最后一击力道最重，能把射程内的敌人一起震退。' },
+    { name: '鬼斩', type: '物理技', elem: '', desc: '蓄鬼气于剑锋，向前斩出暗色剑气，命中可使敌人短暂僵直，是输出与控场兼顾的一击。' },
+    { name: '裂波斩', type: '物理技', elem: '', desc: '挥剑斩出波动剑气，向前扩散撕开近身魔物护甲，范围虽窄出手极快，适合贴身拼刀。' },
   ],
   fighter: [
-    { name: '崩拳', type: '物理技', elem: '', tier: '普通', desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
-    { name: '背摔', type: '物理技', elem: '', tier: '普通', desc: '贴身擒抱，借力把敌人掼向地面，土石四溅。' },
+    { name: '上勾拳', type: '物理技', elem: '', desc: '沉腰挥出上勾拳，命中后把敌人挑离地面浮空，可接空中连击，是格斗家的主力起手技。' },
+    { name: '前踢', type: '物理技', elem: '', desc: '正面蹬出势大力沉的直踢，攻击距离远、命中把敌人踢退数步，拉开身位或起动连招皆宜。' },
+    { name: '下段踢', type: '物理技', elem: '', desc: '放低重心贴地横扫，命中使敌人下盘失衡踉跄不稳，能在对方起手时打断其攻击。' },
+    { name: '背摔', type: '物理技', elem: '', desc: '贴身擒抱住敌人，借力一拧将其过肩摔向地面，落地造成伤害并顺势压制，衔接地面连击。' },
   ],
   gunner: [
-    { name: '加特林扫射', type: '物理技', elem: '', tier: '高级', desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
-    { name: '银弹', type: '魔法技', elem: '', tier: '普通', desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+    { name: '瞬踢', type: '物理技', elem: '', desc: '近身快速一记侧踢，出脚快得难以捕捉，命中把敌人踢得后退，用来摆脱贴身缠斗。' },
+    { name: '浮空弹', type: '物理技', elem: '', desc: '抬枪朝敌人脚下射击，弹着冲击把人抬离地面浮空，为后续连射或连招留出稳定输出窗口。' },
+    { name: '加特林机枪', type: '物理技', elem: '', desc: '架起加特林向前持续扫射，弹幕密集覆盖一线，能把掩体后的敌人压得抬不起头。' },
+    { name: '膝撞', type: '物理技', elem: '', desc: '近身屈膝向上猛顶，命中把人顶得倒退并短暂僵直，趁对方弯腰僵直的功夫补上一枪。' },
   ],
   mage: [
-    { name: '魔力弹', type: '魔法技', elem: '', tier: '普通', desc: '指尖凝出一颗刺目的魔力弹，折线扑向敌人。' },
-    { name: '火球术', type: '魔法技', elem: '', tier: '普通', desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+    { name: '魔法星弹', type: '魔法技', elem: '', desc: '凝聚魔力射出一枚星形弹丸，碰到目标炸开星屑灼伤周围敌人，消耗少、出手快。' },
+    { name: '杰克爆弹', type: '魔法技', elem: '', desc: '向前掷出杰克南瓜炸弹，落地引爆火焰吞噬范围敌人，冷却短伤害足，清理成片的小怪。' },
+    { name: '冰霜雪人', type: '魔法技', elem: '', desc: '召唤冰霜雪人扑向敌人，撞碎时寒气四散，能让范围内的敌人减速并造成冰属性伤害。' },
+    { name: '魔力护盾', type: '魔法技', elem: '', desc: '张开一面魔力护盾，正面来的一部分伤害会被吸收，护盾碎裂瞬间把近身敌人震开。' },
   ],
   priest: [
-    { name: '圣光十字', type: '物理技', elem: '', tier: '普通', desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
-    { name: '治愈术', type: '魔法技', elem: '', tier: '高级', desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+    { name: '圣光十字', type: '物理技', elem: '', desc: '挥动十字架划出圣光正面扫落，圣光所过之处魔气消散，对黑暗系魔物格外克制。' },
+    { name: '治愈术', type: '魔法技', elem: '', desc: '引导圣光治愈同伴伤势，肉眼可见愈合，战斗中为前排持续回血，是圣职者的续航核心。' },
+    { name: '直拳冲击', type: '物理技', elem: '', desc: '把圣光凝聚在拳头上正拳轰出，命中造成可观伤害，并顺势击退敌人、震散其护体效果。' },
+    { name: '净化', type: '魔法技', elem: '', desc: '释放圣光涤荡体表，驱散诅咒毒素等异常，救急时能清空身上负面状态，稳住局面。' },
   ],
 };
+
+/* 初始装备：每个职业固定一把对应新手武器（复用 ITEM_CHOICES 的 weapon 项）。 */
+const ROOT_WEAPON = { slayer: 'sword', fighter: 'gauntlet', gunner: 'gun', mage: 'staff', priest: 'cross' };
+/* 初始治疗药水：3 瓶，创建后与职业武器一起放入随身装备。 */
+const STARTER_POTION = { name: '治疗药水', kind: 'pill', qty: 3, desc: '恢复药剂，饮下能愈合伤口。' };
 
 const ITEM_CHOICES = [
   { key: 'sword', name: '新手长刀', kind: 'weapon', desc: '刀鞘做旧，刃口还带着崩口，是初入阿拉德的冒险家最顺手的家伙。' },
@@ -53,11 +70,18 @@ const ITEM_CHOICES = [
   { key: 'explosive', name: '爆裂符', kind: 'talisman', desc: '以符文凝成的一次性爆裂咒，掷出即炸，杀伤可观。' },
 ];
 
-/* 服务端权威生成角色对象（与单机 createRole 同构） */
-function createCharacterObject({ name, rootKey, gender, pers, itemKeys }) {
+/* 服务端权威生成角色对象（与单机 createRole 同构）：
+   skills 为玩家选中的技能名数组（4 选 2），按 ROOT_SKILLS 顺序映射；
+   初始装备固定为 职业武器 + 3 瓶治疗药水，直接放入随身装备。 */
+function createCharacterObject({ name, rootKey, gender, pers, skills }) {
+  const source = ROOT_SKILLS[rootKey] || ROOT_SKILLS.slayer;
+  const chosen = (Array.isArray(skills) && skills.length ? skills : source.map(s => s.name));
+  const selected = source.filter(s => chosen.includes(s.name)).slice(0, 2);
   const root = ROOT_KEYS[rootKey] || ROOT_KEYS.slayer;
   const rand = () => 1 + Math.floor(Math.random() * 20);
   const now = Date.now();
+  const weaponKey = ROOT_WEAPON[rootKey] || ROOT_WEAPON.slayer;
+  const weapon = ITEM_CHOICES.find(i => i.key === weaponKey) || ITEM_CHOICES[0];
   return {
     id: now, name: String(name || '').trim(), title: '', status: 'resting', is_mine: true,
     gender: gender === '女' ? '女' : '男',
@@ -66,22 +90,24 @@ function createCharacterObject({ name, rootKey, gender, pers, itemKeys }) {
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 100, character_class: root.label, classTitle: null,
     personality: PERS_LIST.includes(pers) ? pers : PERS_LIST[0],
-    traits: ['初入阿拉德'],
-    skills: (ROOT_SKILLS[rootKey] || ROOT_SKILLS.slayer).map(s => ({ ...s })),
+    skills: selected.map(s => ({ ...s })),   // 技能栏：选中的 2 门（最多 5 门）
     skillPool: [],
-    equipment: [],
-    bag: (itemKeys || []).slice(0, 2).map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return it ? { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind } : null; }).filter(Boolean),
+    equipment: [
+      { name: weapon.name, desc: weapon.desc, qty: 1, kind: weapon.kind },
+      { ...STARTER_POTION },
+    ],
+    bag: [],
     latest_score: 0, praise_count: 0, is_followed: false,
   };
 }
 
-/* 创建表单数据（前端渲染用）；roots 仍是旧字段名，内容为职业列表 */
+/* 创建表单数据（前端渲染用）；roots 仍是旧字段名，内容为职业列表与候选技能 */
 function creationData() {
   return {
-    roots: Object.entries(ROOT_KEYS).map(([k, v]) => ({ key: k, ...v, skills: ROOT_SKILLS[k].map(s => ({ name: s.name, type: s.type, tier: s.tier, desc: s.desc })) })),
+    roots: Object.entries(ROOT_KEYS).map(([k, v]) => ({ key: k, ...v, skills: ROOT_SKILLS[k].map(s => ({ name: s.name, type: s.type, desc: s.desc })) })),
     pers: PERS_LIST,
     items: ITEM_CHOICES,
   };
 }
 
-module.exports = { createCharacterObject, creationData, ROOT_KEYS, ROOT_SKILLS, ITEM_CHOICES, PERS_LIST, MAX_SKILLS };
+module.exports = { createCharacterObject, creationData, ROOT_KEYS, ROOT_SKILLS, ROOT_WEAPON, ITEM_CHOICES, PERS_LIST, MAX_SKILLS };
