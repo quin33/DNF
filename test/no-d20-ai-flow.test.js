@@ -36,7 +36,7 @@ test('AI loot normalization drops short names and pseudo currencies', () => {
   const step = GE.normalizeAiStepResult({
     loot: [
       { name: '无' },
-      { name: '灵石三十块' },
+      { name: '金币三十块' },
       { name: '残箭杆' },
       { name: '幽绿灵骨珠', qty: 2, rarity: 'rare' },
     ],
@@ -61,14 +61,14 @@ test('applyDungeonSetup uses AI-selected enemies while ignoring out-of-pool name
     isHidden: true,
     specialEvent: true,
     breakthrough: true,
-    enemies: [{ name: '腐骨妖狼', realm: '练气三层' }, { name: '不存在的敌人', realm: '筑基中期' }],
+    enemies: [{ name: '腐骨妖狼', level: 'Lv.3' }, { name: '不存在的敌人', level: 'Lv.5' }],
   });
   assert.equal(dungeon.name, '白骨深渊·万骨冢');
   assert.equal(dungeon.desc, '隐藏');
   assert.equal(dungeon.isHidden, true);
   assert.equal(dungeon.specialEvent, true);
   assert.equal(dungeon.breakthrough, true);
-  assert.deepEqual(dungeon.enemies, [{ name: '腐骨妖狼', desc: '妖狼', realm: '练气三层' }]);
+  assert.deepEqual(dungeon.enemies, [{ name: '腐骨妖狼', desc: '妖狼', level: 3 }]);
 });
 
 test('server parseAiStoryResponse exposes AI step fields for single-player story route', () => {

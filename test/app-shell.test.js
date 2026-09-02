@@ -327,7 +327,7 @@ test('adventurer profile renders equipped skills with the same list style as the
   assert.match(profile, /skillListItemHTML/);
   assert.match(profile, /poolVisible/);
   assert.match(profile, /toggleAdvPoolExpand/);
-  assert.match(profile, /未装备功法 \/ 术法/);
+  assert.match(profile, /未装备技能/);
   assert.doesNotMatch(profile, /skill-grid|skill-slot/);
 });
 
@@ -343,8 +343,8 @@ test('adventurer combat profile renders magic items and storage with the same ca
   assert.match(combat, /itemCardHTML/);
   assert.match(combat, /toggleAdvBagExpand/);
   assert.match(combat, /skill-pool-list/);
-  assert.match(combat, /随身法宝/);
-  assert.match(combat, /储物袋/);
+  assert.match(combat, /随身装备/);
+  assert.match(combat, /背包/);
   assert.doesNotMatch(combat, /equip-card|ec-head|ec-name|ec-desc|ec-act|collect-grid|collect-card|cc-head|cc-name|cc-desc|cc-act/);
 });
 

@@ -159,7 +159,7 @@ function resolveGames(options = {}, env = process.env) {
   const xiuxianRoot = path.resolve(env.XIUXIAN_ROOT || path.join(dnfRoot, 'xiuxian'));
   return [
     { key: 'xiuxian', name: '问道仙坊', rootDir: xiuxianRoot, fallbackPort: 8787, entry: 'server.js' },
-    { key: 'dnf', name: 'DNF', rootDir: dnfRoot, fallbackPort: 8788, entry: 'server.js' },
+    { key: 'dnf', name: '地下城与勇士', rootDir: dnfRoot, fallbackPort: 8788, entry: 'server.js' },
   ];
 }
 

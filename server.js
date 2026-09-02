@@ -296,35 +296,36 @@ const AUTHORITATIVE_CHARACTER_FIELDS = new Set([
   'intelligence', 'luck', 'gold', 'exp', 'breakthroughBonus', 'injury',
 ]);
 const SERVER_LIBRARY_BOOKS = new Map([
-  ['tuna', { name: '吐纳诀', type: '功法', elem: '无', tier: '黄阶', price: 50, stock: 20, desc: '最基础的呼吸吐纳之法，引天地灵气入体，稳固根基，气脉绵长。' }],
-  ['yufeng', { name: '御风诀', type: '功法', elem: '无', tier: '玄阶', price: 60, stock: 18, desc: '运气于足底，身轻如燕，步法迅捷，探路逃遁皆有妙用。' }],
-  ['wood_shield', { name: '木盾术', type: '术法', elem: '木灵根', tier: '黄阶', price: 70, stock: 16, desc: '催生灵力凝成一面青木盾，可挡寻常刀剑与爪牙。' }],
-  ['fireball', { name: '火球术', type: '术法', elem: '火灵根', tier: '玄阶', price: 80, stock: 15, desc: '凝聚一团赤焰火球掷向敌手，爆裂灼烧，炼气期术法的招牌。' }],
-  ['water_arrow', { name: '水箭术', type: '术法', elem: '水灵根', tier: '地阶', price: 80, stock: 15, desc: '凝水成箭，破空无声，阴湿之地威力更盛。' }],
-  ['gold_blade', { name: '金刃术', type: '术法', elem: '金灵根', tier: '天阶', price: 80, stock: 15, desc: '凝聚一道锋锐金刃，可近可远，削铁如泥。' }],
-  ['lianxi', { name: '敛息术', type: '功法', elem: '无', tier: '玄阶', price: 90, stock: 12, desc: '收敛气息灵机，隐于暗处，修士探索阴地必备之技。' }],
-  ['qingmu', { name: '青木长生功', type: '功法', elem: '木灵根', tier: '天阶', price: 320, stock: 8, desc: '筑基级木系功法，吐纳青木生气，绵绵不绝，伤势恢复极快。' }],
-  ['xuanbing', { name: '玄冰真气', type: '功法', elem: '水灵根', tier: '地阶', price: 320, stock: 8, desc: '筑基级水系功法，引水灵凝寒成冰，真气过处寒气逼人。' }],
-  ['zixiao', { name: '紫霄雷法', type: '术法', elem: '雷灵根', tier: '天阶', price: 420, stock: 6, desc: '筑基级雷系术法，引紫霄天雷为己用，一击之威惊动四野。' }],
-  ['yujian', { name: '御剑术·初窥', type: '术法', elem: '金灵根', tier: '地阶', price: 450, stock: 5, desc: '剑修入门秘录，御使飞剑千里取敌，初窥门径已非凡俗可比。' }],
+  ['tuna', { name: '里鬼剑术', type: '物理技', elem: '无', tier: '普通', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' }],
+  ['yufeng', { name: '银弹', type: '魔法技', elem: '无', tier: '普通', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' }],
+  ['wood_shield', { name: '圣光十字', type: '物理技', elem: '无', tier: '普通', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' }],
+  ['fireball', { name: '火球术', type: '魔法技', elem: '无', tier: '普通', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' }],
+  ['water_arrow', { name: '冰霜雪人', type: '魔法技', elem: '无', tier: '高级', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' }],
+  ['gold_blade', { name: '崩拳', type: '物理技', elem: '无', tier: '普通', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' }],
+  ['lianxi', { name: '三段斩', type: '物理技', elem: '无', tier: '普通', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' }],
+  ['qingmu', { name: '治愈术', type: '魔法技', elem: '无', tier: '高级', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' }],
+  ['xuanbing', { name: '鬼斩', type: '物理技', elem: '无', tier: '稀有', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' }],
+  ['zixiao', { name: '浮空弹', type: '物理技', elem: '无', tier: '普通', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
+  ['yujian', { name: '加特林扫射', type: '物理技', elem: '无', tier: '稀有', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
 ]);
 const serverLibraryStock = new Map([...SERVER_LIBRARY_BOOKS].map(([code, book]) => [code, book.stock]));
+
+/* DNF60 转职：Lv10 突破门 → 转职，职业固定、子职业由玩家在转职时选择。 */
+const SUBCLASS_BY_CLASS = {
+  '鬼剑士': ['剑魂', '狂战士', '鬼泣', '阿修罗'],
+  '格斗家': ['气功师', '散打', '街霸', '柔道家'],
+  '神枪手': ['漫游枪手', '枪炮师', '机械师', '弹药专家'],
+  '魔法师': ['元素师', '召唤师', '战斗法师', '魔道学者'],
+  '圣职者': ['圣骑士', '蓝拳圣使', '驱魔师', '复仇者'],
+};
 
 const CULTIVATION_HALF_HOUR_MS = 30 * 60 * 1000;
 const CULTIVATION_HOUR_MS = 60 * 60 * 1000;
 const BREAKTHROUGH_DURATION_MS = 2 * CULTIVATION_HOUR_MS;
 
-function cultivationRealmForLevel(level) {
-  if (level <= 10) return '练气' + (level === 1 ? '一层' : ['二', '三', '四', '五', '六', '七', '八', '九', '十'][level - 2] + '层');
-  if (level === 11) return '筑基前期';
-  if (level === 12) return '筑基中期';
-  if (level === 13) return '筑基后期';
-  return '筑基圆满';
-}
-
+/* 职业固定、不随等级改写；Lv10 突破门 = 转职（见 settleCultivation 与转职接口）。 */
 function applyCultivationExp(role, amount) {
   const levels = GE.applyExperience(role, amount);
-  if (levels.length) role.character_class = cultivationRealmForLevel(role.level);
   return levels;
 }
 
@@ -356,7 +357,7 @@ function settleCultivation(role, now = Date.now(), randomFn = Math.random) {
       role.level = 11;
       role.exp = 0;
       GE.applyLevelGrowth(role, { breakthrough: true });
-      role.character_class = '筑基前期';
+      role.classTitle = (SUBCLASS_BY_CLASS[role.character_class] || ['转职中'])[0];
       role.breakthroughBonus = 0;
       return { changed: true, event: { type: 'breakthrough_success', chance } };
     }
@@ -368,24 +369,24 @@ function settleCultivation(role, now = Date.now(), randomFn = Math.random) {
 }
 
 function cultivationStartBlocked(role) {
-  if (role.cultivation) return '角色正在闭关';
-  if (role.status === 'insighting' || role.taixuInsight) return '角色正在太虚幻境参悟';
-  if (['in_party', 'adventuring'].includes(role.status)) return '角色当前无法闭关';
+  if (role.cultivation) return '角色正在修炼';
+  if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
+  if (['in_party', 'adventuring'].includes(role.status)) return '角色当前无法修炼';
   return '';
 }
 
 function characterBusyReason(role) {
   if (!role) return '';
-  if (role.status === 'insighting' || role.taixuInsight) return '角色正在太虚幻境参悟';
-  if (role.status === 'adventuring') return '角色正在探险';
-  if (role.cultivation) return '角色正在闭关';
+  if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
+  if (role.status === 'adventuring') return '角色正在地下城探险';
+  if (role.cultivation) return '角色正在修炼';
   if (role.status === 'in_party') return '角色正在队伍中';
   return '';
 }
 
-// 装备与功法调整只在实际探险期间锁定；闭关、参悟、组队等待等状态仍可整理战备。
+// 装备与技能调整只在实际探险期间锁定；修炼、顿悟、组队等待等状态仍可整理战备。
 function equipmentActionBusyReason(role) {
-  if (role && role.status === 'adventuring') return '角色正在探险';
+  if (role && role.status === 'adventuring') return '角色正在地下城探险';
   return '';
 }
 
@@ -548,37 +549,37 @@ function sanitizeAdminCompanion(input, existing) {
 /* ============================================================
    AI 提示词（整合世界观 / 结构 / 叙事 / 装备 / 技能 / 判定）
    ============================================================ */
-const SYSTEM_PROMPT = `你是《问道仙坊》的探险日志作家，一名修仙志怪小说作者。游戏世界观：天地灵气枯竭后，修仙者聚居在洞天福地，经「灵墟」（上古战场破碎空间）探险求道；修仙体系参考：炼气、筑基、金丹、元婴、化神、炼虚、合体、大乘、渡劫。可提及功法、法宝、丹药、阵法、符箓、灵兽、禁制、心魔、天劫等元素；角色四维为体魄/身法/神识/气运；货币为灵石。**修士皆隶属宗门，灵墟探险多为宗门派发的任务——每次进入副本都是受宗门差遣，任务完成须回宗门复命并领取报酬。**
+const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险日志作家，一名DNF题材冒险小说作者。游戏世界观：玩家是**阿拉德大陆的冒险家**，在城镇**赫顿玛尔**从**冒险家公会任务板**接取悬赏差遣，组队进入**阿拉德地下城**刷图，清怪 → 领主 → 翻牌/撤离 → 回城领金币。战斗体系为职业+等级（Lv.1 起步，60 级封顶，首期内容覆盖 Lv.1~19 的格兰之森→天空之城→天帷巨兽），技能分**物理技**（靠体魄，探测/缠斗类）与**魔法技**（靠智力，攻伐/治愈类）两系，稀有度分**普通/高级/稀有/神器**四档；角色四维为**力量/敏捷/智力/幸运**；货币为**金币**。角色从五大初始职业中择一（鬼剑士/格斗家/神枪手/魔法师/圣职者），Lv10 死亡门是**转职**，此后职业前挂子职业（如「鬼剑士·剑魂」）。
 
 叙事规则：
-1. 使用古风仙侠文笔，兼有白话叙事，画面感强，节奏张弛有度。
-2. 战斗描写要符合境界与法宝特性，避免一刀999或无脑碾压；若敌人境界高于队伍，需体现苦战、智取或撤退。
-3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、灵根、特质、境界体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含道友/师兄/姑娘/兄台等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化（例如"魔法少女早苗酱"不得写作"早苗酱"或"酱"，"唐三"不得写作"唐"），每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
-9. **特质即经历与能力依据**：每名角色的特质是过往经历凝成的能力，**生成剧情时必须在合适时机让特质因果性地发挥作用**——不是偶然提一句，而是"因有某特质→事件随之发生"：如「辨别灵草（初级）」的修士在探索中更容易发现灵草药草、能识别毒草（找到灵草的机会增加）；「灵觉敏锐/听风辨位」者先察觉危险与伏击；「断后英杰」者在队伍遇险时挺身断后；「寻宝直觉/气运缠身」者更易发现暗格秘藏；「百毒不侵」者出入瘴毒之地更有底气。特质未直接相关的场景不必强用，但特质相关的机会要明显增多。
-4. 四名队员必须有差异化的表现：依据其性格、功法和法宝分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成“特质/技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果”的完整因果链，不能只写“参与攻击”或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
-5. 技能优先：角色的功法/术法是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制），功法偏修炼蓄势、术法偏攻防应变；判定成功则写得势如破竹、灵光迸发，判定失败则如实写施法受挫、灵光未聚。未选中技能时，也可在合适时机自然带出角色的功法术法。
-6. 结合副本背景：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**修为（【此间生灵】/【深处首领】中已标注，如练气三层、筑基初期）要在战斗描写中自然体现**——修为高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、丹药、符箓、材料、杂物、功法术法卷轴等皆可，只要与副本故事设定自洽即可（例如古战场可出残兵锈甲与军功之物，药镇废墟可出药炉丹方），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得灵石时在正文写明具体数量（如"得了三十块灵石"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或“无”）。
-6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出“借给/递给/交给/暂借”的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
-7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人修为、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
-8. **宗门任务设定**：本次探险是宗门派发的任务——开局阶段必须尽早交代任务由来：由宗门长辈/执事差遣，结合副本背景说明任务目的（如调查异动、寻回失物、清剿妖兽、取回传承等），队伍受命出发；收尾阶段必须描写**回到宗门复命、领取任务报酬**（写明报酬灵石数量），收束故事。
-9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、首领凶威、身负重伤、灵光将尽等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、修为被敌人碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向宗门复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
-10. **突破试炼（练气十层 → 筑基前期）**：当【当前进度】为「突破」阶段（见【突破试炼】标注），说明队伍中有角色修为已至练气十层满（灵机盈满），正面临突破筑基的关隘。**本阶段必须围绕该角色（主角）安排一场突破试炼**：可召唤天劫淬体、心魔问心、道基重铸、斩我明道等（贴合其灵根与修行路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则突破成功（灵台清明、道基稳固、踏入筑基）；失败则功亏一篑（气血翻涌、受创，修为仍停留练气十层，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
+1. 使用 DNF 风味冒险笔法（兼具白话叙事与画面感），节奏张弛有度，可写出地下城的阴森、怪物的狰狞与冒险家间的默契。
+2. 战斗描写要符合职业与等级特性，避免一刀清场或无脑碾压；若敌人等级高于队伍，需体现苦战、智取或撤退。
+3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、职业、等级、特质体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含老兄/姑娘/前辈等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化，每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
+4. **特质即经历与能力依据**：每名角色的特质是过往经历凝成的能力，**生成剧情时必须在合适时机让特质因果性地发挥作用**——不是偶然提一句，而是"因有某特质→事件随之发生"：如「夜视之眼」者在地下城黑暗中先察觉危险与伏击；「寻宝直觉/气运缠身」者更易发现暗格秘藏；「老练猎手」者能辨足迹、寻猎物；「百毒不侵」者出入瘴毒之地更有底气；「胆大心细」者看着莽撞却总能稳住局面。特质未直接相关的场景不必强用，但特质相关的机会要明显增多。
+5. **队伍差异化**：四名队员必须有差异化的表现：依据其性格、职业和技能分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成"特质/技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果"的完整因果链，不能只写"参与攻击"或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
+6. **技能优先**：角色的物理技/魔法技是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制），物理技偏硬桥硬马的压制与格挡，魔法技偏元素爆发与治愈；判定成功则写得势如破竹、光焰迸发，判定失败则如实写施法受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
+7. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
+7b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
+8. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
+9. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
+10. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主凶威、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
+11. **晋级/转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职**关隘。**本阶段必须围绕该角色（主角）安排一场转职试炼**：可写技能觉醒、职业之魂考验、心魔问心等（贴合其职业与技能路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业真意，晋升子职业，如「鬼剑士·剑魂」）；失败则功亏一篑（受伤、受创，等级仍留 Lv.10，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
 
-阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出“依据 → 行动 → 结果”，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或归途步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
+阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出"依据 → 行动 → 结果"，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或归途步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
 
 function buildUserMessage(b) {
   const lines = [];
   const dynamic = b.flowMode === 'dynamic';
   lines.push(`【副本】${b.dungeon}${b.isHidden ? '（隐藏副本，原名 ' + b.baseDungeon + '）' : ''}`);
-  if (b.specialEvent) lines.push('【特殊事件】本局触发异象：副本整体凶险更甚（敌人修为更高、机关更险），但机缘亦更丰厚——剧情中应烘托出异象骤生、凶机并现的氛围，战利品与报酬可以更丰。');
+  if (b.specialEvent) lines.push('【特殊事件】本局触发异象：副本整体凶险更甚（敌人等级更高、机关更险），但机缘亦更丰厚——剧情中应烘托出异象骤生、凶机并现的氛围，战利品与报酬可以更丰。');
   if (b.lore) lines.push(`【背景】${b.lore}`);
-  if (b.enemies && b.enemies.length) lines.push(`【此间生灵】${b.enemies.map(e => e.name + '（' + (e.realm || '修为不明') + '）：' + e.desc).join('；')}`);
-  if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.realm || '修为不明') + '）：' + x.desc).join('；')}`);
+  if (b.enemies && b.enemies.length) lines.push(`【此间生灵】${b.enemies.map(e => e.name + '（' + (e.level != null ? 'Lv.' + e.level : (e.realm || '等级不明')) + '）：' + e.desc).join('；')}`);
+  if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.level != null ? 'Lv.' + x.level : (x.realm || '等级不明')) + '）：' + x.desc).join('；')}`);
   lines.push('【队伍】');
   (b.party || []).forEach(m => {
-    const sk = (m.skills || []).map(s => `${s.name}（${s.tier || '黄阶'}·${s.type || '功法'}：${s.desc || '无描述'}）`).join('、') || '无';
+    const sk = (m.skills || []).map(s => `${s.name}（${s.tier || '普通'}·${s.type || '物理技'}：${s.desc || '无描述'}）`).join('、') || '无';
     const items = (m.items || []).map(i => `${i.name}（${i.kind || '杂物'}：${i.desc || '无描述'}，持有人：${i.ownerName || m.name || '未知'}）`).join('，') || '无';
-    lines.push(`· ${m.name}（${m.gender || '男'}·${m.realm}·${m.root}·性格${m.personality}）｜特质：${(m.traits || []).join('、')}｜功法术法：${sk}｜携带：${items}`);
+    lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·性格${m.personality}）｜特质：${(m.traits || []).join('、')}｜技能：${sk}｜携带：${items}`);
   });
   if (Array.isArray(b.ownedItems) && b.ownedItems.length) {
     lines.push(`【物品归属】${b.ownedItems.map(item => `${item.name}（${item.ownerName || '未知'}持有）`).join('；')}`);
@@ -589,12 +590,12 @@ function buildUserMessage(b) {
     const preferredMaxSteps = Number(b.preferredMaxSteps == null ? 25 : b.preferredMaxSteps);
     lines.push(`【当前进度】第 ${b.stepNo} 步 · 正常目标为 ${b.minSteps}~${preferredMaxSteps} 步 · 安全边界：最少 ${b.minSteps} 步，最多 ${b.maxSteps} 步 · 当前阶段：${b.phase || b.stage || 'explore'}`);
     lines.push(`【篇幅规则】${preferredMaxSteps} 步是建议长度，不是强制结束点；只有任务、遭遇与已有伏笔均已妥善解决时才可自然收尾。第 ${b.maxSteps} 步为硬上限。`);
-    lines.push(`【任务状态】任务状态：${quest.status || 'active'}；目标：${quest.objective || '完成宗门差遣'}`);
+    lines.push(`【任务状态】任务状态：${quest.status || 'active'}；目标：${quest.objective || '完成公会悬赏'}`);
     lines.push(`【遭遇状态】遭遇状态：${encounter.status || 'none'}${encounter.name ? '；当前对象：' + encounter.name : ''}`);
     if (b.nextHint) lines.push(`【待续线索】${b.nextHint}`);
     if (b.lastDecision && Object.keys(b.lastDecision).length) lines.push(`【上步决策】${JSON.stringify(b.lastDecision)}`);
     lines.push('【流程决策】不按预设阶段顺序推进，由 AI 自行决定下一叙事方向。phase 只是建议，引擎会拒绝不合法的搜刮或收尾；任务、首领或其他危险未解决时应继续当前冲突、转入休整或明确撤退。encounterStatus 只有在正文确实解决、击退或逃脱当前遭遇后才能写 resolved/escaped。questStatus、encounterStatus 与 continue 只描述本步已经发生或明确决定的状态，不得预告未来结果。');
-    lines.push('【道具权限】只能使用本步明确列出的道具。默认仅可使用本步主角自身携带的装备或背包物品；不得擅自使用其他角色的道具，也不得让其他角色持有、取出或展示他人道具。只有正文明确写出原持有人将道具借给/递给/交给/暂借使用者时，才允许队友使用，并必须保持“使用者、原持有人、道具、数量”的对应关系。非消耗道具借出后使用完毕应归还原持有人；丹药、符箓等一次性道具只有正文明确服用、激发或消耗后才扣除。道具名必须与【物品归属】完全一致，不得缩写。');
+    lines.push('【道具权限】只能使用本步明确列出的道具。默认仅可使用本步主角自身携带的装备或背包物品；不得擅自使用其他角色的道具，也不得让其他角色持有、取出或展示他人道具。只有正文明确写出原持有人将道具借给/递给/交给/暂借使用者时，才允许队友使用，并必须保持“使用者、原持有人、道具、数量”的对应关系。非消耗道具借出后使用完毕应归还原持有人；药水、爆裂符等一次性道具只有正文明确服用、激发或消耗后才扣除。道具名必须与【物品归属】完全一致，不得缩写。');
     if (Array.isArray(b.availableItems) && b.availableItems.length) lines.push(`【本步可用道具】${b.availableItems.map(i => `${i.name}（${i.userName || b.actor || '当前角色'}使用，原持有人：${i.ownerName || i.userName || b.actor || '当前角色'}${i.loaned ? '，已明确借出' : '，自有'}）`).join('；')}`);
     if (Number(b.stepNo) >= Math.max(Number(b.minSteps), preferredMaxSteps - 5) && Number(b.stepNo) <= preferredMaxSteps) lines.push('【收束段】已进入目标区间的收束段。停止新增支线，不得新增地点、线索、敌人、任务目标或更深一层谜团；本步必须推动已有任务或遭遇接近完成。不得为了补足角色高光而延长故事，尚未获得高光的角色可在解决现有冲突时自然贡献，不另开事件。');
     if (Number(b.stepNo) > preferredMaxSteps && Number(b.stepNo) < Number(b.maxSteps) - 1) lines.push(`【超出建议篇幅】已经超过建议的 ${preferredMaxSteps} 步，但不得仅因超过建议长度就结束。现在禁止新增地点、线索、敌人、任务目标或支线；每一步都必须减少至少一项未决事项。优先在本步直接解决当前遭遇，并把任务标记为 completed、failed 或 retreated；若本步确实无法完成，nextHint 只能填写最后一个已有障碍，最多再用 3 步解决或明确撤退，不得继续 explore 或制造后续谜团。`);
@@ -606,34 +607,34 @@ function buildUserMessage(b) {
   if (b.focus) lines.push(`【本段叙事焦点】${b.focus.actor || b.actor || '当前角色'}（连续焦点第 ${b.focus.step || 1}/${b.focus.size || 1} 步）${b.focus.highlight ? '；本步为高光收束：必须写出“特质/技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果”' : '；保持该角色的内心、判断与行动连续，不得无理由切换到其他角色的主视角'}`);
   if (b.allowedCharacters && b.allowedCharacters.length) lines.push(`【本步允许出场】${b.allowedCharacters.join('、')}`);
   if (b.forbiddenCharacters && b.forbiddenCharacters.length) lines.push(`【本步禁止主动出场】${b.forbiddenCharacters.join('、')}`);
-  if (b.stage === 'breakthrough' || b.stageLabel === '突破') lines.push('【突破试炼】本步为突破试炼（练气十层 → 筑基前期）：围绕主角安排突破关隘（天劫/心魔/道基重铸等），成败按本步判定（success 见【检定】）自然收束。');
+  if (b.stage === 'breakthrough' || b.stageLabel === '晋级') lines.push('【突破试炼】本步为转职试炼（Lv.10 → 转职）：围绕主角安排转职关隘（技能觉醒/职业之魂考验等），成败按本步判定（success 见【检定】）自然收束。');
   if (b.actor) lines.push(`【本步主角】${b.actor}${b.support ? '（与 ' + b.support + (b.support2 ? '、' + b.support2 : '') + ' 配合）' : ''}：本步成败、受伤与收获由你依据剧情直接判定，不要模拟骰子。`);
   if (b.enemy) lines.push(`【当前敌人】${b.enemy.name}：${b.enemy.desc || ''}`);
   if (b.actor) {
     const actorInfo = (b.party || []).find(member => member.name === b.actor) || (b.party || [])[0];
-    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}（${s.tier || '黄阶'}·${s.type || '功法'}）`).join('、');
+    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}（${s.tier || '普通'}·${s.type || '物理技'}）`).join('、');
     if (skillList) lines.push(`【本步可用技能】${skillList}`);
   }
   if (b.skillUse) {
     const em = b.skillUse.elemMod || 0;
-    const emTxt = em > 0 ? '此技能与施法者灵根同属，施展得心应手、威力增益' : '';
+    const emTxt = em > 0 ? '此技能与施法者特质契合，施展得心应手、威力增益' : '';
     lines.push(`【本步技能】${b.skillUse.name}（${b.skillUse.type}）：是否使用及成败由你直接判定${emTxt ? '（' + emTxt + '）' : ''}。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
   }
   if (b.itemUse) {
     lines.push(`【装备判定】${b.itemUse.name}（${b.itemUse.kind}）${b.itemUse.loaned ? `由${b.itemUse.ownerName || '原持有人'}明确借给${b.itemUse.userName || b.actor || '使用者'}` : `由${b.itemUse.ownerName || b.actor || '使用者'}本人持有`}：是否使用及成败由你直接判定，不使用或失败则正文如实写未能奏效。`);
   }
   if (b.context) lines.push(`【前文衔接】\n${b.context}`);
-  if (b.stepNo === 1) lines.push('【开局】这是本次探险的第一步（入谷）：请交代这是宗门派发的任务——由宗门长辈/执事差遣，结合副本背景说明任务目的（调查异动/寻回失物/清剿妖兽等），描写队伍受命出发，营造任务感。');
-  if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（归途）：请描写队伍**回到宗门复命、领取任务报酬**（写明报酬灵石数量），回顾得失，收束故事，留有余韵。');
+  if (b.stepNo === 1) lines.push('【开局】这是本次探险的第一步（进入地下城）：请交代这是公会派发的悬赏——由公会执事在任务板派单，结合副本背景说明任务目的（调查异动/寻回失物/清剿怪物/讨伐领主等），描写队伍受命出发，营造任务感。');
+  if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（撤离回城）：请描写队伍**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），回顾得失，收束故事，留有余韵。');
   if (dynamic) {
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
     lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
-    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的气血（无则为 0）；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
+    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0）；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
   } else {
     if (Array.isArray(b.availableItems) && b.availableItems.length) lines.push(`【本步可用道具】${b.availableItems.map(i => `${i.name}（${i.userName || b.actor || '当前角色'}使用，原持有人：${i.ownerName || i.userName || b.actor || '当前角色'}${i.loaned ? '，已明确借出' : '，自有'}）`).join('；')}`);
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
     lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"itemUse":null,"skillUse":null,"loot":[]}');
-    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的气血（无则为 0）；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
+    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0）；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
   }
   return lines.join('\n');
 }
@@ -643,7 +644,7 @@ function buildUserMessage(b) {
    ============================================================ */
 function fastRoomLlmResponse(systemPrompt) {
   if (systemPrompt === SETUP_PROMPT) return JSON.stringify({ hidden: false, specialEvent: false, breakthrough: false, enemies: [] });
-  if (systemPrompt === SUMMARY_PROMPT) return '众修士稳步穿过险地，勘明路径后平安归返。';
+  if (systemPrompt === SUMMARY_PROMPT) return '众冒险家稳步穿过险地，勘明路径后平安归返。';
   if (systemPrompt === OUTCOME_PROMPT) return JSON.stringify({ ok: true, reason: '队伍完成探索并安全返回', statBuffs: [], traits: [], injury: null, scroll: null });
   if (systemPrompt === EXTRACT_LOOT_PROMPT || systemPrompt === LEARNED_SKILL_PROMPT) return '[]';
   if (systemPrompt === DEATH_SUMMARY_PROMPT) return JSON.stringify({ overall: '', roles: [] });
@@ -754,13 +755,13 @@ function finalizeTaixuInsightJob(job, now = Date.now()) {
     if (state.phase !== 'ready' || !state.skill) {
       role.status = 'resting';
       delete role.taixuInsight;
-      role.taixuInsightNotice = { jobId: job.id, ok: false, error: '太虚幻境参悟未能在一小时内完成', completedAt: now };
+      role.taixuInsightNotice = { jobId: job.id, ok: false, error: '觉醒祭坛顿悟未能在一小时内完成', completedAt: now };
       const saved = DB.saveCharacterIfCurrent(job.userId, job.charId, current.updated_at, role, role.name);
       if (!saved) return null;
       notifyCharacterUpdated(job.userId, job.charId, saved.updated_at);
       job.status = 'failed';
       job.finished_at = now;
-      job.error = '太虚幻境参悟未能在一小时内完成';
+      job.error = '觉醒祭坛顿悟未能在一小时内完成';
       return { status: 'failed', error: job.error };
     }
 
@@ -804,14 +805,14 @@ async function runTaixuInsightJob(job) {
         lastError = error;
       }
     }
-    if (!skill) throw new Error('太虚幻境未能参悟出可用能力，请稍后重试');
+    if (!skill) throw new Error('觉醒祭坛未能顿悟出可用能力，请稍后重试');
 
-    // AI 生成期间只暂存结果；角色必须等满一小时参悟时间后才能获得技能。
+    // AI 生成期间只暂存结果；角色必须等满一小时顿悟时间后才能获得技能。
     const latestCharacter = DB.getCharacter(job.userId, job.charId);
     if (!latestCharacter) throw new Error('角色不存在');
     role = latestCharacter.data;
     const state = role.taixuInsight;
-    if (!state || state.jobId !== job.id || role.status !== 'insighting') throw new Error('太虚幻境参悟任务已失效');
+    if (!state || state.jobId !== job.id || role.status !== 'insighting') throw new Error('觉醒祭坛顿悟任务已失效');
     const latestKnownNames = new Set([...(role.skills || []), ...(role.skillPool || [])].map(entry => entry && entry.name).filter(Boolean));
     if (latestKnownNames.has(skill.name)) throw new Error('角色数据已更新，请重试');
     state.phase = 'ready';
@@ -828,7 +829,7 @@ async function runTaixuInsightJob(job) {
   } catch (error) {
     job.status = 'failed';
     job.finished_at = Date.now();
-    job.error = String(error && error.message || error || '太虚幻境参悟失败').slice(0, 200);
+    job.error = String(error && error.message || error || '觉醒祭坛顿悟失败').slice(0, 200);
     const current = DB.getCharacter(job.userId, job.charId);
     if (current && current.data.taixuInsight && current.data.taixuInsight.jobId === job.id) {
       current.data.status = 'resting';
@@ -865,7 +866,7 @@ async function generateForgeResult(materials) {
   let parseError = null;
   for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
     try {
-      const raw = await callLLM('投入材料：' + mats + '\n请判断合理性并炼器。', FORGE_PROMPT, 1200);
+      const raw = await callLLM('投入材料：' + mats + '\n请判断合理性并锻造。', FORGE_PROMPT, 1200);
       let jsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
       const st = jsonStr.indexOf('{'), en = jsonStr.lastIndexOf('}');
       if (st >= 0 && en > st) jsonStr = jsonStr.slice(st, en + 1);
@@ -874,20 +875,20 @@ async function generateForgeResult(materials) {
   }
   if (!parsed) throw new Error('AI 返回格式异常，请稍后重试');
   if (typeof parsed.success !== 'boolean') throw new Error('AI 未返回可用的成败判定');
-  const process = String(parsed.process || '炼器大师引火熔合两件材料，灵力交织后塑成一件新的法器。').slice(0, 100);
+  const process = String(parsed.process || '铁匠大师引火熔合两件材料，淬炼交织后锻成一件崭新的装备。').slice(0, 100);
   if (parsed.success) {
-    if (!parsed.item || !parsed.item.name) throw new Error('AI 未返回可用的法器');
+    if (!parsed.item || !parsed.item.name) throw new Error('AI 未返回可用的装备');
     const it = parsed.item;
     const highestRarity = (materials || []).reduce((best, material) => {
       const rarity = normalizeForgeRarity(material.rarity);
       return FORGE_RARITIES.indexOf(rarity) > FORGE_RARITIES.indexOf(best) ? rarity : best;
     }, 'common');
     const rarity = forgeRarityUpgrade(highestRarity);
-    const itemName = String(it.name || '').replace(/ +/g, '').trim() || '新炼法器';
-    const itemDesc = String(it.desc || '新炼成的法器').replace(/ +/g, '').trim() || '两件材料融合炼成的法器。';
-    return { ok: true, process, item: { name: itemName.slice(0, 12), desc: itemDesc.slice(0, 200), kind: ['武器', '防具', '法宝', '工具'].includes(it.kind) ? it.kind : '法宝', rarity: normalizeForgeRarity(it.rarity || rarity) } };
+    const itemName = String(it.name || '').replace(/ +/g, '').trim() || '新锻造装备';
+    const itemDesc = String(it.desc || '新锻造的装备').replace(/ +/g, '').trim() || '两件材料融合锻成的装备。';
+    return { ok: true, process, item: { name: itemName.slice(0, 12), desc: itemDesc.slice(0, 200), kind: ['武器', '防具', '首饰', '工具'].includes(it.kind) ? it.kind : '首饰', rarity: normalizeForgeRarity(it.rarity || rarity) } };
   }
-  return { ok: false, process, reason: String(parsed.reason || '两件材料属性冲突，灵力无法相融，炉火失衡未能成器').replace(/ +/g, '').slice(0, 100), item: { name: '未定型法器', desc: '材料冲突，炼制失败，未形成可用法器。', kind: '法宝', rarity: 'common' } };
+  return { ok: false, process, reason: String(parsed.reason || '两件材料属性冲突，锻造时无法相融，锤火失衡未能成器').replace(/ +/g, '').slice(0, 100), item: { name: '未定型装备', desc: '材料冲突，锻造失败，未形成可用装备。', kind: 'equipment', rarity: 'common' } };
 }
 
 async function runForgeJob(job) {
@@ -911,7 +912,7 @@ async function runForgeJob(job) {
     }
     if (!Array.isArray(role.bag)) role.bag = [];
     const existingOutput = role.bag.find(entry => entry && entry.name === String(generated.item.name).slice(0, 24));
-    if (generated.ok && !existingOutput && role.bag.length >= 100) throw new Error('储物袋已满，无法收纳炼器产物');
+    if (generated.ok && !existingOutput && role.bag.length >= 100) throw new Error('背包已满，无法收纳锻造产物');
     role.stamina = Math.max(0, Number(role.stamina || 0) - FORGE_STAMINA_COST);
     const lost = [];
     if (!generated.ok) {
@@ -928,7 +929,7 @@ async function runForgeJob(job) {
         const found = list.find(entry => entry && entry.name === material.name);
         if (found) { found.qty = (found.qty || 1) - 1; if (found.qty <= 0) list.splice(list.indexOf(found), 1); }
       });
-      const item = { name: String(generated.item.name).slice(0, 24), desc: String(generated.item.desc || '新炼成的法器').slice(0, 200), kind: generated.item.kind, qty: 1, rarity: normalizeForgeRarity(generated.item.rarity) };
+      const item = { name: String(generated.item.name).slice(0, 24), desc: String(generated.item.desc || '新锻造的装备').slice(0, 200), kind: generated.item.kind, qty: 1, rarity: normalizeForgeRarity(generated.item.rarity) };
       const existing = role.bag.find(entry => entry && entry.name === item.name);
       if (existing) { existing.qty = (existing.qty || 1) + 1; existing.desc = item.desc; existing.kind = item.kind; existing.rarity = item.rarity; }
       else role.bag.push(item);
@@ -943,7 +944,7 @@ async function runForgeJob(job) {
   } catch (error) {
     job.status = 'failed';
     job.finished_at = Date.now();
-    job.error = String(error && error.message || error || '炼器失败').slice(0, 200);
+    job.error = String(error && error.message || error || '锻造失败').slice(0, 200);
     console.warn('[forge-job]', job.error);
   }
 }
@@ -1425,13 +1426,13 @@ async function handleAuthAPI(req, res, urlPath) {
       const blocked = cultivationStartBlocked(character.data);
       if (blocked) { sendJSON(res, 400, { error: blocked }); return true; }
       const cost = hours * 100;
-      if (Number(character.data.gold || 0) < cost) { sendJSON(res, 400, { error: '灵石不足' }); return true; }
+      if (Number(character.data.gold || 0) < cost) { sendJSON(res, 400, { error: '金币不足' }); return true; }
       character.data.gold -= cost;
       character.data.status = 'cultivating';
       character.data.cultivation = { mode: 'cultivate', startedAt: now, endsAt: now + hours * CULTIVATION_HOUR_MS, lastSettledAt: now, spentGold: cost };
       event = { type: 'cultivation_started', hours, cost };
     } else if (action === 'cultivation/exit') {
-      if (!character.data.cultivation || character.data.cultivation.mode !== 'cultivate') { sendJSON(res, 400, { error: '当前未在闭关修炼' }); return true; }
+      if (!character.data.cultivation || character.data.cultivation.mode !== 'cultivate') { sendJSON(res, 400, { error: '当前未在修炼' }); return true; }
       const exitResult = settleCultivation(character.data, now);
       delete character.data.cultivation;
       character.data.status = 'resting';
@@ -1439,7 +1440,7 @@ async function handleAuthAPI(req, res, urlPath) {
     } else {
       const blocked = cultivationStartBlocked(character.data);
       if (blocked) { sendJSON(res, 400, { error: blocked }); return true; }
-      if (!GE.canBreakthrough(character.data)) { sendJSON(res, 400, { error: '需达到练气十层圆满（2000 经验）' }); return true; }
+      if (!GE.canBreakthrough(character.data)) { sendJSON(res, 400, { error: '需达到 Lv.10 圆满（2000 经验）' }); return true; }
       character.data.status = 'breaking_through';
       character.data.cultivation = { mode: 'breakthrough', startedAt: now, endsAt: now + BREAKTHROUGH_DURATION_MS, lastSettledAt: now, spentGold: 0 };
       event = { type: 'breakthrough_started', chance: Math.min(1, 0.5 + Number(character.data.breakthroughBonus || 0)) };
@@ -1470,7 +1471,7 @@ async function handleAuthAPI(req, res, urlPath) {
         taixuInsightJobs.set(job.id, job);
       }
     }
-    if (!job || job.userId !== u.id || job.charId !== charId) { sendJSON(res, 404, { error: '参悟任务不存在或已过期' }); return true; }
+    if (!job || job.userId !== u.id || job.charId !== charId) { sendJSON(res, 404, { error: '顿悟任务不存在或已过期' }); return true; }
     if (job.status === 'ready') {
       const character = DB.getCharacter(u.id, charId);
       const state = character && character.data && character.data.taixuInsight;
@@ -1479,7 +1480,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (job.status === 'completed') {
       sendJSON(res, 200, { ...job.result, status: 'completed', jobId: job.id });
     } else if (job.status === 'failed') {
-      sendJSON(res, 200, { ok: false, status: 'failed', jobId: job.id, error: job.error || '太虚幻境参悟失败' });
+      sendJSON(res, 200, { ok: false, status: 'failed', jobId: job.id, error: job.error || '觉醒祭坛顿悟失败' });
     } else {
       const character = DB.getCharacter(u.id, charId);
       const state = character && character.data && character.data.taixuInsight;
@@ -1497,7 +1498,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!Number.isSafeInteger(body.updated_at) || body.updated_at < 0) { sendJSON(res, 400, { error: '角色版本无效' }); return true; }
     const type = String(body.type || '').trim();
     const goal = String(body.goal || '').trim();
-    if (!TI.VALID_TYPES.has(type)) { sendJSON(res, 400, { error: '参悟类型只能是功法或术法' }); return true; }
+    if (!TI.VALID_TYPES.has(type)) { sendJSON(res, 400, { error: '领悟类型只能是物理技或魔法技' }); return true; }
     if (!goal || goal.length > 100) { sendJSON(res, 400, { error: '期望目标需为 1 至 100 字' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
@@ -1540,9 +1541,9 @@ async function handleAuthAPI(req, res, urlPath) {
     if (req.method !== 'GET') { sendJSON(res, 405, { error: 'Method Not Allowed' }); return true; }
     const charId = Number(forgeJobMatch[1]);
     const job = forgeJobs.get(forgeJobMatch[2]);
-    if (!job || job.userId !== u.id || job.charId !== charId) { sendJSON(res, 404, { error: '炼器任务不存在或已过期' }); return true; }
+    if (!job || job.userId !== u.id || job.charId !== charId) { sendJSON(res, 404, { error: '锻造任务不存在或已过期' }); return true; }
     if (job.status === 'completed') sendJSON(res, 200, { ...job.result, status: 'completed', jobId: job.id });
-    else if (job.status === 'failed') sendJSON(res, 200, { ok: false, status: 'failed', jobId: job.id, error: job.error || '炼器失败' });
+    else if (job.status === 'failed') sendJSON(res, 200, { ok: false, status: 'failed', jobId: job.id, error: job.error || '锻造失败' });
     else sendJSON(res, 200, { ok: true, status: job.status, jobId: job.id });
     return true;
   }
@@ -1555,7 +1556,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const body = JSON.parse(await readBody(req));
     if (!Number.isSafeInteger(body.updated_at) || body.updated_at < 0) { sendJSON(res, 400, { error: '角色版本无效' }); return true; }
     const materials = Array.isArray(body.materials) ? body.materials.slice(0, 2) : [];
-    if (materials.length !== 2) { sendJSON(res, 400, { error: '炼器需要两件材料' }); return true; }
+    if (materials.length !== 2) { sendJSON(res, 400, { error: '锻造需要两件材料' }); return true; }
     const itemInput = body.item && typeof body.item === 'object' ? body.item : null;
     if (!itemInput) {
       const character = DB.getCharacter(u.id, charId);
@@ -1570,7 +1571,7 @@ async function handleAuthAPI(req, res, urlPath) {
       sendJSON(res, 202, { ok: true, status: 'pending', jobId: job.id });
       return true;
     }
-    if (!itemInput || !String(itemInput.name || '').trim()) { sendJSON(res, 400, { error: '缺少炼器产物' }); return true; }
+    if (!itemInput || !String(itemInput.name || '').trim()) { sendJSON(res, 400, { error: '缺少锻造产物' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
     settlePassiveRecovery(character.data);
@@ -1591,7 +1592,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!Array.isArray(role.bag)) role.bag = [];
     const existingOutput = role.bag.find(entry => entry && entry.name === String(itemInput.name).slice(0, 24));
     if (itemInput.success !== false && !existingOutput && role.bag.length >= 100) {
-      sendJSON(res, 400, { error: '储物袋已满，无法收纳炼器产物' });
+      sendJSON(res, 400, { error: '背包已满，无法收纳锻造产物' });
       return true;
     }
     role.stamina = Math.max(0, Number(role.stamina || 0) - FORGE_STAMINA_COST);
@@ -1618,7 +1619,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const highestRarity = materialEntries.map((material, index) => normalizeForgeRarity(material.entry.rarity || materials[index].rarity)).reduce((best, rarity) => {
       return FORGE_RARITIES.indexOf(rarity) > FORGE_RARITIES.indexOf(best) ? rarity : best;
     }, 'common');
-    const item = { name: String(itemInput.name).slice(0, 24), desc: String(itemInput.desc || '新炼成的法器').slice(0, 200), kind: ['武器', '防具', '法宝', '工具'].includes(itemInput.kind) ? itemInput.kind : '法宝', qty: 1, rarity: normalizeForgeRarity(itemInput.rarity) };
+    const item = { name: String(itemInput.name).slice(0, 24), desc: String(itemInput.desc || '新锻造的装备').slice(0, 200), kind: ['武器', '防具', '首饰', '工具'].includes(itemInput.kind) ? itemInput.kind : '首饰', qty: 1, rarity: normalizeForgeRarity(itemInput.rarity) };
     const existing = role.bag.find(entry => entry && entry.name === item.name);
     if (existing) { existing.qty = (existing.qty || 1) + 1; existing.desc = item.desc; existing.kind = item.kind; existing.rarity = item.rarity; }
     else role.bag.push(item);
@@ -1663,23 +1664,23 @@ async function handleAuthAPI(req, res, urlPath) {
       const max = action === 'inventory_equip' ? 5 : 100;
       const index = Number(body.index);
       if (!Number.isSafeInteger(index) || index < 0 || index >= from.length) { sendJSON(res, 400, { error: '物品位置无效' }); return true; }
-      if (to.length >= max) { sendJSON(res, 400, { error: action === 'inventory_equip' ? '随身法宝已满' : '储物袋已满' }); return true; }
+      if (to.length >= max) { sendJSON(res, 400, { error: action === 'inventory_equip' ? '随身装备已满' : '背包已满' }); return true; }
       to.push(from.splice(index, 1)[0]);
     } else if (action === 'skill_equip' || action === 'skill_unequip') {
       const from = action === 'skill_equip' ? role.skillPool : role.skills;
       const to = action === 'skill_equip' ? role.skills : role.skillPool;
       const index = Number(body.index);
-      if (!Number.isSafeInteger(index) || index < 0 || index >= from.length) { sendJSON(res, 400, { error: '功法位置无效' }); return true; }
-      if (action === 'skill_equip' && to.length >= 5) { sendJSON(res, 400, { error: '功法栏已满' }); return true; }
+      if (!Number.isSafeInteger(index) || index < 0 || index >= from.length) { sendJSON(res, 400, { error: '技能位置无效' }); return true; }
+      if (action === 'skill_equip' && to.length >= 5) { sendJSON(res, 400, { error: '技能栏已满' }); return true; }
       to.push(from.splice(index, 1)[0]);
     } else if (action === 'library_buy') {
       const code = String(body.code || '');
       const book = SERVER_LIBRARY_BOOKS.get(code);
-      if (!book) { sendJSON(res, 400, { error: '功法不存在' }); return true; }
-      if ([...role.skills, ...role.skillPool].some(skill => skill && skill.name === book.name)) { sendJSON(res, 400, { error: '已拥有该功法' }); return true; }
+      if (!book) { sendJSON(res, 400, { error: '技能不存在' }); return true; }
+      if ([...role.skills, ...role.skillPool].some(skill => skill && skill.name === book.name)) { sendJSON(res, 400, { error: '已拥有该技能' }); return true; }
       const stock = Number(serverLibraryStock.get(code) || 0);
       if (stock <= 0) { sendJSON(res, 400, { error: '已售罄' }); return true; }
-      if (Number(role.gold || 0) < book.price) { sendJSON(res, 400, { error: '灵石不足' }); return true; }
+      if (Number(role.gold || 0) < book.price) { sendJSON(res, 400, { error: '金币不足' }); return true; }
       const skill = { name: book.name, type: book.type, elem: book.elem, tier: book.tier, desc: book.desc };
       role.gold = Number(role.gold || 0) - book.price;
       (role.skills.length < 5 ? role.skills : role.skillPool).push(skill);
@@ -1733,7 +1734,7 @@ async function handleAuthAPI(req, res, urlPath) {
       if (busy) { sendJSON(res, 409, { error: busy, code: 'character_busy' }); return true; }
       settlePassiveRecovery(current.data);
       for (const field of AUTHORITATIVE_CHARACTER_FIELDS) {
-        // 闭关页面会提交其本地计时快照，服务端随后在读取时结算；仅允许该专用同步场景。
+        // 修炼页面会提交其本地计时快照，服务端随后在读取时结算；仅允许该专用同步场景。
         if (field === 'exp' && current.data.cultivation && data.cultivation) continue;
         if (Object.prototype.hasOwnProperty.call(data, field) && JSON.stringify(data[field]) !== JSON.stringify(current.data[field])) {
           sendJSON(res, 400, { error: '角色经济与战斗字段只能由服务端操作' }); return true;
@@ -1791,83 +1792,83 @@ async function handleAuthAPI(req, res, urlPath) {
   return false;  // 非账号 API，交给后续路由
 }
 
-/* 道具描述生成：为每件新获得的战利品编写修仙风格描述（严格 JSON 输出） */
-const LOOT_PROMPT = `你是《问道仙坊》的宝物文案作者。为给定列表中的每件道具编写一段 15~40 字的修仙风格描述：点明材质、来历或用途，语言凝练有古意，贴合道具名。严格只输出一个 JSON 数组，不要任何解释或标记，格式：[{"name":"道具名","desc":"描述"}]，数组必须包含输入的全部道具名，顺序不限。`;
+/* 道具描述生成：为每件新获得的战利品编写冒险风格描述（严格 JSON 输出） */
+const LOOT_PROMPT = `你是《地下城与勇士》的宝物文案作者。为给定列表中的每件道具编写一段 15~40 字的冒险风格描述：点明材质、来历或用途，语言凝练有画面感，贴合道具名。严格只输出一个 JSON 数组，不要任何解释或标记，格式：[{"name":"道具名","desc":"描述"}]，数组必须包含输入的全部道具名，顺序不限。`;
 
 /* 探险总结生成：为整篇探险日志写一段 ≤200 字的总结 */
-const SUMMARY_PROMPT = `你是《问道仙坊》的日志编者。请只根据本局提供的完整探险段落，写一段本局独有的总结，不超过 150 字。必须引用本局实际发生的至少一个具体事件、角色行动、敌人或收获；不得只根据副本名、固定背景或模板作答。每局措辞和内容都应随日志变化。语言凝练，带仙侠韵味，只输出总结正文，不要标题，不要解释。`;
+const SUMMARY_PROMPT = `你是《地下城与勇士》的冒险日志编者。请只根据本局提供的完整探险段落，写一段本局独有的总结，不超过 150 字。必须引用本局实际发生的至少一个具体事件、角色行动、敌人或收获；不得只根据副本名、固定背景或模板作答。每局措辞和内容都应随日志变化。语言凝练，带冒险气息，只输出总结正文，不要标题，不要解释。`;
 
-const DEATH_SUMMARY_PROMPT = `你是《问道仙坊》的执事史官。请通读本局完整探险日志，只依据日志中实际发生的内容，分析死亡角色的具体死因。
+const DEATH_SUMMARY_PROMPT = `你是《地下城与勇士》的公会史官。请通读本局完整探险日志，只依据日志中实际发生的内容，分析死亡角色的具体死因。
 严格只输出一个 JSON 对象，不要代码围栏或额外文字：
 {"overall":"对本局死亡角色共同遭遇/结局的总结，100字以内","roles":[{"name":"死亡角色完整姓名","reason":"结合全文说明该角色为何死亡，100字以内"}]}
 要求：overall 和每条 reason 都必须不超过 100 个汉字；不得臆造日志未出现的事件；roles 只填写输入名单中的死亡角色，每个角色恰好一条；若多人死亡，分别说明各自最后导致死亡的行动、伤势、敌人或环境因素。`;
 
 /* 探险成败判定：AI 通读整篇日志后，依据最终剧情走向判定本次探险是成功还是失败 */
-const OUTCOME_PROMPT = `你是《问道仙坊》的执事长老。阅读这篇探险日志的完整剧情，判断这次探险的最终结果：
+const OUTCOME_PROMPT = `你是《地下城与勇士》的公会执事。阅读这篇探险日志的完整剧情，判断这次探险的最终结果：
 1. **成功**：队伍达成了任务目标或至少全身而退（即使中途有波折、受伤、损失道具，只要最终完成任务或顺利撤离）；
 2. **失败**：剧情明确以任务失败、队伍溃败/团灭、被逐出副本、核心目标未达成且付出惨重代价告终；**队伍在途中逃跑/撤退脱身同样视为失败**（未完成任务，哪怕保住了性命）。
 注意：仅凭单次受挫、一次大失败、或某段描写凶险，不构成失败；必须以全文的最终结局为准。
 同时决定本局结算中的成长与机缘：
-1. statBuffs：依据每位成员在本局中的实际表现，自行决定是否获得 1 点属性成长以及加在哪一项（体魄/身法/神识/气运）；没有则留空数组。不要随机补发，成员必须有明确的成长理由。
+1. statBuffs：依据每位成员在本局中的实际表现，自行决定是否获得 1 点属性成长以及加在哪一项（力量/敏捷/智力/幸运）；没有则留空数组。不要随机补发，成员必须有明确的成长理由。
 2. traits：依据剧情中的实际表现（断后、临危、寻宝、苦战等）自行决定是否授予永久特质；没有充分叙事依据就留空数组，不要为了奖励而补发。特质名必须为 6~12 字，描述必须为 20~100 字且同时详细说明获取经历与未来探险中的具体效果，不得与已有特质重复。
 3. injury：只能从输入列出的“重伤候选”中选择至多一人判断是否获得临时受伤特质。通常不要授予，仅在剧情明确支持且伤势会形成持续影响的少数情况下低概率授予；不授予时为 null。授予时 grant 必须为 true，名称必须为 6~12 字，描述必须为 20~100 字并详细说明受伤经历与伤势效果。
-4. scroll：依据本局是否明确获得功法/术法传承或卷轴，自行决定是否掉落卷轴；没有则 null，有则给出类型。
+4. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出 {type} 与名称。
 严格只输出一个 JSON 对象，不要任何解释或标记：
-{"ok":true,"reason":"简短理由","statBuffs":[{"member":"角色完整姓名","attribute":"体魄"}],"traits":[{"member":"角色完整姓名","name":"绝境守心如铁","desc":"包含获取经历与具体效果的详细描述"}],"injury":{"member":"重伤候选中的角色完整姓名","grant":true,"name":"经脉震裂未愈","desc":"包含受伤经历与具体效果的详细描述"},"scroll":null}
+{"ok":true,"reason":"简短理由","statBuffs":[{"member":"角色完整姓名","attribute":"力量"}],"traits":[{"member":"角色完整姓名","name":"绝境守心如铁","desc":"包含获取经历与具体效果的详细描述"}],"injury":{"member":"重伤候选中的角色完整姓名","grant":true,"name":"筋骨震裂未愈","desc":"包含受伤经历与具体效果的详细描述"},"scroll":null}
 或
 {"ok":false,"reason":"简短理由","statBuffs":[],"traits":[],"injury":null,"scroll":null}`;
 
-/* 功法/术法卷轴生成：10% 概率的稀有战利品（严格 JSON 输出） */
-const SCROLL_PROMPT = `你是《问道仙坊》的藏经阁执事。创作一部{type}卷轴——不是功法本体，而是记载修炼之法的卷轴（拓本/残卷/秘录皆可）。要求：
-1. 起一个简洁贴切的名字（2~12 字，如"《青木养气诀》残卷""御风术·拓本""庚金炼体要旨"）；
+/* 技能书/传承卷轴生成：10% 概率的稀有战利品（严格 JSON 输出） */
+const SCROLL_PROMPT = `你是《地下城与勇士》的导师大厅执事。创作一部{type}技能书——不是技能本身，而是记载战斗之法的技能书/传承卷轴（拓本/残卷/秘录皆可）。要求：
+1. 起一个简洁贴切的名字（2~12 字，如"《银弹》残缺手记""崩拳·秘传要旨""三层斩断章"）；
 2. 写一段 15~40 字的描述：来历、内容、价值；
-3. 卷轴名与描述都要有修仙韵味，风格与《问道仙坊》一致。
-严格只输出一个 JSON 对象，不要任何解释或标记：{"name":"卷轴名","desc":"描述"}`;
+3. 技能书名与描述都要有 DNF 冒险风味，风格与《地下城与勇士》一致。
+严格只输出一个 JSON 对象，不要任何解释或标记：{"name":"技能书名","desc":"描述"}`;
 
-/* 炼器：AI 综合材料属性自行判断成败，并生成对应的完整叙事。 */
-const FORGE_PROMPT = `你是《问道仙坊》的器道宗师，执掌炼器坊。请综合两件材料的名称、描述、种类、品质、五行/属性关联、炼器常理与组合契合度，自行判断本次炼器成功或失败。
-1. **合理性判断**（符合修仙世界观与炼器常理）：材料带有品质（普通/稀有/珍贵/传说），高品质材料（稀有及以上）炼成的法器应相应更珍奇，可在描述中体现品质带来的不凡之处；
-   - 合理的组合：金属/矿石/兽骨/妖皮/灵木/灵植/符箓/法宝残片等炼器材料之间相互熔炼组合（如"铁剑+灵骨碎片"→骨铁兵刃、"兽皮+骨笛"→皮骨法器）；
-   - 不合理的组合：丹药/食物/货币/活物等不宜入炉之物，或风马牛不相及的材料拼凑（如"聚气丹+罗盘"），判为不合理并说明理由。
-2. 只有判断成功时才生成法器：产物必须契合两件材料特性，起名 2~10 字，写 50~200 字详细描述（包括材质、来历、外观、核心能力、适用场景或限制），kind 为"武器/防具/法宝/工具"之一，并给出合理品质。
-3. 成功时 process 写结合、淬炼、定型及产物形成的完整流程，100 字以内；失败时 process 写炉火变化、材料冲突或失控、最终未成器的完整过程，100 字以内；reason 写具体失败原因，50 字以内。失败流程和理由不得出现成功、成器、定型完成或获得法器等成功结局。
+/* 锻造：AI 综合材料属性自行判断成败，并生成对应的完整叙事。 */
+const FORGE_PROMPT = `你是《地下城与勇士》的铁匠宗师（凯丽的同行）。请综合两件材料的名称、描述、种类、品质、属性关联、锻造常理与组合契合度，自行判断本次锻造成功或失败。
+1. **合理性判断**（符合 DNF 世界观与锻造常理）：材料带有品质（普通/稀有/珍贵/传说），高品质材料（稀有及以上）锻成的装备应相应更珍奇，可在描述中体现品质带来的不凡之处；
+   - 合理的组合：金属/矿石/兽骨/皮毛/木材/晶体/符文等锻造材料之间相互熔炼组合（如"铁剑+兽皮"→皮铁兵刃、"兽骨+布甲"→骨甲护具）；
+   - 不合理的组合：药水/食物/货币/活物等不宜入炉之物，或风马牛不相及的材料拼凑（如"魔力药剂+旧怀表"），判为不合理并说明理由。
+2. 只有判断成功时才生成装备：产物必须契合两件材料特性，起名 2~10 字，写 50~200 字详细描述（包括材质、来历、外观、核心能力、适用场景或限制），kind 为"武器/防具/首饰/工具"之一，并给出合理品质。
+3. 成功时 process 写结合、淬炼、定型及产物形成的完整流程，100 字以内；失败时 process 写炉火变化、材料冲突或失控、最终未成器的完整过程，100 字以内；reason 写具体失败原因，50 字以内。失败流程和理由不得出现成功、成器、定型完成或获得装备等成功结局。
 严格只输出一个 JSON 对象，不要任何解释或标记：
-{"success":true,"item":{"name":"法器名","desc":"详细描述","kind":"武器","rarity":"rare"},"process":"与成败一致的炼器流程","reason":"失败原因；成功时为空"}`;
+{"success":true,"item":{"name":"装备名","desc":"详细描述","kind":"武器","rarity":"rare"},"process":"与成败一致的锻造流程","reason":"失败原因；成功时为空"}`;
 
 /* 战利品提取：从探险日志全文中语义提取角色们获得的道具（AI 理解剧情，能区分"获得"与"提及"），并为每件写描述 */
-const EXTRACT_LOOT_PROMPT = `你是《问道仙坊》的结算师。只根据带有“第N段”编号的探险日志全文，找出本局剧情中**明确写出获得动作**的全部道具（包括击败首领后明确获得的首领遗物）。战利品必须来自剧情中明确发生的获得动作，例如"获得/捞到/捡到/摸出/拾起/拾得/搜刮到/缴获/寻得/翻出/收下/取走/到手/得"；不得根据副本名称、固定掉落表、首领配置或常识自行补充未在剧情中获得的物品。注意排除：
-1. 只是被提及/使用/携带的装备与工具（如"催动避瘴珠""摸了摸兽皮囊""提着灵锄"——这不是获得）；
-2. 消耗掉的使用物（丹药、符箓等）；
-3. 灵石等货币。
-输出名称统一为 4~12 字；原文道具名不足 4 字时，按物品特征补足为完整名称（如“残箭”→“残箭杆”），不得输出 3 字及以下的简称、货币或“无”。
-**必须穷尽列举**：只要出现获得动作指向的物品，即使一句话带过、即使只有一枚/半张，也要列出（例："拾起一枚幽绿磷骨珠""弯腰捡起半张兽皮"都要列入）。不设掉落件数、数量或稀有度预算，剧情没有明确获得任何道具时允许输出空数组。
+const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根据带有“第N段”编号的探险日志全文，找出本局剧情中**明确写出获得动作**的全部道具（包括击败首领后明确获得的首领遗物）。战利品必须来自剧情中明确发生的获得动作，例如"获得/捞到/捡到/摸出/拾起/拾得/搜刮到/缴获/寻得/翻出/收下/取走/到手/得"；不得根据副本名称、固定掉落表、首领配置或常识自行补充未在剧情中获得的物品。注意排除：
+1. 只是被提及/使用/携带的装备与工具（如"挥动短剑""摸了摸背包""提着火把"——这不是获得）；
+2. 消耗掉的使用物（药水、符纸等）；
+3. 金币等货币。
+输出名称统一为 4~12 字；原文道具名不足 4 字时，按物品特征补足为完整名称（如“木棒”→“哥布林的木棒”），不得输出 3 字及以下的简称、货币或“无”。
+**必须穷尽列举**：只要出现获得动作指向的物品，即使一句话带过、即使只有一枚/半张，也要列出（例："拾起一枚龙人鳞片""弯腰捡起半卷绷带"都要列入）。不设掉落件数、数量或稀有度预算，剧情没有明确获得任何道具时允许输出空数组。
 为每件道具填写：
 - name：该段原文中的道具名（4~12 字）；canonicalName：同一实体在全文中的统一名称（4~12 字），别名必须统一；
-- desc：15~40 字修仙风格描述；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/rare/epic/legendary；
+- desc：15~40 字冒险风格描述；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/rare/epic/legendary；
 - owner：剧情明确写出最终拿取、收下或持有者时填队伍成员完整姓名；集体保管、无人明确取得或无法判断时填空字符串；
 - sourceStep：首次明确获得所在的段落编号；entityId：同一实体稳定且简短的标识；
 - sameAsStep：若本条只是后文再次提到此前已获得的同一实体，填写首次获得段落编号，此时不得当作新掉落；若是新的获得事件则填 null。
 严格只输出一个 JSON 数组，不要任何解释或标记；每个对象单独占一行，格式：
-[{"name":"青白古剑","canonicalName":"殉剑古剑","desc":"描述","qty":1,"rarity":"epic","owner":"洛清欢","sourceStep":12,"entityId":"sword-1","sameAsStep":null},
-{"name":"殉剑古剑","canonicalName":"殉剑古剑","desc":"描述","qty":1,"rarity":"epic","owner":"洛清欢","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
+[{"name":"锋刃短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":12,"entityId":"sword-1","sameAsStep":null},
+{"name":"精铁短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
 兼容要求：旧格式的 name/desc/qty/rarity 仍可使用。没有获得任何道具时输出 []。`;
 
 /* 特质颁发：AI 结合剧情为成员颁发新特质（名字 + 描述） */
-const TRAIT_PROMPT = `你是《问道仙坊》的宗门藏经阁执事。修士「{member}」刚完成一次灵墟探险，请根据他/她在剧情中的实际表现（英勇断后、临危不乱、中毒负伤、寻宝发现、击杀强敌、辨识药草等）为其颁发一个新特质：
-1. 特质名 6~12 字，可带熟练度后缀（初级/中级/高级），如"辨别灵草（初级）""绝境断后英杰""百毒侵身不倒""临危守心不乱""灵墟猎宝直觉"，要贴合剧情行为，不要与已有特质重复（已有：{existing}）；
+const TRAIT_PROMPT = `你是《地下城与勇士》的公会执事。冒险家「{member}」刚完成一次地下城探险，请根据他/她在剧情中的实际表现（英勇断后、临危不乱、中毒负伤、寻宝发现、击杀强敌、辨识机关等）为其颁发一个新特质：
+1. 特质名 6~12 字，可带熟练度后缀（初级/中级/高级），如"辨别机关（初级）""绝境断后英杰""百毒侵身不倒""临危守心不乱""地下城猎宝直觉"，要贴合剧情行为，不要与已有特质重复（已有：{existing}）；
 2. 写一段 20~100 字的详细描述：必须同时说明因何具体经历获得、体现何种能力，以及未来探险中该特质会如何发挥具体效果。
 严格只输出一个 JSON 对象，不要任何解释或标记：{"name":"绝境守心如铁","desc":"在本次探险中独自断后并护住同伴，因此今后遭遇强敌时更能稳住心神并提高防守表现。"}`;
 
-const LEARNED_SKILL_PROMPT = `你是《问道仙坊》的藏经阁执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的功法/术法。不要把原本已经会、仅仅施展、只是提及、获得卷轴但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名、功法或术法类型、黄阶/玄阶/地阶/天阶品阶与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","type":"功法或术法","tier":"黄阶","desc":"技能描述"}]`;
+const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的物理技/魔法技。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名、物理技或魔法技类型、普通/高级/稀有/神器品阶与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","type":"物理技","tier":"普通","desc":"技能描述"}]`;
 
-/* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、修为 */
-const SETUP_PROMPT = `你是《问道仙坊》的开局推演师。根据副本背景、队伍修为与角色特质，决定本次探险的局势：
+/* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级 */
+const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色特质，决定本次探险的局势：
 1. hidden：是否触发隐藏凶地（首领盘踞、名称改变、凶险加倍）；normal：false。
 2. specialEvent：是否触发特殊异象（整体难度与机缘上调）；normal：false。
-3. breakthrough：仅当队伍中有练气十层圆满的角色时可为 true，否则必须 false。
-4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定合理修为（练气一层~十层，特殊事件可至筑基初期/中期）。
+3. breakthrough：仅当队伍中有 Lv.10 圆满的角色时可为 true，否则必须 false。
+4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定合理等级（1~10，特殊事件可至 11/12，即"Lv.11"）。
 严格只输出一个 JSON 对象，不要任何解释或标记：
-{"hidden":false,"specialEvent":false,"breakthrough":false,"enemies":[{"name":"敌人名","realm":"练气三层"}]}`;
+{"hidden":false,"specialEvent":false,"breakthrough":false,"enemies":[{"name":"敌人名","level":3}]}`;
 
 function parseSetupJson(raw) {
   let s = String(raw || '').replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -1885,10 +1886,10 @@ function normalizeAiSetup(parsed, payload = {}) {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim();
     const src = pool.find(x => String(x.name || '').trim() === name);
     if (!src || seen.has(name)) return null;
-    const realm = String(entry && entry.realm || '').trim();
-    const validRealm = /^(练气[一二三四五六七八九十]+层|筑基(初期|前期|中期|后期))$/.test(realm);
+    const rawLevel = Number(entry && entry.level != null ? entry.level : (String(entry && entry.realm || '').match(/Lv\.?(\d+)/i) || [])[1]);
+    const level = Number.isFinite(rawLevel) && rawLevel > 0 ? Math.min(19, Math.round(rawLevel)) : 1;
     seen.add(name);
-    return { ...src, realm: validRealm ? realm : '练气一层' };
+    return { ...src, level };
   }).filter(Boolean);
   const specialEvent = parsed.specialEvent === true;
   return {
@@ -1911,7 +1912,7 @@ async function aiDecideSetup(payload = {}) {
   let lastError = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const raw = await callLLM('副本：' + body.dungeon + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.realm || '修为不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（' + (body.role.character_class || '练气一层') + '·' + ((body.role.traits || [])[0] || '') + '）\n' + (body.breakthroughEligible ? '【突破】该角色已至练气十层圆满，可触发突破试炼。' : ''), SETUP_PROMPT, 1200);
+      const raw = await callLLM('副本：' + body.dungeon + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.level != null ? 'Lv.' + b.level : '等级不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（Lv.' + (body.role.level || 1) + '·' + (body.role.character_class || '职业不明') + (body.role.classTitle ? '·' + body.role.classTitle : '') + '）\n' + (body.breakthroughEligible ? '【突破】该角色已至 Lv.10 圆满，可触发转职试炼。' : ''), SETUP_PROMPT, 1200);
       return normalizeAiSetup(parseSetupJson(raw), body);
     } catch (e) {
       lastError = e;
@@ -1987,7 +1988,7 @@ function parseDeathSummary(raw, deadNames) {
 function fallbackDeathSummary(deadNames, dungeonName) {
   const names = Array.from(new Set((deadNames || []).map(name => String(name || '').trim()).filter(Boolean)));
   return {
-    overall: `本局有${names.length}名角色在「${String(dungeonName || '灵墟')}」中因气血耗尽陨落。`.slice(0, 100),
+    overall: `本局有${names.length}名角色在「${String(dungeonName || '地下城')}」中因生命归零阵亡。`.slice(0, 100),
     roles: names.map(name => ({ name, reason: `角色「${name}」在探险中气血归零，道消身殒。`.slice(0, 100) })),
   };
 }
@@ -1996,7 +1997,7 @@ async function generateDeathSummary(storyText, dungeonName, deadNames) {
   const names = Array.from(new Set((deadNames || []).map(name => String(name || '').trim()).filter(Boolean)));
   if (!names.length) return { overall: '', roles: [] };
   const raw = await callLLM(
-    `副本：${String(dungeonName || '灵墟')}\n死亡角色名单：${names.join('、')}\n\n探险日志全文（必须以此为唯一依据）：\n${String(storyText || '').slice(0, 12000)}`,
+    `副本：${String(dungeonName || '地下城')}\n阵亡角色名单：${names.join('、')}\n\n探险日志全文（必须以此为唯一依据）：\n${String(storyText || '').slice(0, 12000)}`,
     DEATH_SUMMARY_PROMPT,
     2500,
   );
@@ -2206,7 +2207,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = JSON.parse(await readBody(req));
       const logText = String(body.log || '').slice(0, 8000);
-      const dungeon = String(body.dungeon || '灵墟');
+      const dungeon = String(body.dungeon || '地下城');
       const raw = await callLLM(`副本：${dungeon}\n\n探险日志全文：\n${logText}`, SUMMARY_PROMPT);
       // 150 字以内截断（保留完整句子）
       let text = raw.trim();
@@ -2227,7 +2228,7 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = JSON.parse(await readBody(req));
       const logText = String(body.log || '').slice(0, 12000);
-      const dungeon = String(body.dungeon || '灵墟');
+      const dungeon = String(body.dungeon || '地下城');
       const deadNames = Array.isArray(body.roles) ? body.roles.map(name => String(name || '').trim()).filter(Boolean).slice(0, 12) : [];
       const result = await generateDeathSummary(logText, dungeon, deadNames);
       sendJSON(res, 200, result);
@@ -2313,7 +2314,7 @@ const server = http.createServer(async (req, res) => {
     if (!requireAiAccess(req, res)) return;
     try {
       const body = JSON.parse(await readBody(req));
-      const member = String(body.member || '修士').slice(0, 20);
+      const member = String(body.member || '冒险家').slice(0, 20);
       const logText = String(body.log || '').slice(0, 12000);
       const existing = Array.isArray(body.existing) ? body.existing.map(String) : [];
       const raw = await callLLM('探险日志全文：\n' + logText, TRAIT_PROMPT.replace('{member}', member).replace('{existing}', existing.join('、') || '无'));
@@ -2334,7 +2335,7 @@ const server = http.createServer(async (req, res) => {
     if (!requireAiAccess(req, res)) return;
     try {
       const body = JSON.parse(await readBody(req));
-      const type = body.type === '术法' ? '术法' : '功法';
+      const type = body.type === '魔法技' ? '魔法技' : '物理技';
       const raw = await callLLM('请创作一部' + type + '卷轴。', SCROLL_PROMPT.replace('{type}', type));
       // 容错解析：去 ```json 包裹，截取首个 { ... } 段
       let jsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -2359,8 +2360,8 @@ const server = http.createServer(async (req, res) => {
       let parseError = null;
       for (let attempt = 0; attempt < 3 && !parsed; attempt++) {
         try {
-          // 炼器返回的是结构化 JSON，不能使用叙事接口的 250 字截断，否则会截断 JSON。
-          const raw = await callLLM('投入材料：' + mats + '\n请判断合理性并炼器。', FORGE_PROMPT, 1200);
+          // 锻造返回的是结构化 JSON，不能使用叙事接口的 250 字截断，否则会截断 JSON。
+          const raw = await callLLM('投入材料：' + mats + '\n请判断合理性并锻造。', FORGE_PROMPT, 1200);
           // 容错解析：去 ```json 包裹，截取首个 { ... } 段
           let jsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
           const st = jsonStr.indexOf('{'), en = jsonStr.lastIndexOf('}');
@@ -2372,8 +2373,8 @@ const server = http.createServer(async (req, res) => {
       }
       if (!parsed) throw new Error('AI 返回格式异常，请稍后重试');
       if (!parsed || typeof parsed.success !== 'boolean') throw new Error('AI 未返回可用的成败判定');
-      if (parsed.success && (!parsed.item || !parsed.item.name)) throw new Error('AI 未返回可用的法器');
-      const process = String(parsed.process || '炼器大师引火熔合两件材料，灵力交织后塑成一件新的法器。').slice(0, 100);
+      if (parsed.success && (!parsed.item || !parsed.item.name)) throw new Error('AI 未返回可用的装备');
+      const process = String(parsed.process || '铁匠大师引火熔合两件材料，淬炼交织后锻成一件崭新的装备。').slice(0, 100);
       if (parsed.success) {
         const it = parsed.item || {};
         const highestRarity = (body.materials || []).reduce((best, material) => {
@@ -2381,12 +2382,12 @@ const server = http.createServer(async (req, res) => {
           return FORGE_RARITIES.indexOf(rarity) > FORGE_RARITIES.indexOf(best) ? rarity : best;
         }, 'common');
         const rarity = forgeRarityUpgrade(highestRarity);
-        const itemName = String(it.name || '').replace(/ +/g, '').trim() || '新炼法器';
-        const itemDesc = String(it.desc || '新炼成的法器').replace(/ +/g, '').trim() || '两件材料融合炼成的法器。';
-        sendJSON(res, 200, { ok: true, process, item: { name: itemName.slice(0, 12), desc: itemDesc.slice(0, 200), kind: ['武器', '防具', '法宝', '工具'].includes(it.kind) ? it.kind : '法宝', rarity: normalizeForgeRarity(it.rarity || rarity) } });
+        const itemName = String(it.name || '').replace(/ +/g, '').trim() || '新锻造装备';
+        const itemDesc = String(it.desc || '新锻造的装备').replace(/ +/g, '').trim() || '两件材料融合锻成的装备。';
+        sendJSON(res, 200, { ok: true, process, item: { name: itemName.slice(0, 12), desc: itemDesc.slice(0, 200), kind: ['武器', '防具', '首饰', '工具'].includes(it.kind) ? it.kind : '首饰', rarity: normalizeForgeRarity(it.rarity || rarity) } });
       } else {
-        const failureProcess = String(parsed.process || `炉火在淬炼${mats}时骤然失衡，灵力冲突使材料崩散，最终未能成器。`).slice(0, 100);
-        sendJSON(res, 200, { ok: false, process: failureProcess, reason: String(parsed.reason || '两件材料属性冲突，灵力无法相融，炉火失衡未能成器').replace(/ +/g, '').slice(0, 100), item: { name: '未定型法器', desc: '材料冲突，炼制失败，未形成可用法器。', kind: '法宝', rarity: 'common' } });
+        const failureProcess = String(parsed.process || `炉火在淬炼${mats}时骤然失衡，属性冲突使材料崩散，最终未能成器。`).slice(0, 100);
+        sendJSON(res, 200, { ok: false, process: failureProcess, reason: String(parsed.reason || '两件材料属性冲突，锻造之力无法相融，炉火失衡未能成器').replace(/ +/g, '').slice(0, 100), item: { name: '未定型装备', desc: '材料冲突，锻造失败，未形成可用装备。', kind: '首饰', rarity: 'common' } });
       }
     } catch (e) {
       console.error('[ai/forge]', e.message);
@@ -2601,7 +2602,7 @@ function fillNpcs(room) {
   while ((room.party || []).length < target) {
     const used = new Set((room.party || []).map(member => member && member.name));
     const available = GE.NPC_NAME_POOL.filter(name => !used.has(name));
-    const name = available.length ? available[Math.floor(Math.random() * available.length)] : `无名修士${room.party.length + 1}`;
+    const name = available.length ? available[Math.floor(Math.random() * available.length)] : `无名冒险家${room.party.length + 1}`;
     addMember(room, makeNpcMember(name));
   }
 }
@@ -2800,7 +2801,7 @@ async function dungeonStep(room) {
     if (!entry || !entry.name) return null;
     const skill = (actor.skills || []).find(s => s.name === entry.name);
     if (!skill) return null;
-    return { name: skill.name, type: skill.type || '功法', tier: GE.skillTier(skill), elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
+    return { name: skill.name, type: skill.type || '物理技', tier: GE.skillTier(skill), elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
   };
   let dynamicFocusAdded = false;
   if (dynamic) {
@@ -3122,7 +3123,7 @@ async function settleRoom(room) {
       };
     }));
   let scrollItem = null;
-  const scrollType = outcomeParsed && outcomeParsed.scroll && (outcomeParsed.scroll.type === '术法' ? '术法' : '功法');
+  const scrollType = outcomeParsed && outcomeParsed.scroll && (outcomeParsed.scroll.type === '魔法技' ? '魔法技' : '物理技');
   if (scrollType) {
     const raw = await callLLM('请创作一部' + scrollType + '卷轴。', SCROLL_PROMPT.replace('{type}', scrollType));
     let jsonStr = String(raw || '').replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -3199,7 +3200,7 @@ async function settleRoom(room) {
       score: 5, damage: g.damage || 0, gold: spiritStoneShare, newTraits: [], newSkills: [], praise: 0,
     };
     if (m.isNpc) {
-      // AI 队友结算时可分到战利品：仅用于结算界面展示，不进入其储物袋（NPC 无持久化背包）。
+      // AI 队友结算时可分到战利品：仅用于结算界面展示，不进入其背包（NPC 无持久化背包）。
       const npcLoot = lootByMember[m.uid || m.id] || [];
       memberRes.loot = npcLoot.map(x => x.name);
       memberRes.lootItems = npcLoot.map(x => ({ name: x.name, desc: x.desc || '', qty: Math.max(1, Number(x.qty || 1)), rarity: x.rarity || 'common' }));
@@ -3234,11 +3235,11 @@ async function settleRoom(room) {
     // 道具消耗已在整队结算前按原持有人扣除；此处沿用同一对象保存。
     let leveledUp = false;
     memberRes.newSkills = GE.applyLearnedSkills(role, learnedSkillsByMember.get(m.name) || []);
-    if (dg.breakthrough && dg.breachSuccess && role.level === 10) { role.level = 11; role.exp = 0; role.character_class = '筑基前期'; GE.applyLevelGrowth(role, { breakthrough: true }); leveledUp = true; }
+    if (dg.breakthrough && dg.breachSuccess && role.level === 10) { role.level = 11; role.exp = 0; role.classTitle = (SUBCLASS_BY_CLASS[role.character_class] || ['转职中'])[0]; GE.applyLevelGrowth(role, { breakthrough: true }); leveledUp = true; }
     else {
       const levels = GE.applyExperience(role, exp);
       if (levels.length) {
-        role.character_class = cultivationRealmForLevel(role.level);
+        // DNF60：character_class 固定为职业，不随等级/境界回写（转职子职业名入 classTitle，见上方 Lv10 分支）
         leveledUp = true;
       }
     }
@@ -3341,7 +3342,7 @@ const MATCH_MIN_REAL = 2;
 const MATCH_TIMEOUT_MS = 2 * 60 * 1000;
 let matchSeq = 1;
 function matchPublic(m) {
-  return { uid: m.uid, name: m.char ? m.char.name : '?', realm: m.char ? (m.char.character_class || '练气一层') : '', charId: m.charId, joinedAt: m.joinedAt, isAI: false };
+  return { uid: m.uid, name: m.char ? m.char.name : '?', realm: m.char ? (m.char.character_class || '职业不明') : '', charId: m.charId, joinedAt: m.joinedAt, isAI: false };
 }
 function matchRemainingMs() {
   const first = MATCH_QUEUE.find(m => !m._isAI);
@@ -3370,7 +3371,7 @@ function tryStartMatch() {
   while (room.party.length < MATCH_TARGET) {
     const used = new Set(room.party.map(member => member && member.name));
     const available = GE.NPC_NAME_POOL.filter(name => !used.has(name));
-    const name = available.length ? available[Math.floor(Math.random() * available.length)] : `无名修士${room.party.length + 1}`;
+    const name = available.length ? available[Math.floor(Math.random() * available.length)] : `无名冒险家${room.party.length + 1}`;
     room.party.push(makeNpcMember(name));
   }
   MATCH_QUEUE.length = 0;
@@ -3483,7 +3484,7 @@ async function handleWS(ws, req, msg) {
       if (settlement.changed) DB.saveCharacter(u.id, c.id, c.data, c.data.name);
       const busy = characterBusyReason(c.data);
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (c.data.cultivation) { send({ type: 'error', error: '闭关期间不可匹配探险' }); return; }
+      if (c.data.cultivation) { send({ type: 'error', error: '修炼期间不可匹配探险' }); return; }
       if (MATCH_QUEUE.some(m => m.uid === u.id)) { send({ type: 'error', error: '已在匹配队列中' }); return; }
       if (roomForUser(u.id)) { send({ type: 'error', error: '已在公开队伍中' }); return; }
       ws._uid = u.id;
@@ -3522,7 +3523,7 @@ async function handleWS(ws, req, msg) {
         return;
       }
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (character.data.cultivation) { send({ type: 'error', error: '闭关期间不可创建队伍' }); return; }
+      if (character.data.cultivation) { send({ type: 'error', error: '修炼期间不可创建队伍' }); return; }
       if (!validDungeonName(msg.dungeon)) { send({ type: 'error', error: '地图不存在' }); return; }
       const description = String(msg.description || '').trim();
       if (description.length > 100) { send({ type: 'error', error: '小队描述不能超过 100 字' }); return; }
@@ -3560,7 +3561,7 @@ async function handleWS(ws, req, msg) {
         return;
       }
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (character.data.cultivation) { send({ type: 'error', error: '闭关期间不可加入队伍' }); return; }
+      if (character.data.cultivation) { send({ type: 'error', error: '修炼期间不可加入队伍' }); return; }
       addMember(room, memberFromCharacter(user.id, character, ws));
       ws._roomId = room.id;
       send({ type: 'room_state', room: roomStatePublic(room) });

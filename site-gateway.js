@@ -47,7 +47,7 @@ const DEFAULT_PORT = 8786;
 
 const DEFAULT_SITES = [
   { prefix: 'xiuxian', name: '问道仙坊', port: 8787, tagline: '修仙问道，结庐山野' },
-  { prefix: 'dnf', name: 'DNF', port: 8788, tagline: '组队下副本，刀刀见血' },
+  { prefix: 'dnf', name: '地下城与勇士', port: 8788, tagline: '组队下副本，刀刀见血' },
 ];
 
 // 逐跳首部不能透传，否则转发链上的连接语义会错乱。

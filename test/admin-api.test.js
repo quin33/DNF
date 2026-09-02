@@ -465,10 +465,10 @@ test('a player creates a map-backed public room and another player joins it', as
   const guest = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const created = await createdMessage;
     assert.equal(created.rooms.length, 1);
-    assert.equal(created.rooms[0].dungeon, '迷雾泽');
+    assert.equal(created.rooms[0].dungeon, '幽暗密林');
 
     const hasTwoMembers = message => message.rooms[0] && message.rooms[0].party.length === 2;
     const hostJoinedMessage = nextWebSocketMessageOfType(host, 'rooms_updated', hasTwoMembers);
@@ -491,15 +491,15 @@ test('a player cannot occupy multiple waiting rooms through separate WebSockets'
   const other = await connectPlayerWebSocket(additionalPlayers[0].token);
   try {
     const hostCreatedMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const hostCreated = await hostCreatedMessage;
 
     const duplicateCreate = nextWebSocketMessageOfType(hostAgain, 'error');
-    hostAgain.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: characterId, dungeon: '赤炎谷' }));
+    hostAgain.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: characterId, dungeon: '雷鸣废墟' }));
     assert.equal((await duplicateCreate).error, '无法创建队伍');
 
     const otherCreatedMessage = nextWebSocketMessageOfType(other, 'rooms_updated');
-    other.send(JSON.stringify({ type: 'room_create', token: additionalPlayers[0].token, charId: additionalPlayers[0].characterId, dungeon: '赤炎谷' }));
+    other.send(JSON.stringify({ type: 'room_create', token: additionalPlayers[0].token, charId: additionalPlayers[0].characterId, dungeon: '雷鸣废墟' }));
     const otherCreated = await otherCreatedMessage;
     const otherRoom = otherCreated.rooms.find(room => room.host === additionalPlayers[0].id);
 
@@ -529,15 +529,15 @@ test('room lifecycle rejects unauthenticated, foreign, full, duplicate, and queu
   const guestAgain = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const unauthenticatedError = nextWebSocketMessageOfType(unauthenticated, 'error');
-    unauthenticated.send(JSON.stringify({ type: 'room_create', charId: pushCharacterId, dungeon: '迷雾泽' }));
+    unauthenticated.send(JSON.stringify({ type: 'room_create', charId: pushCharacterId, dungeon: '幽暗密林' }));
     assert.equal((await unauthenticatedError).error, '无法创建队伍');
 
     const foreignCharacterError = nextWebSocketMessageOfType(guest, 'error');
-    guest.send(JSON.stringify({ type: 'room_create', token: secondPlayerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    guest.send(JSON.stringify({ type: 'room_create', token: secondPlayerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     assert.equal((await foreignCharacterError).error, '无法创建队伍');
 
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     for (const [socket, player] of [[guest, { token: secondPlayerToken, characterId: secondCharacterId }], [third, additionalPlayers[0]], [fourth, additionalPlayers[1]]]) {
@@ -573,7 +573,7 @@ test('host disconnect transfers waiting-room ownership and broadcasts the update
   const guest = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     const joinedMessage = nextWebSocketMessageOfType(guest, 'rooms_updated');
@@ -606,7 +606,7 @@ test('only the room host starts and missing members are filled with AI', async (
   const guest = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '赤炎谷' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '雷鸣废墟' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     const joinedMessage = nextWebSocketMessageOfType(guest, 'rooms_updated', message => (
@@ -638,7 +638,7 @@ test('only the room host starts and missing members are filled with AI', async (
     assert.equal(guestStartingMsg.room.status, 'starting');
     assert.equal(started.snapshot.party.length, 4);
     assert.equal(started.snapshot.party.filter(member => member.isNpc).length, 2);
-    assert.equal(started.snapshot.baseDungeon, '赤炎谷');
+    assert.equal(started.snapshot.baseDungeon, '雷鸣废墟');
     assert.equal(guestSnapshot.snapshot.party.length, 4);
     await firstStep;
     const durableRun = DB.getExpeditionRun(started.runId);
@@ -655,7 +655,7 @@ test('a player can create a new public room after their expedition settles', asy
   const host = await connectPlayerWebSocket(playerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     const terminal = nextWebSocketMessageOfTypes(host, ['settled', 'run_error'], 12_000);
@@ -664,9 +664,9 @@ test('a player can create a new public room after their expedition settles', asy
     assert.equal(result.type, 'settled', result.error || 'expedition did not settle');
 
     const recreated = nextWebSocketMessageOfType(host, 'rooms_updated', message => (
-      message.rooms.some(room => room.host === userId && room.dungeon === '赤炎谷')
+      message.rooms.some(room => room.host === userId && room.dungeon === '雷鸣废墟')
     ));
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '赤炎谷' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '雷鸣废墟' }));
     assert.equal((await recreated).rooms.filter(room => room.host === userId).length, 1);
   } finally {
     host.terminate();
@@ -678,7 +678,7 @@ test('every expedition member log contains the complete party status update', as
   const guest = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     const joinedMessage = nextWebSocketMessageOfType(guest, 'rooms_updated', message => (
@@ -726,7 +726,7 @@ test('only the room host dissolves a waiting room', async () => {
   const guest = await connectPlayerWebSocket(secondPlayerToken);
   try {
     const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '迷雾泽' }));
+    host.send(JSON.stringify({ type: 'room_create', token: playerToken, charId: pushCharacterId, dungeon: '幽暗密林' }));
     const roomId = (await createdMessage).rooms.find(room => room.host === userId).id;
 
     const joinedMessage = nextWebSocketMessageOfType(guest, 'rooms_updated', message => (
@@ -945,7 +945,7 @@ test('room starts fill one through four human parties to exactly four members', 
     const [host, ...guests] = sockets;
     try {
       const createdMessage = nextWebSocketMessageOfType(host, 'rooms_updated');
-      host.send(JSON.stringify({ type: 'room_create', token: players[0].token, charId: players[0].characterId, dungeon: '迷雾泽' }));
+      host.send(JSON.stringify({ type: 'room_create', token: players[0].token, charId: players[0].characterId, dungeon: '幽暗密林' }));
       const roomId = (await createdMessage).rooms.find(room => room.host === players[0].id).id;
 
       for (let index = 0; index < guests.length; index++) {

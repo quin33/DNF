@@ -508,7 +508,7 @@ test('forge materials and result use rarity-colored names', () => {
 test('forge keeps generated item metadata and refuses a full bag', () => {
   assert.match(source, /function bagAdd\(role, item\)[\s\S]*kind: item\.kind/);
   assert.match(source, /const added = bagAdd\(role, item\)/);
-  assert.match(source, /if \(!added\)[\s\S]*储物袋已满/);
+  assert.match(source, /if \(!added\)[\s\S]*背包已满/);
 });
 
 test('online forge commits materials, stamina, and item through the server', () => {
@@ -519,7 +519,7 @@ test('online forge commits materials, stamina, and item through the server', () 
   assert.match(server, /saveCharacterIfCurrent\(u\.id, charId/);
   assert.match(online, /\/api\/character\/.*\/forge/);
   assert.match(source, /role\._char_db_id && typeof window\.forgeOnline/);
-  assert.match(source, /炼器失败也会消耗本次精力/);
+  assert.match(source, /锻造失败也会消耗本次精力/);
 });
 
 test('online forge runs as an asynchronous server job that survives client disconnects', () => {
@@ -567,7 +567,7 @@ test('online forge preserves submitted material rarity when legacy stored materi
 test('online forge validates output capacity before consuming materials', () => {
   const server = fs.readFileSync('server.js', 'utf8');
   const forgeRoute = server.slice(server.indexOf('const forgeMatch'), server.indexOf('const charMatch'));
-  assert.match(forgeRoute, /储物袋已满[\s\S]*materials\.forEach/);
+  assert.match(forgeRoute, /背包已满[\s\S]*materials\.forEach/);
   assert.match(forgeRoute, /material\.src === 'equip'/);
 });
 

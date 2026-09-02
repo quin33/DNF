@@ -10,11 +10,11 @@ const LootSettlement = require('./loot-settlement.js');
 
 const MAX_SKILLS = 5;
 const STAGE_ATTR = { explore: ['intelligence', 'luck'], battle: ['strength', 'agility'], boss: ['strength', 'agility', 'luck'], loot: ['luck', 'intelligence'], breakthrough: ['luck', 'intelligence'] };
-const ATTR_NAME = { strength: '体魄', agility: '身法', intelligence: '神识', luck: '气运' };
+const ATTR_NAME = { strength: '力量', agility: '敏捷', intelligence: '智力', luck: '幸运' };
 const QI_LAYER = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-const SKILL_TIERS = ['黄阶', '玄阶', '地阶', '天阶'];
-const SKILL_TIER_COLOR = { 黄阶: '#8b949e', 玄阶: '#58a6ff', 地阶: '#a371f7', 天阶: '#f0883e' };
-const BAD_TRAIT_POOL = ['重伤未愈', '惊吓过度', '中了尸毒', '心有余悸'];
+const SKILL_TIERS = ['普通', '高级', '稀有', '神器'];
+const SKILL_TIER_COLOR = { 普通: '#8b949e', 高级: '#58a6ff', 稀有: '#a371f7', 神器: '#f0883e' };
+const BAD_TRAIT_POOL = ['重伤未愈', '惊吓过度', '中了猛毒', '心有余悸'];
 const NPC_NAME_POOL = AI_COMPANIONS.NPC_NAME_POOL;
 const BREAKTHROUGH_EXP = 2000;
 
@@ -27,93 +27,100 @@ function canBreakthrough(role) {
 }
 
 const DUNGEON_POOL = [
-  { name: '枯骨林', hiddenName: '白骨深渊·万骨冢', icon: '🦴', desc: '枯骨遍地、阴风阵阵的乱葬林，亡魂在碑影间低语。', hiddenDesc: '林间怨气远超寻常——那万人坑的深处，有什么东西在呼唤。',
-    lore: '相传此地原是上古战场的一处万人坑，战死的士卒怨气不散，化作白骨与亡魂在林中徘徊。',
-    explore: ['瘴气弥漫的枯骨坡地', '横七竖八的断碑残棺', '亡魂游荡的骨林深处'],
+  { name: '洛兰', hiddenName: '洛兰·魔王洞穴', icon: '🌲', region: '格兰之森', desc: '格兰之森边缘的魔兽林地，哥布林与牛头兵在此劫掠过往旅人。', hiddenDesc: '密林深处藏着一条直通魔王洞穴的暗道，魔气蠢蠢欲动。',
+    lore: '这里是冒险家踏入地下城的第一步——格兰之森外围的洛兰，哥布林部落盘踞多年，草木间弥漫着粗野的杀气。',
+    explore: ['哥布林扼守的林间小径', '坍塌的边境哨塔', '树根盘绕的幽暗洞穴'],
     enemies: [
-      { name: '腐骨妖狼', desc: '由散落骨骸拼凑而成的妖狼，骨缝间渗出磷火，极擅伏击。' }, { name: '拾骨亡魂', desc: '披着残破战甲的亡魂，仍执着地搜刮生者的血肉。' }, { name: '骨甲骷髅兵', desc: '生前是悍卒，死后仍保持着军阵的杀意。' }, { name: '白骨秃鹫', desc: '盘旋于骨林上空的巨鹫，羽翼由骨片拼成。' }, { name: '噬骨蛆潮', desc: '骨缝间涌出的蛆群，所过之处连骨髓都被啃食殆尽。' }, { name: '执戈老兵魂', desc: '生前是执戈冲锋的悍卒，死后仍不肯放下长戈。' },
+      { name: '哥布林', desc: '矮小狡诈的绿色魔物，挥舞木棒，成群结队地袭击落单者。' }, { name: '青哥布林', desc: '皮糙肉厚的哥布林，臂力过人，一棒抡下能砸碎岩石。' }, { name: '猫妖', desc: '灵巧的丛林猎手，爪刃锋利，惯于从树影中扑出。' }, { name: '刀锋猫妖', desc: '爪刃淬过毒的猫妖，出手又快又狠。' }, { name: '牛头兵', desc: '蛮横的牛头魔物，手持锈斧，横冲直撞势不可挡。' }, { name: '赤毛野猪', desc: '獠牙外翻的野猪，受惊后横冲直撞，皮糙肉厚。' },
     ],
     bosses: [
-      { name: '白骨将军', desc: '万人坑最深处的执念所化，披着锈蚀战甲，战旗残破却杀气凛然。', realm: '筑基初期', reward: { name: '将军虎符', desc: '锈蚀的铜符，据说能号令枯骨。' } }, { name: '噬骨怨灵', desc: '千万亡魂凝成的怨灵，哀嚎声直入识海。', realm: '筑基中期', reward: { name: '怨灵结晶', desc: '万千亡魂凝成的黑晶，隐隐传来呜咽。' } },
+      { name: '烈焰哥布林', desc: '洛兰魔王洞穴的守门领主，手中战斧燃着不灭的火焰。', level: 11, reward: { name: '火焰哥布林战斧', desc: '一柄被烈焰熏得发黑的战斧，斧刃上仍残留灼灼热气。' } }, { name: '牛头巨兵', desc: '洛兰深处被魔气侵蚀的牛头统领，浑身肌肉虬结，一斧劈开山石。', level: 12, reward: { name: '牛头巨兵的裂斧', desc: '断裂的巨斧，斧面刻着扭曲的魔纹。' } },
     ],
-    loot: [{ name: '兽皮', desc: '妖兽皮缝制的粗料，能卖些灵石。' }, { name: '骨笛', desc: '以灵骨磨制的短笛，呜呜作响。' }, { name: '灵骨碎片', desc: '一块莹白的骨片，蕴含残存灵气。' }] },
-  { name: '迷雾泽', hiddenName: '迷雾泽·沉镇幽影', icon: '🌫️', desc: '终年不散的毒雾笼罩泽地，水下潜伏着不知名的猎手。', hiddenDesc: '毒雾浓得化不开，水下的药镇废墟在雾气中若隐若现。',
-    lore: '旧时这里是一座药镇，一场瘟疫让全镇覆灭，残存的怨念与毒雾纠缠成这片沼泽。',
-    explore: ['雾锁断桥的深泽', '浮萍下的暗流通道', '废弃的采药人茅屋'],
+    loot: [{ name: '哥布林的木棒', desc: '粗犷的木棒，敲上去闷响。' }, { name: '牛头兵的麻布', desc: '牛头兵裹身的粗麻布，带着一股膻味。' }, { name: '猫妖的利爪', desc: '打磨锋利的猫妖爪刃，泛着冷光。' }] },
+  { name: '幽暗密林', hiddenName: '幽暗密林·树精深渊', icon: '🌿', region: '格兰之森', desc: '阳光透不进的深林，树影间潜伏着嗜血的猫妖与巨型哥布林。', hiddenDesc: '越往深处走，古树越粗——那些老树的根系下，似乎埋着什么会呼吸的东西。',
+    lore: '幽暗密林的古树已经吞噬了不止一支冒险队。树精与猫妖在这里结成了猎场，专等活人送上门。',
+    explore: ['藤蔓垂落的密林小径', '猫妖聚集的枯树广场', '盘根错节的树精巢穴'],
     enemies: [
-      { name: '毒瘴水蟒', desc: '盘踞深泽的巨蟒，毒腺喷出的瘴气能腐蚀护体灵光。' }, { name: '迷雾蛙群', desc: '成群结队的毒蛙，皮肤分泌的黏液是毒雾的源头之一。' }, { name: '泽地巨蚊', desc: '吸血巨蚊，口器如针，叮咬处红肿溃烂。' }, { name: '溺影水鬼', desc: '溺亡采药人的怨魂，湿发如蛇，专拖活人入水。' }, { name: '雾隐毒蛛', desc: '藏身水草间的巨蛛，通体灰白，毒液能蚀穿护体罡气。' }, { name: '腐沼鳄鲵', desc: '潜伏泥沼的巨鲵，体表覆满腐苔，张口便是一股腥臭毒气。' },
+      { name: '哥布林斥候', desc: '哨探哥布林，瘦小却警觉，一有风吹草动便吹哨示警。' }, { name: '猫妖', desc: '灵巧的丛林猎手，爪刃锋利，惯于从树影中扑出。' }, { name: '巨型哥布林', desc: '哥布林中的异类，体型堪比牛头兵，行动却丝毫不笨拙。' }, { name: '树精', desc: '古树化成的精怪，皮如树皮，挥臂横扫。' }, { name: '毒蘑菇怪', desc: '背生毒斑的蘑菇怪，靠近便释放刺鼻孢子。' }, { name: '猫妖王侍从', desc: '猫妖王的贴身护卫，爪刃缠着血色绷带。' },
     ],
     bosses: [
-      { name: '瘟疫之源·雾母', desc: '瘟疫的源头化作人形，周身毒雾缭绕，所立之处草木皆枯。', realm: '筑基初期', reward: { name: '雾灵珠', desc: '雾母本体凝成的珠子，内里雾气流转不息。' } }, { name: '沉镇怨首·病柳', desc: '药镇的老柳树饮尽全镇死者的血，化作盘踞水下的凶物。', realm: '筑基中期', reward: { name: '瘟疫古方', desc: '一张残缺的羊皮古方，记载着失传的解毒秘术。' } },
+      { name: '巨型哥布林', desc: '幽暗密林深处的哥布林之王，腰围惊人，巨棒横扫如砍瓜切菜。', level: 11, reward: { name: '巨棒骨饰', desc: '巨型哥布林的骨制饰物，挂满胜利者的牙齿。' } }, { name: '猫妖王', desc: '密林猎场之主，身法快如鬼魅，双爪泛着幽绿的毒光。', level: 12, reward: { name: '猫妖王毒爪', desc: '淬毒的爪刃，刃上绿光幽幽。' } },
     ],
-    loot: [{ name: '龙涎草', desc: '生于深泽的灵草，气味清冽，可入丹。' }, { name: '避瘴珠', desc: '千年灵木结成的珠子，可避瘴气毒雾。' }, { name: '雾隐石', desc: '灰蒙蒙的石子，握在掌心时周围雾气会微微散开。' }] },
-  { name: '赤炎谷', hiddenName: '赤炎谷·地火核心', icon: '🔥', desc: '地火翻涌的灼热山谷，火灵草木丛中栖息着炽焰妖兽。', hiddenDesc: '山谷深处的熔岩湖彻底沸腾——传说中沉于湖底的上古火系至宝似乎正在苏醒。',
-    lore: '千年前天火坠落于此，地火至今未熄。火属性修士视此为圣地。',
-    explore: ['熔岩裂谷的栈道', '火灵草丛生的热泉', '被岩浆封死的洞窟'],
+    loot: [{ name: '树精的树皮', desc: '坚韧的树皮，摸上去粗糙温热。' }, { name: '哥布林骨笛', desc: '以兽骨磨制的短笛，呜呜作响。' }, { name: '猫妖的利爪', desc: '打磨锋利的猫妖爪刃，泛着冷光。' }] },
+  { name: '雷鸣废墟', hiddenName: '雷鸣废墟·落雷祭坛', icon: '⛈️', region: '格兰之森', desc: '终日被雷电笼罩的哥布林废墟，断壁残垣间电光如蛇。', hiddenDesc: '废墟中央的祭坛上，雷光汇聚——那里的落雷哥布林似乎正在举行某种仪式。',
+    lore: '一处被落雷劈毁的古镇废墟，哥布林巫师借雷光立起祭坛，妄图让整片格兰之森臣服于雷鸣之下。',
+    explore: ['雷光闪烁的断壁街道', '焦黑的巨型老树', '半塌的哥布林祭坛'],
     enemies: [
-      { name: '赤炎蜥蜴', desc: '火灵草养大的蜥蜴，鳞甲能短暂喷出烈焰。' }, { name: '熔岩傀儡', desc: '地火凝聚的傀儡，拳脚带着滚烫的岩浆。' }, { name: '火鸦群', desc: '成群的火鸦，翅羽燃着赤焰，俯冲如流星坠地。' }, { name: '地火甲虫', desc: '背甲灼红如炭的甲虫，受惊时喷出灼热气浪。' }, { name: '火灵精', desc: '火灵草间游荡的赤色灵体，触之灼伤。' }, { name: '岩浆鳄', desc: '半身浸在熔岩中的巨鳄，皮甲上岩浆流淌。' },
+      { name: '落雷哥布林', desc: '手持引雷棒的哥布林，棒尖不时迸出滋滋电弧。' }, { name: '落雷哥布林卫兵', desc: '披着藤甲的落雷哥布林，挺着一根缠电的长矛。' }, { name: '夜视猫妖', desc: '能在雷光中蛰伏的猫妖，漆黑皮毛下藏着杀机。' }, { name: '火花哥布林', desc: '口袋里装满火花的哥布林，一扬手便是一蓬灼热火粒。' }, { name: '祭坛石灵', desc: '祭坛崩落的碎石拼成的石灵，行动迟缓却异常沉重。' }, { name: '雷纹蝙蝠', desc: '翅膜上浮着电纹的蝙蝠，成群掠过时带起一片静电。' },
     ],
     bosses: [
-      { name: '地火之灵', desc: '天火残魂孕育的灵体，通体赤红，举手投足皆引动地火。', realm: '筑基初期', reward: { name: '地火精魄', desc: '地火之灵的核心，散发的热意永不消散。' } }, { name: '熔核巨蜥', desc: '沉睡在熔岩湖底的巨蜥，苏醒时整座山谷都在震颤。', realm: '筑基中期', reward: { name: '熔核晶', desc: '巨蜥心口凝出的晶核，内里仿佛封着一团流动的岩浆。' } },
+      { name: '雷光哥布林指挥官', desc: '落雷祭坛的执鞭者，挥动引雷杖召来一道道落雷。', level: 11, reward: { name: '雷光引雷杖', desc: '一根引雷杖，杖头凝着一团噼啪作响的电光。' } }, { name: '大落雷哥布林', desc: '沐浴雷光而生的巨大哥布林，浑身电弧缠动，踏一步地面便爆出火花。', level: 12, reward: { name: '大落雷之核', desc: '落雷哥布林心口凝成的雷核，触碰时指尖微微发麻。' } },
     ],
-    loot: [{ name: '火灵草', desc: '赤炎谷特有的灵草，叶脉赤红如血。' }, { name: '火晶石', desc: '熔岩中凝结的晶石，握在手里微微发烫。' }, { name: '灰烬木', desc: '被地火淬炼过的焦木，质地坚硬。' }] },
-  { name: '万剑冢', hiddenName: '万剑冢·剑冢之心', icon: '🗡️', desc: '上古剑修陨落之地，万千残剑倒插于山丘，剑意彻骨。', hiddenDesc: '万千残剑同时震颤低鸣——封存千年的剑意正在核心处苏醒。',
-    lore: '上古剑宗覆灭之夜，十万弟子以身为祭，将宗门万剑埋入山丘，剑意封存千年。',
-    explore: ['剑丘之巅的试炼台', '锈剑密布的剑林', '剑修遗府的石阶'],
+    loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '哥布林引雷棒', desc: '一根粗制的引雷棒，棒头焦黑。' }, { name: '电光尘土', desc: '废墟里刮起的电光尘土，握在手里酥酥麻麻。' }] },
+  { name: '格拉卡', hiddenName: '格拉卡·哥布林王都', icon: '⚔️', region: '格兰之森', desc: '哥布林王国的腹地，部落的战旗与牛头兵的铁蹄踏满这片草原。', hiddenDesc: '格拉卡深处的王宫正门洞开——哥布林王似乎正为一场大战秣马厉兵。',
+    lore: '格拉卡是格兰之森里最大的哥布林聚居地，部落林立，牛头兵横行。每当有冒险家试图深入，迎来的都是一场恶战。',
+    explore: ['战旗猎猎的哥布林营地', '牛头兵巡逻的草原', '哥布林王的宫殿前庭'],
     enemies: [
-      { name: '剑灵残影', desc: '陨落剑修的残魂，执念于剑，出手便是凌厉剑意。' }, { name: '锈剑傀儡', desc: '残剑拼成的傀儡，浑身锈迹却快如闪电。' }, { name: '剑意风暴', desc: '封存的剑意失控化作风暴，卷入者如遭千剑穿身。' }, { name: '断剑亡魂', desc: '以身殉剑的剑修残念，双臂化为残剑。' }, { name: '剑匣机关兽', desc: '半毁的剑匣化形而成，开匣一瞬万剑齐发。' }, { name: '噬剑铁蠹', desc: '啃食残剑为生的铁蠹，甲壳坚逾精钢，口器能咬断剑刃。' },
+      { name: '哥布林弓手', desc: '躲在战旗后放冷箭的哥布林，箭法刁钻。' }, { name: '哥布林精英', desc: '披精甲、持短矛的哥布林精锐，纪律严明。' }, { name: '牛头兵', desc: '蛮横的牛头魔物，手持锈斧，横冲直撞势不可挡。' }, { name: '牛头卫兵', desc: '持巨盾的牛头兵，盾墙一立便牢不可破。' }, { name: '哥布林盗贼', desc: '潜行摸包的哥布林，专挑落单者下手。' }, { name: '骸骨猎犬', desc: '食尸而生的魔犬，骨瘦如柴却凶猛异常。' },
     ],
     bosses: [
-      { name: '剑冢守墓人', desc: '镇守剑冢千年的老者残影，怀中古剑温养千年，一剑出则风云变色。', realm: '筑基初期', reward: { name: '守墓剑令', desc: '守墓人随身剑令，古意盎然，可令残剑短暂听命。' } }, { name: '万剑之主·残念', desc: '剑宗宗主的执念，万剑环绕，剑意通天彻地。', realm: '筑基中期', reward: { name: '剑冢之心', desc: '万剑冢的核心，内里似有万剑低鸣。' } },
+      { name: '牛头卫兵队长', desc: '格拉卡草原上最壮硕的牛头，扛着一面嵌满钉刺的塔盾。', level: 11, reward: { name: '钉刺塔盾', desc: '一面嵌满铁钉的塔盾，盾面坑坑洼洼，全是交战的伤疤。' } }, { name: '哥布林王·皮鲁斯', desc: '格拉卡哥布林部落之王，头戴骨冠，挥舞的双斧能劈开一整排盾牌。', level: 12, reward: { name: '哥布林王的骨冠', desc: '一顶白骨雕成的王冠，嵌着几颗暗红的宝石。' } },
     ],
-    loot: [{ name: '剑灵碎片', desc: '古剑残魂凝成的碎片，隐隐震颤。' }, { name: '残剑刃', desc: '断剑残刃，仍有余锋。' }, { name: '剑修遗简', desc: '残破玉简，隐约刻着半篇剑诀。' }] },
-  { name: '幽冥渊', hiddenName: '幽冥渊·渊底裂隙', icon: '🌑', desc: '阴煞之气凝成黑雾的深渊，鬼修巢穴，越深越冷。', hiddenDesc: '今晚正是月圆——渊底传来低沉的呼吸声，阴阳两界的裂隙正在缓缓张开。',
-    lore: '幽冥渊是阴阳两界的裂隙，阴煞之气常年倒灌。曾有鬼修在此开宗立派，后被正道联军剿灭。',
-    explore: ['鬼火摇曳的崖壁栈道', '白骨铺就的渊底甬道', '被封印的鬼修洞府'],
+    loot: [{ name: '哥布林战旗', desc: '一面残破的哥布林战旗，旗帜上血渍斑斑。' }, { name: '牛头兵的铁环', desc: '牛头兵鼻梁上的铁环，锈迹里带着倔强。' }, { name: '部落矛尖', desc: '粗制的矛尖，仍留着反复淬火的痕迹。' }] },
+  { name: '天空之城·龙人之塔', hiddenName: '龙人之塔·断裂之巅', icon: '🐉', region: '天空之城', desc: '悬浮于云海之上的龙人之塔，龙人盘踞塔顶，石巨人镇守廊道。', hiddenDesc: '塔顶的龙人祭坛正在苏醒——传说中的龙人之王似乎要在今日现世。',
+    lore: '天空之城崩塌后仅存的龙人之塔，古老龙人一族在此盘踞万年，凝视着脚下的大地。',
+    explore: ['云海环绕的塔基廊道', '龙人盘踞的盘旋阶梯', '石巨人镇守的殿堂'],
     enemies: [
-      { name: '幽冥鬼爪', desc: '从阴影中探出的鬼爪，五根枯骨般的指节力可碎铁。' }, { name: '鬼潮', desc: '成百上千的低阶亡魂汇成的潮水，所过之处生机尽灭。' }, { name: '缚魂阴煞', desc: '以魂锁缚人的阴煞，被缠上者神识如坠冰窟。' }, { name: '吊颈孤魂', desc: '悬在崖壁半空的孤魂，目光空洞，靠近者喉间发紧。' }, { name: '阴火狐', desc: '口吐幽蓝鬼火的狐妖，狡诈善惑，专诱活人误入绝路。' }, { name: '白骨夜叉', desc: '手持骨叉的夜叉，赤目獠牙，力可开碑裂石。' },
+      { name: '龙人', desc: '半龙半人的魔物，鳞甲坚硬，利爪能撕裂铁甲。' }, { name: '狂龙人', desc: '狂化的龙人，双目赤红，攻速快得惊人。' }, { name: '石巨人', desc: '以塔身岩石凝聚的巨人，一拳砸地震得石屑纷飞。' }, { name: '翼龙', desc: '盘旋塔外的飞龙，俯冲时翼风呼啸。' }, { name: '龙人卫兵', desc: '持长斧的龙人卫兵，列队成阵，杀意森然。' }, { name: '塔灵', desc: '龙人之塔的古老灵体，无形无影，专扰人心神。' },
     ],
     bosses: [
-      { name: '缚魂鬼母', desc: '鬼修宗门残存的祖师，半身已与阴煞同化，魂锁漫天。', realm: '筑基初期', reward: { name: '缚魂索', desc: '鬼母以千年阴煞凝成的魂索，缠上便难挣脱。' } }, { name: '渊底·沉眠者', desc: '深渊最深处沉睡的东西终于睁眼，阴煞之气随它的呼吸暴涨。', realm: '筑基中期', reward: { name: '渊底之瞳', desc: '沉眠者遗落的眼瞳，通体漆黑，凝视时如坠深渊。' } },
+      { name: '召唤龙人', desc: '龙人一族的守护者，缠着祭坛的古老魔力，召来漫天石与火。', level: 11, reward: { name: '龙人古石', desc: '一枚浸染龙人魔力的古石，内里似有龙影盘旋。' } }, { name: '龙人统领', desc: '龙人塔的至强者，龙鳞泛着暗金光泽，一击便能震断半根塔柱。', level: 12, reward: { name: '龙鳞甲片', desc: '一枚厚重龙鳞，触手冰凉而坚不可摧。' } },
     ],
-    loot: [{ name: '幽冥寒铁', desc: '渊底寒铁，入手冰冷彻骨。' }, { name: '阴煞珠', desc: '凝聚阴煞之气的珠子，魔修趋之若鹜。' }, { name: '魂灯残油', desc: '半盏魂灯残油，可照见幽冥之物。' }] },
-  { name: '雷音山', hiddenName: '雷音山·雷池尽头', icon: '⚡', desc: '常年雷云密布的孤峰，天雷淬体，雷系灵物遍地。', hiddenDesc: '雷云低得压到了山巅，雷池中的雷灵砂剧烈沸腾——那名失败的上古雷修似乎要在今日再渡一次劫。',
-    lore: '这座孤峰常年被雷云笼罩，据说是上古雷修渡劫失败之地，雷意千年不散。',
-    explore: ['雷云下的通天石阶', '被雷劈开的古树洞', '雷池边缘的乱石滩'],
+    loot: [{ name: '龙人鳞片', desc: '一片泛着微光的龙鳞，边缘锋利。' }, { name: '塔岩碎片', desc: '天空之城崩落的塔岩，握在手里轻若无物。' }, { name: '远古石像残块', desc: '石巨人身上崩落的残块，雕刻着看不懂的文字。' }] },
+  { name: '天空之城·黑暗玄廊', hiddenName: '黑暗玄廊·深渊之门', icon: '🌌', region: '天空之城', desc: '阳光无法触及的幽暗长廊，石巨人与暗影怪在黑暗中徘徊。', hiddenDesc: '玄廊尽头那扇紧闭的深渊之门，正渗出令人不安的黑暗气息。',
+    lore: '黑暗玄廊是天空之城最幽深的角落，巨人与暗影怪把守在此，阻隔着所有窥探深渊的生灵。',
+    explore: ['幽暗的玄廊石道', '巨人守卫的空旷大殿', '被封印的深渊之门'],
     enemies: [
-      { name: '雷兽', desc: '沐浴天雷而生的异兽，皮毛间电弧流窜。' }, { name: '雷暴傀儡', desc: '雷池畔的傀儡，受雷意驱动，出手便引动雷霆。' }, { name: '天雷余威', desc: '残留的雷意凝成人形，触之如遭雷击。' }, { name: '雷音蝠群', desc: '雷电环绕的蝙蝠群，尖啸声与雷鸣共振。' }, { name: '紫电蛇', desc: '通体缠绕紫色电弧的雷蛇，速度极快。' }, { name: '雷纹石人', desc: '雷纹密布的山石化形，一拳砸下带闷雷之声。' },
+      { name: '暗石巨人', desc: '覆着青苔的石巨人，行动迟缓，但一拳足以砸碎石壁。' }, { name: '黑暗鹰', desc: '通体漆黑的鹰，翅展遮光，俯冲无声。' }, { name: '巴罗', desc: '藏在暗处的神秘生物，双爪如钩，伺机扑杀。' }, { name: '暗影蝙蝠', desc: '黑暗里产出的蝙蝠，成群掠过时仿佛一团移动的黑雾。' }, { name: '玄廊魔像', desc: '半毁的魔像，眼窝里燃着幽蓝鬼火。' }, { name: '暗影触手', desc: '深渊之门渗出的黑暗凝成的触手，缠上便拖向深渊。' },
     ],
     bosses: [
-      { name: '雷池化身', desc: '雷池中的雷意凝成的化身，通体电光，威严如天神降世。', realm: '筑基初期', reward: { name: '雷池玉髓', desc: '雷池深处的玉髓，入手酥麻，蕴含纯净雷灵。' } }, { name: '渡劫残魂', desc: '上古雷修的残魂，执念于那场失败的天劫。', realm: '筑基中期', reward: { name: '劫雷木心', desc: '被劫雷劈过千年的古木心，木纹里封着一道未散的劫雷。' } },
+      { name: '暗黑石巨像', desc: '黑暗玄廊的镇守巨像，由深渊之石拼成，眼窝两团暗火腾腾。', level: 11, reward: { name: '深渊之石', desc: '巨像眼窝里取出的黑石，握在掌心冰凉彻骨。' } }, { name: '玄廊之主·巴罗王', desc: '蛰伏玄廊深处的巴罗之王，双翼张开几乎遮住整条长廊。', level: 12, reward: { name: '巴罗王之翼', desc: '一片漆黑的翼膜，边缘锋利如刀。' } },
     ],
-    loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '雷灵砂', desc: '雷池畔的砂砾，触碰时指尖微微发麻。' }, { name: '引雷针', desc: '一指长的银针，雨夜时会自己指向天空。' }] },
-  { name: '落仙台', hiddenName: '落仙台·仙宫秘境', icon: '🏯', desc: '仙人陨落之地，残破仙宫悬浮于云海之上，逆天机缘与绝命凶险并存。', hiddenDesc: '云海翻涌，仙宫深处的道则碎片亮起——那位仙人陨落时的执念，正在等待一个"有缘人"。',
-    lore: '上古仙人于此地飞升失败，肉身崩解，仙宫残骸悬浮于云海之上。仙人的道则碎片散落各处。',
-    explore: ['云海浮桥', '仙宫残殿', '仙人悟道石'],
+    loot: [{ name: '暗影晶石', desc: '黑暗里凝结的晶石，触手冰凉。' }, { name: '巨人苔石', desc: '石巨人身上剥落的苔石，覆着厚厚青苔。' }, { name: '玄廊符文', desc: '刻着深渊符文的石片，幽幽发光。' }] },
+  { name: '天帷巨兽·神殿外围', hiddenName: '神殿外围·教团密室', icon: '🔱', region: '天帷巨兽', desc: '矗立在天帷巨兽背上的神殿，GBL 教徒在此狂热朝拜。', hiddenDesc: '神殿地底的密室透出诡异的蓝光——教团似乎正谋划着什么不可告人的仪式。',
+    lore: '天帷巨兽背上矗立着古老的教团神殿，GBL 教徒在此日夜朝拜，狂热而排外，任何外来者都是他们口中的异端。',
+    explore: ['巨兽背上的青石台阶', '教徒诵经的大殿', '教团封锁的地底密室'],
     enemies: [
-      { name: '仙宫守卫傀儡', desc: '仙宫残留的守卫傀儡，符文明灭，依旧尽职地驱逐入侵者。' }, { name: '心魔幻象', desc: '仙人道则滋生的幻象，映照出每个修士心底最深的执念。' }, { name: '上古残阵', desc: '残缺的仙家阵法，无人主持却仍在缓缓运转。' }, { name: '云海螭龙', desc: '云海灵气凝成的螭龙残影，翻腾之间掀起风雷。' }, { name: '道音钟灵', desc: '仙宫残钟化出的灵体，每一声钟鸣都直震神魂。' }, { name: '玉简书灵', desc: '仙家玉简化形，以道文为刃，字字皆是杀机。' },
+      { name: 'GBL 教徒', desc: '披着白袍的狂热教徒，手持短杖，口中念念有词。' }, { name: 'GBL 祭司', desc: '教团的司祭，能引动神殿的蓝光化作护盾。' }, { name: '神殿守卫', desc: '守护教团的巨汉，手持铁锤，面容虔诚而冰冷。' }, { name: '空海翼龙', desc: '盘踞神殿上空的海翼龙，俯冲掀起狂风。' }, { name: '教堂僵尸', desc: '被教团仪式复生的僵尸，动作僵硬却力大无穷。' }, { name: '狂热信徒', desc: '被洗脑的狂热信徒，赤手空拳也奋不顾身。' },
     ],
     bosses: [
-      { name: '仙宫镇守者', desc: '仙宫最后的镇守者，半身已石化，眼中神光却未熄灭。', realm: '筑基初期', reward: { name: '仙宫令牌', desc: '镇守者腰间的令牌，镌刻着仙宫纹章。' } }, { name: '仙人残念·道则', desc: '仙人陨落时遗下的道则残念，举手投足皆是大道轰鸣。', realm: '筑基中期', reward: { name: '道则碎片', desc: '仙人道则凝成的碎片，内里日月流转。' } },
+      { name: 'GBL 主教', desc: '神殿外围的主教，掌中托着一团幽蓝的教团圣火。', level: 11, reward: { name: '教团圣火', desc: '一团不灭的蓝色圣火，封在水晶瓶里静静燃烧。' } }, { name: '教团骑士团长', desc: '教团武装的头目，身披重甲，铁锤落下大地都要颤三颤。', level: 12, reward: { name: '骑士团长铁锤', desc: '一把缠着蓝纹的重锤，锤头还残留着圣火的余温。' } },
     ],
-    loot: [{ name: '仙府残卷', desc: '仙宫残卷，字迹流转不定。' }, { name: '悟道茶', desc: '仙人遗落的茶饼，泡开时有道韵流转。' }, { name: '星图残片', desc: '星图一角，凑齐三块可开启隐藏试炼。' }] },
+    loot: [{ name: '教团白袍', desc: '一件洗得发白的教团白袍，反复浆洗过。' }, { name: '圣水瓶', desc: '装过圣水的小瓶，瓶壁泛着淡蓝。' }, { name: '神殿残卷', desc: '一卷残破的教团经文，字迹工整。' }] },
 ];
 
 const rollD20 = () => 1 + Math.floor(Math.random() * 20);
 const pick = a => a[Math.floor(Math.random() * a.length)];
-const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '黄阶';
+const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '普通';
 
-/* 境界值换算（练气一层=1…筑基初期=11…） */
-function enemyRealmVal(realm) {
-  const s = String(realm || '');
-  const qi = s.match(/练气([一二三四五六七八九十]+)层/); if (qi) return QI_LAYER.indexOf(qi[1]);
-  const zj = s.match(/筑基(初期|前期|中期|后期)/); if (zj) return 11 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[zj[1]] || 0);
-  const jd = s.match(/金丹(初期|前期|中期|后期)/); if (jd) return 14 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[jd[1]] || 0);
-  const yy = s.match(/元婴(初期|前期|中期|后期)/); if (yy) return 17 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[yy[1]] || 0);
+/* 敌人强度换算：优先读取数值等级，兼容 "Lv.N" 字符串与旧数值（不保留修仙境界词）。 */
+function realmWordToLevel(text) {
+  const s = String(text || '');
+  const num = Number(s);
+  if (Number.isFinite(num) && num > 0) return num;
+  const lv = s.match(/Lv\.?(\d+)/i); if (lv) return parseInt(lv[1], 10);
   return 0;
 }
-function actorRealmVal(actor) { const lv = actor.level || 1; if (lv <= 10) return lv; if (lv <= 13) return 11 + (lv - 11); if (lv <= 16) return 14 + (lv - 14); return 17 + Math.min(2, lv - 17); }
-function realmDiffMod(actor, enemy) { if (!enemy || !enemy.realm) return 0; const ev = enemyRealmVal(enemy.realm); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
+function enemyRealmVal(input) {
+  if (typeof input === 'number') return input;
+  if (typeof input === 'object') {
+    if (input && Number.isFinite(Number(input.level)) && Number(input.level) > 0) return Number(input.level);
+    return realmWordToLevel(input && input.realm);
+  }
+  return realmWordToLevel(input);
+}
+function actorRealmVal(actor) { const lv = Number(actor && actor.level); return Number.isFinite(lv) && lv > 0 ? lv : 1; }
+function realmDiffMod(actor, enemy) { if (!enemy) return 0; const ev = enemyRealmVal(enemy); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
 function realmBonus(actor) { return Math.min(9, Math.floor(((actor.level || 1) - 1) / 2)); }
 function elemMatchMod(actor, sk) {
   const root = ((actor.traits || [])[0] || '');
@@ -124,21 +131,21 @@ function elemMatchMod(actor, sk) {
 function traitBonus(actor) { let b = 0; (actor.traits || []).forEach(t => { if (/灵觉|夜视|听风/.test(t)) b += 1; if (/心狠|老练/.test(t)) b += 1; if (/寻宝|气运/.test(t)) b += 1; if (/胆大心细/.test(t)) b += 1; }); return Math.min(b, 2); }
 
 const ITEM_BONUS = [
-  { kw: '避瘴珠', stage: 'explore', mod: 2 }, { kw: '引灵灯', stage: 'explore', mod: 2 }, { kw: '罗盘', stage: 'explore', mod: 2 },
-  { kw: '灵锄', stage: 'explore', mod: 1 }, { kw: '灵锄', stage: 'loot', mod: 1 },
-  { kw: '兽皮囊', stage: 'loot', mod: 1 }, { kw: '聚气丹', stage: 'explore', mod: 1 },
-  { kw: '火球符', stage: 'battle', mod: 2 }, { kw: '铁剑', stage: 'battle', mod: 1 }, { kw: '剑', stage: 'battle', mod: 2 },
-  { kw: '暴血丹', stage: 'battle', mod: 1 }, { kw: '雷暴符', stage: 'battle', mod: 2 }, { kw: '噬魂刃', stage: 'battle', mod: 2 }, { kw: '仙衣', stage: 'battle', mod: 1 },
+  { kw: '火把', stage: 'explore', mod: 2 }, { kw: '寻宝图', stage: 'explore', mod: 2 }, { kw: '布甲', stage: 'explore', mod: 1 },
+  { kw: '生命药水', stage: 'explore', mod: 1 }, { kw: '短剑', stage: 'battle', mod: 1 }, { kw: '长刀', stage: 'battle', mod: 1 },
+  { kw: '格斗护拳', stage: 'battle', mod: 2 }, { kw: '旧式手枪', stage: 'battle', mod: 2 }, { kw: '榆木法杖', stage: 'battle', mod: 2 },
+  { kw: '圣光十字架', stage: 'battle', mod: 1 }, { kw: '圣光符', stage: 'battle', mod: 1 }, { kw: '爆裂符', stage: 'battle', mod: 2 },
+  { kw: '魔力药剂', stage: 'battle', mod: 1 }, { kw: '旧怀表', stage: 'loot', mod: 1 }, { kw: '绷带', stage: 'loot', mod: 1 },
 ];
 function itemBonus(dg, stage) { let b = 0; dg.party.forEach(m => (m.equipment || []).forEach(it => { const hit = ITEM_BONUS.find(x => x.stage === stage && (it.name || '').includes(x.kw)); if (hit) b += hit.mod; })); return Math.min(b, 4); }
 
-/* 开本：随机 0~3 敌人（特殊事件必 ≥1 且修为上调）、首领定型 */
+/* 开本：随机 0~3 敌人（特殊事件必 ≥1 且等级上调）、首领定型 */
 function rollEnemies(dungeon, specialEvent) {
   const pool = (dungeon.enemies || []).slice();
   const n = specialEvent ? 1 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 4);
   const picked = [];
   while (picked.length < n && pool.length) picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  return picked.map(e => { let layer = 1 + Math.floor(Math.random() * 10); if (specialEvent) layer = Math.min(10, layer + 2 + Math.floor(Math.random() * 3)); return { ...e, realm: '练气' + QI_LAYER[layer] + '层' }; });
+  return picked.map(e => { let level = 1 + Math.floor(Math.random() * 10); if (specialEvent) level = Math.min(10, level + 2 + Math.floor(Math.random() * 3)); return { ...e, level }; });
 }
 function pickDungeon(role) {
   const pool = DUNGEON_POOL.filter(d => d.rank * 0 + (role.level || 1) <= 18);
@@ -154,12 +161,12 @@ function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
   let explore = minE, loot = minL, battle = minB, boss = minBo;
   let extra = Math.max(0, total - 2 - minE - minL - minB - minBo);
   while (extra > 0) { const r = Math.random(); if (r < 0.34) explore++; else if (r < 0.58) loot++; else if (r < 0.82 && hasBattle) battle++; else if (hasBoss) boss++; else explore++; extra--; }
-  const p = [ { key: 'opening', label: '入谷', steps: 1, check: false }, { key: 'explore', label: '探索', steps: explore, check: true } ];
+  const p = [ { key: 'opening', label: '进入地下城', steps: 1, check: false }, { key: 'explore', label: '探索', steps: explore, check: true } ];
   if (hasBattle) p.push({ key: 'battle', label: '战斗', steps: battle, check: true });
   if (hasBoss) p.push({ key: 'boss', label: '首领', steps: boss, check: true });
   p.push({ key: 'loot', label: '搜刮', steps: loot, check: true });
-  if (breakthrough) p.push({ key: 'breakthrough', label: '突破', steps: 1 + Math.floor(Math.random() * 2), check: true });
-  p.push({ key: 'closing', label: '归途', steps: 1, check: false });
+  if (breakthrough) p.push({ key: 'breakthrough', label: '晋级', steps: 1 + Math.floor(Math.random() * 2), check: true });
+  p.push({ key: 'closing', label: '撤离回城', steps: 1, check: false });
   return p;
 }
 /* 叙事焦点调度：把连续步骤分成 2~3 步的角色窗口，最后一步完成个人高光。 */
@@ -523,17 +530,17 @@ function itemUseCheck(dg, stageKey, actor) {
   const it = pick(pool); const roll = rollD20(); const total = roll + (it.mod || 0);
   return { item: it, roll, total, success: total >= 12 };
 }
-/* 技能判定：D20 + 术法3/功法2 + 灵根契合±0/+2，成功 ≥12 */
+/* 技能判定：D20 + 魔法技3/物理技2 + 元素契合±0/+2，成功 ≥12 */
 function skillUseCheck(dg, stageKey, actor) {
   const skills = actor.skills || []; if (!skills.length) return null;
   const p = (stageKey === 'battle' || stageKey === 'boss') ? 1 : stageKey === 'explore' ? 0.6 : 0.35;
   if (Math.random() > p) return null;
   let pool = skills;
-  if (stageKey === 'battle' || stageKey === 'boss') { const shufa = skills.filter(s => s.type === '术法'); if (shufa.length && Math.random() < 0.7) pool = shufa; }
-  else if (stageKey === 'explore') { const gongfa = skills.filter(s => s.type === '功法'); if (gongfa.length && Math.random() < 0.6) pool = gongfa; }
+  if (stageKey === 'battle' || stageKey === 'boss') { const magic = skills.filter(s => s.type === '魔法技'); if (magic.length && Math.random() < 0.7) pool = magic; }
+  else if (stageKey === 'explore') { const physical = skills.filter(s => s.type === '物理技'); if (physical.length && Math.random() < 0.6) pool = physical; }
   const sk = pick(pool); const elemMod = elemMatchMod(actor, sk); const roll = rollD20();
-  const total = roll + (sk.type === '术法' ? 3 : 2) + elemMod;
-  return { name: sk.name, type: sk.type || '功法', tier: skillTier(sk), elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
+  const total = roll + (sk.type === '魔法技' ? 3 : 2) + elemMod;
+  return { name: sk.name, type: sk.type || '物理技', tier: skillTier(sk), elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
 }
 /* 解析剧情【获得：…】标记 */
 function parseLootMarkers(text) {
@@ -548,9 +555,9 @@ function parseLootMarkers(text) {
   return out;
 }
 function extractGold(text) {
-  const m = String(text || '').match(/灵石\s*([一二两三四五六七八九十百千万]+|)\s*(\d+)/);
+  const m = String(text || '').match(/金币\s*([一二两三四五六七八九十百千万]+|)\s*(\d+)/);
   if (m) return parseInt(m[2], 10) || 0;
-  const m2 = String(text || '').match(/(\d+)\s*[块枚]?\s*灵石/);
+  const m2 = String(text || '').match(/(\d+)\s*[枚个]?\s*金币/);
   return m2 ? parseInt(m2[1], 10) : 30;
 }
 
@@ -610,9 +617,10 @@ function applyDungeonSetup(base, setup) {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim();
     const src = pool.find(x => String(x.name || '').trim() === name);
     if (!src) return null;
-    return { ...src, realm: String(entry && entry.realm || '').trim() || '练气一层' };
+    const level = realmWordToLevel(entry && (entry.level != null ? entry.level : entry.realm));
+    return { ...src, level: Number.isFinite(level) && level > 0 ? level : 1 };
   }).filter(Boolean).slice(0, specialEvent ? 4 : 3);
-  const bosses = (base && Array.isArray(base.bosses) ? base.bosses : []).map((b, i) => ({ ...b, realm: i === 1 ? '筑基中期' : '筑基初期' }));
+  const bosses = (base && Array.isArray(base.bosses) ? base.bosses : []).map((b, i) => ({ ...b, level: i === 1 ? 12 : 11 }));
   return {
     ...base,
     name: isHidden && base ? (base.hiddenName || base.name) : (base && base.name) || '',
@@ -638,7 +646,7 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
   if (stageKey === 'battle') {
     if (outcome === 'bad') hurt(8 + Math.floor(Math.random() * 12));
     if (outcome === 'fumble') hurt(20 + Math.floor(Math.random() * 20));
-    if (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('暴血丹'))) hurt(8);
+    if (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('爆裂符'))) hurt(8);
   }
   if (stageKey === 'boss') {
     const boss = dg._curEnemy;
@@ -715,7 +723,7 @@ function applyExperience(role, amount, options = {}) {
   const levels = [];
   while (true) {
     const level = Number(role.level || 1);
-    // 练气十层的 1000 经验是突破门槛，不是经验上限；允许探险继续积累经验。
+    // Lv.10 的 1000 经验是转职门槛，不是经验上限；允许探险继续积累经验。
     if (level === 10) break;
     if (level >= 14) { role.exp = 2800; break; }
     const threshold = level < 10 ? level * 100 : level * 200;
@@ -737,7 +745,7 @@ function parseLearnedSkills(raw) {
     parsed = JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
   } catch (_) { return []; }
   if (!Array.isArray(parsed)) return [];
-  const validTypes = new Set(['功法', '术法']);
+  const validTypes = new Set(['物理技', '魔法技']);
   const validTiers = new Set(SKILL_TIERS);
   const seen = new Set();
   return parsed.flatMap(item => {
@@ -775,7 +783,7 @@ const AI_PHASES = ['opening', 'explore', 'encounter', 'battle', 'boss', 'loot', 
 const AI_EVENTS = ['advance', 'resolve', 'fail', 'retreat'];
 const AI_QUEST_STATUSES = ['active', 'completed', 'failed', 'retreated'];
 const AI_ENCOUNTER_STATUSES = ['none', 'active', 'resolved', 'escaped'];
-const AI_PHASE_LABELS = { opening: '入谷', explore: '探索', encounter: '遭遇', battle: '战斗', boss: '首领', loot: '搜刮', rest: '休整', retreat: '撤退', closing: '归途' };
+const AI_PHASE_LABELS = { opening: '进入地下城', explore: '探索', encounter: '遭遇', battle: '战斗', boss: '首领', loot: '搜刮', rest: '休整', retreat: '撤退', closing: '撤离回城' };
 
 function normalizeAiDecision(raw, fallback = {}) {
   const input = raw && typeof raw === 'object' ? raw : {};
@@ -865,8 +873,8 @@ function genNpc(name, card) {
     gender: Math.random() < 0.5 ? '男' : '女', hp: 100 + Math.floor(Math.random() * 60), max_hp: 160, stamina: 100, max_stamina: 100, hpTs: Date.now(),
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
-    gold: 0, character_class: '练气' + QI_LAYER[1 + Math.floor(Math.random() * 10)] + '层',
-    personality: pick(GC.PERS_LIST), traits: ['初入仙途'], equipment: [], bag: [], skills: [],
+    gold: 0, character_class: pick(Object.values(GC.ROOT_KEYS)).label,
+    personality: pick(GC.PERS_LIST), traits: ['初入阿拉德'], equipment: [], bag: [], skills: [],
     exp: 0, status: 'idle',
   };
 }
@@ -880,7 +888,7 @@ function createDg(hostChar, opts = {}) {
     const specialEvent = Math.random() < 0.1;
     const breakthrough = canBreakthrough(hostChar) && Math.random() < 0.1;
     const enemies = rollEnemies(base, specialEvent);
-    const bosses = (base.bosses || []).map((b, i) => ({ ...b, realm: i === 1 ? '筑基中期' : '筑基初期' }));
+    const bosses = (base.bosses || []).map((b, i) => ({ ...b, level: i === 1 ? 12 : 11 }));
     return { ...base, name: isHidden ? (base.hiddenName || base.name) : base.name, desc: isHidden ? (base.hiddenDesc || base.desc) : base.desc, isHidden, baseName: base.name, enemies, bosses, specialEvent, breakthrough };
   })();
   const objective = String(dungeon.lore || '').trim() || `探索${dungeon.name}`;
@@ -919,13 +927,13 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
     focus: focus ? { actor: actor.name, step: focus.focusStep, size: focus.windowSize, highlight: !!focus.highlight, mode: focus.mode } : null,
     allowedCharacters, forbiddenCharacters,
     stepNo: dg.totalStep + 1, totalSteps: Number(dg.maxSteps == null ? ((dg.plan || []).reduce((a, p) => a + p.steps, 0) || 40) : dg.maxSteps),
-    enemy: dg._curEnemy ? { name: dg._curEnemy.name, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
+    enemy: dg._curEnemy ? { name: dg._curEnemy.name, level: dg._curEnemy.level || null, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
     itemUse: null,
     availableItems: availableItemsForActor(dg, actor),
     ownedItems: collectOwnedItems(dg),
     skillUse: null,
     party: dg.party.map(m => ({
-      name: m.name, gender: m.gender || '男', realm: m.character_class || '', root: (m.traits && m.traits[0]) || '',
+      name: m.name, gender: m.gender || '男', realm: m.character_class || '', level: Number(m.level) || 1, root: '',
       personality: m.personality || '', traits: m.traits || [],
       skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', tier: skillTier(s), desc: s.desc || '' })),
       items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: memberIdentity(m), ownerName: m.name || '' })),

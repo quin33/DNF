@@ -43,7 +43,7 @@ function normalizeContext(text) {
 function extractSpiritStoneEvents(steps) {
   const events = [];
   const seenInStep = new Set();
-  const pattern = /(?:(\d{1,6}|[零〇一二两三四五六七八九十百千万]+)\s*(?:块|枚|颗|个)?\s*(?:下品|中品|上品)?\s*灵石|灵石\s*[：:×xX*]?\s*(\d{1,6}|[零〇一二两三四五六七八九十百千万]+))/g;
+  const pattern = /(?:(\d{1,6}|[零〇一二两三四五六七八九十百千万]+)\s*(?:枚|颗|个)?\s*金币|金币\s*[：:×xX*]?\s*(\d{1,6}|[零〇一二两三四五六七八九十百千万]+))/g;
   for (const step of Array.isArray(steps) ? steps : []) {
     const text = String(step && (step.rawText || step.text) || '');
     if (!text) continue;
@@ -95,7 +95,7 @@ function cleanLootName(value, max = 12) {
   return String(value || '').replace(/\s+/g, '').trim().slice(0, max);
 }
 
-const PSEUDO_LOOT_RE = /灵石|钱|金锭|银锭|铜板/;
+const PSEUDO_LOOT_RE = /金币|钱|金锭|银锭|铜板/;
 
 function rawLootName(value) {
   return String(value || '').replace(/\s+/g, '').trim();

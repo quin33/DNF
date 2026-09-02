@@ -12,7 +12,7 @@
 
   const DEFAULT_ENTRIES = [
     { path: '/xiuxian', name: '问道仙坊', icon: '⛩️' },
-    { path: '/dnf', name: 'DNF', icon: '⚔️' },
+    { path: '/dnf', name: '地下城与勇士', icon: '⚔️' },
   ];
 
   function currentBase() {

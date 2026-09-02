@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>问道仙坊 · 在线</title>
+<title>地下城与勇士 · 在线</title>
 <link rel="stylesheet" href="style.css">
 <style>
   .ol-wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
@@ -42,7 +42,7 @@
   <!-- 登录/注册 -->
   <div id="view-auth" style="display:none">
     <div class="ol-card">
-      <h2>⚔️ 问道仙坊 · 登录</h2>
+      <h2>⚔️ 地下城与勇士 · 登录</h2>
       <div class="ol-row"><label>用户名</label><input id="auth-user" placeholder="2~20 字符（中文/字母/数字）" maxlength="20"></div>
       <div class="ol-row"><label>密码</label><input id="auth-pass" type="password" placeholder="4~64 字符" maxlength="64"></div>
       <div class="ol-err" id="auth-err"></div>
@@ -57,7 +57,7 @@
   <!-- 大厅 -->
   <div id="view-hall" style="display:none">
     <div class="nav-bar">
-      <span class="nav-title">🧭 仙坊大厅</span>
+      <span class="nav-title">🧭 冒险者大厅</span>
       <span class="sp"></span>
       <span id="hall-user"></span>
       <button class="btn btn-primary btn-sm" id="btn-create" onclick="openCreate()">✨ 创建角色</button>
@@ -117,14 +117,14 @@
       <span class="sp"></span>
     </div>
     <div class="ol-card">
-      <div class="ol-row"><label>角色名（1~12 字）</label><input id="rc-name" maxlength="12" placeholder="输入道号"></div>
-      <div class="ol-row"><label>灵根</label><div class="opt-chips" id="root-chips"></div></div>
+      <div class="ol-row"><label>角色名（1~12 字）</label><input id="rc-name" maxlength="12" placeholder="输入角色名"></div>
+      <div class="ol-row"><label>初始职业</label><div class="opt-chips" id="root-chips"></div></div>
       <div class="ol-row"><label>性格</label><div class="opt-chips" id="pers-chips"></div></div>
       <div class="ol-row"><label>性别</label><div class="opt-chips" id="gender-chips"></div></div>
       <div class="ol-row"><label>初始装备 / 道具（选两件）<span id="item-count">已选 0 / 2</span></label><div class="opt-chips" id="item-chips"></div></div>
       <div class="ol-err" id="create-err"></div>
       <div class="create-row">
-        <button class="btn btn-primary" onclick="submitCreate()">🌟 踏入仙途</button>
+        <button class="btn btn-primary" onclick="submitCreate()">⚔️ 成为冒险家</button>
       </div>
     </div>
   </div>
@@ -150,7 +150,7 @@
 const D = window.TAVERN_DATA;
 const API = { token: null, user: null };
 const $ = s => document.querySelector(s);
-const sel = { root: 'jin', pers: '重诺', gender: '男', items: new Set() };
+const sel = { root: 'slayer', pers: '重诺', gender: '男', items: new Set() };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function api(path, opts = {}) {
@@ -199,13 +199,13 @@ async function refreshChars() {
       ? j.characters.map(c => `<div class="ol-char" onclick="gotoChar(${c.id})" data-id="${c.id}">
           <div class="cn">${esc(c.name)}</div>
           <div class="cm">加载中…</div></div>`).join('')
-      : '<div class="ad-empty">尚无角色，点「创建角色」新建一位修士吧</div>';
+      : '<div class="ad-empty">尚无角色，点「创建角色」新建一位冒险家吧</div>';
     j.characters.forEach(async c => {
       try {
         const d = await api('/api/character/' + c.id);
         const r = d.character;
         const el = box.querySelector(`.ol-char[data-id="${c.id}"]`);
-        if (el) el.querySelector('.cm').textContent = `${esc(r.character_class || '')} · Lv.${r.level || 1} · 💰 ${r.gold ?? 0} 灵石`;
+        if (el) el.querySelector('.cm').textContent = `${esc(r.character_class || '')} · Lv.${r.level || 1} · 💰 ${r.gold ?? 0} 金币`;
       } catch (e) {}
     });
   } catch (e) { $('#hall-err').textContent = e.message; }
@@ -301,7 +301,7 @@ function renderSettled(d) {
   const el = $('#room-settle');
   el.innerHTML = `<div class="settle-card ${d.ok ? 'win' : 'lose'}">
     <strong>${d.ok ? '✅ 凯旋' : '❌ 受挫'}</strong>
-    <div>获得经验 +${d.exp}${d.verdict === 'breakthrough_ok' ? ' · <b style="color:var(--color-primary)">⚡ 突破筑基前期！</b>' : ''}</div>
+    <div>获得经验 +${d.exp}${d.verdict === 'breakthrough_ok' ? ' · <b style="color:var(--color-primary)">⚡ 转职成功！</b>' : ''}</div>
     ${d.summary ? `<p style="margin-top:6px">${esc(d.summary)}</p>` : ''}
   </div>`;
   window.scrollTo(0, document.body.scrollHeight);

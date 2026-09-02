@@ -16,9 +16,9 @@ test('parses Chinese spirit-stone amounts containing ten-thousands', () => {
 
 test('extracts all global spirit-stone gains from separate story steps', () => {
   const steps = [
-    { stepNo: 4, actor: '洛清欢', text: '旧木匣内裹着四十块下品灵石，她将遗物收好。' },
-    { stepNo: 29, actor: '洛清欢', text: '回宗复命，执事酬以三百灵石。' },
-    { stepNo: 30, actor: '萧瑟', text: '同一趟复命已核验无讹，执事仍酬以三百灵石。' },
+    { stepNo: 4, actor: '洛清欢', text: '旧木匣内裹着四十枚金币，她将遗物收好。' },
+    { stepNo: 29, actor: '洛清欢', text: '回城复命，公会酬以三百金币。' },
+    { stepNo: 30, actor: '萧瑟', text: '同一趟复命已核验无讹，公会仍酬以三百金币。' },
   ];
 
   const events = extractSpiritStoneEvents(steps);

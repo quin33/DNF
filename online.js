@@ -170,7 +170,7 @@
           .ol-auth-foot{margin:12px 0 0;text-align:center;font-size:12px;color:#8a94a3}
         </style>
         <div class="ol-auth-card">
-          <div class="ol-auth-brand"><span class="ol-auth-brand-mark">⚔️</span><span>问道仙坊</span></div>
+          <div class="ol-auth-brand"><span class="ol-auth-brand-mark">⚔️</span><span>地下城与勇士</span></div>
           <div class="ol-auth-tabs" role="tablist">
             <button class="ol-auth-tab is-active" data-mode="login" type="button" role="tab">登录</button>
             <button class="ol-auth-tab" data-mode="register" type="button" role="tab">注册</button>
@@ -283,11 +283,11 @@
     connectWs();
     scheduleActiveRunSync();
     const nn = $('#nav-nick');
-    if (nn) nn.textContent = API.user ? (API.user.nickname || API.user.username) : '道友';
+    if (nn) nn.textContent = API.user ? (API.user.nickname || API.user.username) : '冒险家';
     const bal = $('#nav-balance');
     if (bal) bal.textContent = (window.D.my_adventurer ? window.D.my_adventurer.gold : 0) + '';
     const T = window.D && window.D.tavern;
-    if (T) T.subtitle = '在线修仙 · 已登录：' + (API.user ? API.user.username : '');
+    if (T) T.subtitle = '在线冒险 · 已登录：' + (API.user ? API.user.username : '');
     const activePanel = document.querySelector('.tab-content.active');
     const activeTab = activePanel && activePanel.id.replace('tab-', '');
     if (activeTab === 'adventurers' || activeTab === 'party') await window.loadTabData?.(activeTab);
@@ -304,7 +304,7 @@
     localStorage.setItem(key, '1');
     setTimeout(() => {
       if (notice.ok && notice.skill && window.renderTaixuInsightSuccess) renderTaixuInsightSuccess({ ...notice, character: role, updated_at: role._char_updated_at });
-      else if (!notice.ok) toastMsg(notice.error || '太虚幻境参悟失败');
+      else if (!notice.ok) toastMsg(notice.error || '觉醒祭坛顿悟失败');
     }, 0);
   }
 
@@ -326,7 +326,7 @@
     }
     if (D.my_adventurer) {
       D.my_adventurer.is_mine = true;
-      // 储物袋/功法等字段补全
+      // 背包/技能等字段补全
       if (!Array.isArray(D.my_adventurer.bag)) D.my_adventurer.bag = [];
       if (!Array.isArray(D.my_adventurer.skillPool)) D.my_adventurer.skillPool = [];
       if (!Array.isArray(D.my_adventurer.skills)) D.my_adventurer.skills = [];
@@ -576,7 +576,7 @@
   window.forgeOnline = async function forgeOnline(payload) {
     const role = window.D && window.D.my_adventurer;
     if (!role || !role._char_db_id) throw new Error('角色尚未与服务器同步');
-    if (role.status === 'insighting' || role.taixuInsight) throw new Error('角色正在太虚幻境参悟');
+    if (role.status === 'insighting' || role.taixuInsight) throw new Error('角色正在觉醒祭坛顿悟');
     if (!payload || !payload.item) {
       forgeInFlight = true;
       try {
@@ -811,7 +811,7 @@
   }
 
   /* 在线匹配状态渲染：注入 .ol-matchbar 到小队页 event-header 之后
-     参与者显示完整的角色名 + 修为境界（圆角标签排版，参考招募板成员卡） */
+     参与者显示完整的角色名 + 职业（圆角标签排版，参考招募板成员卡） */
   function renderMatchState(d) {
     window.__olMatch = d;
     const el = $('#tab-party');
@@ -825,16 +825,16 @@
     others.forEach(member => { if (member && member.card) registerNpcCard(member.card); });
     window.__olMatchMembers = others;
     const me = window.D.my_adventurer;
-    const mineTag = me ? { name: me.name, realm: me.character_class || '练气一层', isNpc: false } : { name: '你', realm: '', isNpc: false };
+    const mineTag = me ? { name: me.name, realm: me.character_class || '职业不明', isNpc: false } : { name: '你', realm: '', isNpc: false };
     const total = 4;
     const remainingSeconds = Math.ceil(Math.max(0, Number(d && d.remainingMs) || 0) / 1000);
     const countdown = `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(remainingSeconds % 60).padStart(2, '0')}`;
     // 参与者列表：自己 + 队列中的其他（真）人
-    const tags = [mineTag, ...others.slice(0, total - 1).map(m => ({ name: m.name, realm: m.realm || '练气一层', isNpc: !!m.isAI || !!m.isNpc, card: m.card }))].slice(0, total);
+    const tags = [mineTag, ...others.slice(0, total - 1).map(m => ({ name: m.name, realm: m.realm || '职业不明', isNpc: !!m.isAI || !!m.isNpc, card: m.card }))].slice(0, total);
     const slots = tags.map((t, i) => `
       <span class="ol-match-tag ${i === 0 ? 'mine' : ''}" title="${esc(t.name)} · ${esc(t.realm)}" ${i > 0 && t.isNpc ? `style="cursor:pointer" onclick="openPartyMemberDetail('',${JSON.stringify(t.name)},'1','')"` : ''}>
         <span class="omt-name">${esc(t.name)}</span>
-        <span class="omt-realm">${t.realm ? esc(t.realm) : '练气一层'}</span>
+        <span class="omt-realm">${t.realm ? esc(t.realm) : '职业不明'}</span>
       </span>`).join('')
       + Array.from({ length: total - tags.length }, () => '<span class="ol-match-tag wait"><span class="omt-name">?</span></span>').join('');
     const old = el.querySelector('.ol-matchbar');
@@ -847,7 +847,7 @@
         <span class="match-pulse">⏳</span>
         <span>匹配中… 已集齐 <b>${tags.length} / ${total}</b> 人</span>
         <span class="ol-match-countdown" aria-label="匹配倒计时">剩余 <b>${countdown}</b></span>
-        <span class="match-wait-hint" style="font-size:12px;color:var(--color-text-secondary)">等待道友加入（2 分钟未满则 AI 道友补位即开）</span>
+        <span class="match-wait-hint" style="font-size:12px;color:var(--color-text-secondary)">等待冒险家加入（2 分钟未满则 AI 冒险家补位即开）</span>
         <button class="btn btn-danger btn-sm" style="margin-left:auto" onclick="cancelMatch()">取消匹配</button>
       </div>
       <div class="match-members" style="display:flex;gap:8px;flex-wrap:wrap">${slots}</div>`;
@@ -898,7 +898,7 @@
       const isHost = uid != null && Number(room.host) === Number(uid);
       const isMember = uid != null && party.some(member => Number(member.uid) === Number(uid));
       const leader = party.find(member => Number(member.uid) === Number(room.host)) || party[0] || {};
-      const members = party.map(member => `<button type="button" class="public-party-member ${Number(member.uid) === Number(room.host) ? 'leader' : ''}" data-party-member data-char-id="${esc(member.charId || '')}" data-name="${esc(member.name || '')}" data-is-npc="${member.isNpc ? '1' : ''}" data-card="${member.isNpc && member.card ? esc(JSON.stringify(member.card)) : ''}" onclick="event.stopPropagation();openPartyMemberDetail(this.dataset.charId,this.dataset.name,this.dataset.isNpc,this.dataset.card)" title="查看角色详情">${Number(member.uid) === Number(room.host) ? '★ ' : ''}${esc(member.name || '未知道友')} <small>${esc(member.realm || '')}</small></button>`).join('');
+      const members = party.map(member => `<button type="button" class="public-party-member ${Number(member.uid) === Number(room.host) ? 'leader' : ''}" data-party-member data-char-id="${esc(member.charId || '')}" data-name="${esc(member.name || '')}" data-is-npc="${member.isNpc ? '1' : ''}" data-card="${member.isNpc && member.card ? esc(JSON.stringify(member.card)) : ''}" onclick="event.stopPropagation();openPartyMemberDetail(this.dataset.charId,this.dataset.name,this.dataset.isNpc,this.dataset.card)" title="查看角色详情">${Number(member.uid) === Number(room.host) ? '★ ' : ''}${esc(member.name || '未知冒险家')} <small>${esc(member.realm || '')}</small></button>`).join('');
       const actions = isHost
         ? `<button class="btn btn-success btn-sm" onclick="startPublicRoom('${esc(room.id)}')">开始探险</button><button class="btn btn-danger btn-sm" onclick="dissolvePublicRoom('${esc(room.id)}')">解散</button>`
         : isMember
@@ -911,7 +911,7 @@
       return `<article class="public-party-card${options.mine ? ' is-mine' : ''}">
         <div class="public-party-main">
           <div class="public-party-head"><strong>公开小队 #${esc(roomId)}</strong><span class="public-party-state">🗡️ ${stateLabel}</span></div>
-          <div class="public-party-map"><span>🗺️ ${esc(room.dungeon || '未知灵墟')}</span><b>${esc(levelLabel)}</b></div>
+          <div class="public-party-map"><span>🗺️ ${esc(room.dungeon || '未知地下城')}</span><b>${esc(levelLabel)}</b></div>
           <div class="public-party-meta"><span>👥 ${party.length} 人（4 人起成团，最多 6 人）</span><span>⌛ ${esc(createdLabel)} 创建</span></div>
           ${room.description ? `<p class="public-party-description">${esc(room.description)}</p>` : ''}
           <div class="public-party-members">${members}</div>
@@ -952,7 +952,7 @@
     const box = document.querySelector('#modal-box');
     if (!box) return;
     box.classList.remove('log-modal');
-    box.innerHTML = `<button class="modal-close" onclick="closeModal()">✕</button><h3 class="modal-title">${esc(name || '未知道友')}</h3><div class="hall-hint">该角色的详细资料暂未同步，可稍后刷新后重试。</div>`;
+    box.innerHTML = `<button class="modal-close" onclick="closeModal()">✕</button><h3 class="modal-title">${esc(name || '未知冒险家')}</h3><div class="hall-hint">该角色的详细资料暂未同步，可稍后刷新后重试。</div>`;
     showModal();
   }
   window.openPartyMemberDetail = openPartyMemberDetail;
@@ -961,7 +961,7 @@
   function startMatchOnline() {
     const role = window.D.my_adventurer;
     if (!role) { toastMsg('请先创建角色'); switchTab('mine'); return; }
-    if (role.status === 'insighting' || role.taixuInsight) { toastMsg('角色正在太虚幻境参悟'); return; }
+    if (role.status === 'insighting' || role.taixuInsight) { toastMsg('角色正在觉醒祭坛顿悟'); return; }
     if (window.matchQueue) { toastMsg('已在匹配队列中'); return; }
     if (isInPublicRoom()) { toastMsg('已在公开队伍中'); return; }
     if (activeWsRun) { toastMsg('正在探险中'); return; }
@@ -1001,7 +1001,7 @@
 
   function canEnterPublicRoom() {
     const role = window.D.my_adventurer;
-    if (role && (role.status === 'insighting' || role.taixuInsight)) { toastMsg('角色正在太虚幻境参悟'); return false; }
+    if (role && (role.status === 'insighting' || role.taixuInsight)) { toastMsg('角色正在觉醒祭坛顿悟'); return false; }
     if (window.matchQueue) { toastMsg('已在匹配队列中'); return false; }
     if (activeWsRun) { toastMsg('正在探险中'); return false; }
     if (isInPublicRoom()) { toastMsg('已在公开队伍中'); return false; }
@@ -1099,7 +1099,7 @@
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
         <span>📍 ${esc(d.name || '')}</span>
-        <span class="dungeon-lv">${esc(d.level_desc || '炼气')}</span>
+        <span class="dungeon-lv">${esc(d.level_desc || '推荐等级待定')}</span>
         <span class="sp" style="flex:1"></span>
         <span style="font-size:12px;color:var(--color-primary);font-weight:700">${members.length} / 4 人</span>
       </div>
@@ -1135,11 +1135,11 @@
         <span style="font-size:12px;color:var(--color-text-secondary)">${esc(members.map(m => m && m.name || '').filter(Boolean).join('、'))}</span>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap">
-        <span>📍 ${esc(room.dungeon || '未知灵墟')}</span>
+        <span>📍 ${esc(room.dungeon || '未知地下城')}</span>
         <span class="sp" style="flex:1"></span>
         <span style="font-size:12px;color:var(--color-primary);font-weight:700">${members.length} / 4 人</span>
       </div>
-      <div class="ol-squad-members" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${members.map(m => `<span class="ol-squad-member" style="font-size:12px;padding:3px 10px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-bg)">${esc(m.name || '未知道友')}<em style="font-style:normal;color:var(--color-text-secondary);margin-left:4px">${esc(m.realm || '')}</em></span>`).join('')}</div>
+      <div class="ol-squad-members" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${members.map(m => `<span class="ol-squad-member" style="font-size:12px;padding:3px 10px;border:1px solid var(--color-border);border-radius:999px;background:var(--color-bg)">${esc(m.name || '未知冒险家')}<em style="font-style:normal;color:var(--color-text-secondary);margin-left:4px">${esc(m.realm || '')}</em></span>`).join('')}</div>
       <div style="margin-top:8px;font-size:11.5px;color:var(--color-text-secondary)">AI 正在推演副本局势，即将进入冒险</div>`;
     const target = el.querySelector('.my-party-section');
     const placeholder = target && target.querySelector('.my-party-placeholder');
@@ -1318,7 +1318,7 @@
       try { renderLogs(); } catch (e) {}
       return;
     }
-    // 刷新服务端角色数据（经验/灵石/战利品已结算）
+    // 刷新服务端角色数据（经验/金币/战利品已结算）
     await loadOnlineRoles();
     if (window.renderMine) renderMine();
     if (window.renderAdventurers) renderAdventurers();
@@ -1331,7 +1331,7 @@
       name: r.name, is_mine: viewerOwnsResult(r), score: r.score != null ? r.score : 5,
       fate: r.fate || '健康', damage: r.damage || 0, gold: r.gold || 0,
       loot: r.lootItems && r.lootItems.length ? r.lootItems : (r.loot || []).map(n => ({ name: n, qty: 1 })),
-      newTraits: r.newTraits || [], praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || `角色「${r.name}」在探险中气血归零，道消身殒。`.slice(0, 100)) : '',
+      newTraits: r.newTraits || [], praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || `角色「${r.name}」在探险中气血耗尽，壮烈阵亡。`.slice(0, 100)) : '',
     }));
     // 日志编号：优先用服务端分配的本局日志 id（001 起递增）
     const myRes = (d.results || []).find(viewerOwnsResult);
@@ -1342,7 +1342,7 @@
       id: logId, log_key: logId, run_id: d.runId || (run && run.id) || '', party_name: '匹配小队 (在线)', dungeon_name: d.dungeon || '',
       status: ownDied ? 'failed' : (d.ok ? 'completed' : 'failed'), result_summary: (d.summary || ''), created_at: new Date().toISOString(),
       death: anyDeath, summary_text: d.summary || '', death_summary: d.death_summary || '', special_event_theme: '',
-      verdict_reason: ownDied ? '角色气血归零，道消身殒' : (d.verdict === 'breakthrough_ok' ? '突破试炼成功，踏入筑基前期' : (d.verdict === 'breakthrough_fail' ? '突破试炼失败' : '')),
+      verdict_reason: ownDied ? '角色气血耗尽，壮烈阵亡' : (d.verdict === 'breakthrough_ok' ? '转职试炼成功，踏入 Lv.11' : (d.verdict === 'breakthrough_fail' ? '转职试炼失败' : '')),
       dg_snapshot: { icon: run ? run.dungeon.icon : '⚔️', name: d.dungeon || '', steps: run ? run.steps : [], party: (run ? run.party : []).map(x => ({ name: x.name, is_mine: !!x.is_mine })) },
       settlement: {
         exp: d.exp || 0,
@@ -1357,11 +1357,11 @@
     if (mine) {
       if (mine.fate === '阵亡') {
         if (typeof window.showDeathDialog === 'function') {
-          window.showDeathDialog(mine.name || (my && my.name) || '角色', d.dungeon || '灵墟', log.id, log.death_summary);
+          window.showDeathDialog(mine.name || (my && my.name) || '角色', d.dungeon || '地下城', log.id, log.death_summary);
         }
       } else {
-        toastMsg(d.ok ? ('✨ 探险胜利！获得经验 +' + (mine.exp || d.exp || 0)) : '💔 探险受挫，望道友莫灰心');
-        if (d.verdict === 'breakthrough_ok') toastMsg('⚡ 突破筑基前期！');
+        toastMsg(d.ok ? ('✨ 探险胜利！获得经验 +' + (mine.exp || d.exp || 0)) : '💔 探险受挫，望冒险家莫灰心');
+        if (d.verdict === 'breakthrough_ok') toastMsg('⚡ 转职成功！');
       }
     }
     // 最近动态：每项战利品单独记录，名称在左、来源作为小字显示。
@@ -1369,9 +1369,9 @@
       const myGold = mine ? (mine.gold || 0) : 0;
       const loot = mine && mine.lootItems || [];
       if (typeof window.addFeedItem === 'function') {
-        loot.forEach(it => window.addFeedItem('⚔️', it.name || '未知道具', `探险获得 · ${d.dungeon || '灵墟'}`, `+${it.qty || 1}`, it.rarity || ''));
-        if (myGold > 0) window.addFeedItem('💰', '灵石', `探险结算收益 · ${d.dungeon || '灵墟'}`, `+${myGold}.00`, '#ffc107');
-        if (d.verdict === 'breakthrough_ok') window.addFeedItem('⚡', '突破成功', `探险结算 · ${d.dungeon || '灵墟'}`, '筑基前期', '#f0883e');
+        loot.forEach(it => window.addFeedItem('⚔️', it.name || '未知道具', `探险获得 · ${d.dungeon || '地下城'}`, `+${it.qty || 1}`, it.rarity || ''));
+        if (myGold > 0) window.addFeedItem('💰', '金币', `探险结算收益 · ${d.dungeon || '地下城'}`, `+${myGold}.00`, '#ffc107');
+        if (d.verdict === 'breakthrough_ok') window.addFeedItem('⚡', '转职成功', `探险结算 · ${d.dungeon || '地下城'}`, 'Lv.11', '#f0883e');
       }
       if (typeof window.saveFeed === 'function') window.saveFeed();
     } catch (e) { /* 动态失败不影响结算 */ }
@@ -1462,7 +1462,7 @@
   window.spiritPlatformAction = async function spiritPlatformAction(action, payload = {}) {
     const role = window.D && window.D.my_adventurer;
     if (!role || !role._char_db_id) { toastMsg('请先创建角色'); return; }
-    if (role.status === 'insighting' || role.taixuInsight) { toastMsg('角色正在太虚幻境参悟'); return; }
+    if (role.status === 'insighting' || role.taixuInsight) { toastMsg('角色正在觉醒祭坛顿悟'); return; }
     try {
       const result = await api('/api/character/' + role._char_db_id + '/' + action, {
         method: 'POST', body: { updated_at: role._char_updated_at, ...payload },
@@ -1475,7 +1475,7 @@
       if (window.renderParty) renderParty();
       if (window.renderBuilding) renderBuilding();
       if (window.renderSpiritPlatformModal) renderSpiritPlatformModal();
-      const messages = { cultivation_started: '已开始闭关修炼', cultivation_exited: '已提前出关', breakthrough_started: '已开始闭关突破' };
+      const messages = { cultivation_started: '已开始打坐修炼', cultivation_exited: '已提前停止修炼', breakthrough_started: '已开始修炼突破' };
       toastMsg(messages[result.event && result.event.type] || '操作成功');
     } catch (e) { toastMsg(e.message || '操作失败'); }
   };
@@ -1493,7 +1493,7 @@
           method: 'POST',
           body: { type, goal, updated_at: role._char_updated_at },
         });
-        if (!accepted.jobId) throw new Error('太虚幻境未创建参悟任务');
+        if (!accepted.jobId) throw new Error('觉醒祭坛未创建顿悟任务');
         if (accepted.character) {
           Object.assign(role, accepted.character, { _char_db_id: role._char_db_id, _char_updated_at: accepted.updated_at, is_mine: true });
           if (window.renderMine) renderMine();
@@ -1504,9 +1504,9 @@
           await new Promise(resolve => setTimeout(resolve, poll === 0 ? 1000 : 5000));
           const status = await api('/api/character/' + role._char_db_id + '/taixu-insight/' + encodeURIComponent(accepted.jobId));
           if (status.status === 'completed') { result = status; break; }
-          if (status.status === 'failed') throw new Error(status.error || '太虚幻境参悟失败');
+          if (status.status === 'failed') throw new Error(status.error || '觉醒祭坛顿悟失败');
         }
-        if (!result) throw new Error('太虚幻境参悟等待超时，请稍后查看角色状态');
+        if (!result) throw new Error('觉醒祭坛顿悟等待超时，请稍后查看角色状态');
         break;
       } catch (error) {
         if (attempt !== 0 || !String(error && error.message || '').includes('角色数据已更新')) {

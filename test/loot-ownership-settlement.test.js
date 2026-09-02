@@ -109,13 +109,13 @@ test('enforces 4~12 character loot names and filters pseudo loot', () => {
   assert.equal(LootSettlement.isValidLootName('幽绿灵骨珠'), true);
   assert.equal(LootSettlement.isValidLootName('残箭杆'), false);
   assert.equal(LootSettlement.isValidLootName('无'), false);
-  assert.equal(LootSettlement.isValidLootName('灵石三十块'), false);
+  assert.equal(LootSettlement.isValidLootName('金币三十块'), false);
   assert.equal(LootSettlement.isValidLootName('非常长的道具名称超过十二个字'), false);
 
   const items = LootSettlement.normalizeLootItems([
     { name: '残箭杆', canonicalName: '残箭杆', desc: '短名。', sourceStep: 1 },
     { name: '无', canonicalName: '无', desc: '伪道具。', sourceStep: 2 },
-    { name: '灵石三十块', canonicalName: '灵石三十块', desc: '货币。', sourceStep: 3 },
+    { name: '金币三十块', canonicalName: '金币三十块', desc: '货币。', sourceStep: 3 },
     { name: '幽绿灵骨珠', canonicalName: '幽绿灵骨珠', desc: '合法道具。', sourceStep: 4 },
   ]);
   assert.equal(items.length, 1);

@@ -74,7 +74,7 @@ const fmtTimeFull = iso => {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
-const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'修炼中', breaking_through:'突破中', insighting:'参悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
+const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'修炼中', breaking_through:'突破中', insighting:'领悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
 const rarityColor = r => ({common:'#8b949e', rare:'#58a6ff', epic:'#a371f7', legendary:'#f0883e', mythic:'#f85149'}[r] || '#8b949e');
 function toastMsg(text) {
   const t = document.createElement('div');
@@ -186,7 +186,7 @@ function advCardHTML(adv) {
   const accent = accentFor(adv);
   const hpPct = adv.max_hp ? Math.max(0, adv.hp / adv.max_hp * 100) : 0;
   const stPct = adv.max_stamina ? Math.max(0, adv.stamina / adv.max_stamina * 100) : 0;
-  // 修为进度：练气阶段为等级 × 100，筑基阶段为等级 × 200
+  // 等级进度：1-9 级为等级 × 100，10 级后为等级 × 200
   const lv = adv.level || 1;
   const expNeed = lv < 10 ? lv * 100 : lv < 14 ? lv * 200 : 2800;
   const expCap = lv === 10 || lv >= 14;
@@ -211,23 +211,23 @@ function advCardHTML(adv) {
     </div>
     <div class="adv-hp"><div class="adv-hp-fill" style="width:${hpPct}%"></div><span class="adv-hp-text">${adv.hp}/${adv.max_hp}</span></div>
     <div class="adv-stamina"><div class="adv-stamina-fill" style="width:${stPct}%"></div><span class="adv-stamina-text">${adv.stamina}/${adv.max_stamina}</span></div>
-    <div class="adv-cultivate" title="当前修为：${esc(adv.character_class || '练气一层')}"><div class="adv-cultivate-fill" style="width:${expPct}%"></div><span class="adv-cultivate-text">⛩️ 修为 ${esc(adv.character_class || '练气一层')} · ${expLabel}</span></div>
+    <div class="adv-cultivate" title="当前等级：Lv.${lv} ${esc(adv.character_class || '职业不明')}"><div class="adv-cultivate-fill" style="width:${expPct}%"></div><span class="adv-cultivate-text">⚔️ Lv.${lv} · ${esc(adv.character_class || '职业不明')} · ${expLabel}</span></div>
     <div class="adv-row">
-      <span class="lv">${esc(adv.character_class || '练气一层')}</span>
-      <span>体魄 ${adv.strength}</span>
-      <span>身法 ${adv.agility}</span>
-      <span>神识 ${adv.intelligence}</span>
-      <span>气运 ${adv.luck}</span>
+      <span class="lv">${esc(adv.character_class || '职业不明')}</span>
+      <span>力量 ${adv.strength}</span>
+      <span>敏捷 ${adv.agility}</span>
+      <span>智力 ${adv.intelligence}</span>
+      <span>幸运 ${adv.luck}</span>
     </div>
     <div class="adv-row secondary">
-      <span>${esc((adv.traits && adv.traits[0]) || '无灵根')}</span>
+      <span>${esc((adv.traits && adv.traits[0]) || '—')}</span>
       <span>${esc(adv.personality || '')}</span>
-      <span>💰 ${Number(adv.gold || 0).toFixed(0)} 灵石</span>
+      <span>💰 ${Number(adv.gold || 0).toFixed(0)} 金币</span>
     </div>
     ${traits.length ? `<div class="adv-tags">${traits.map(t => `<span class="tag-badge${adv.injury && adv.injury.name === t ? ' injury-tag' : ''}">${esc(t)}${adv.injury && adv.injury.name === t ? `<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span>` : ''}</span>`).join('')}${(adv.traits||[]).length > 4 ? `<span class="tag-badge empty">+${(adv.traits||[]).length - 4}</span>` : ''}</div>` : ''}
-    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge st-${s.type === '功法' ? 'gongfa' : 'shufa'}" style="color:${skillTierColor(s)};border-color:${skillTierColor(s)}66">${esc(s.name)}<em class="sb-tier">${skillTier(s)}</em></span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
+    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge st-${s.type === '物理技' ? 'gongfa' : 'shufa'}" style="color:${skillTierColor(s)};border-color:${skillTierColor(s)}66">${esc(s.name)}<em class="sb-tier">${skillTier(s)}</em></span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
     <div class="adv-tags">
-      ${adv.is_mine && (adv.bag && adv.bag.length) ? `<span class="equip-badge">🎒 储物袋 ${adv.bag.length}/100</span>` : ''}
+      ${adv.is_mine && (adv.bag && adv.bag.length) ? `<span class="equip-badge">🎒 背包 ${adv.bag.length}/100</span>` : ''}
       ${equips.map(e => `<span class="equip-badge" style="color:${itemColor(e)};border-color:${itemColor(e)}55">${esc(e.name)}${e.qty > 1 ? ` ×${e.qty}` : ''}</span>`).join('')}
       ${(adv.equipment||[]).length > 4 ? `<span class="equip-badge empty">+${(adv.equipment||[]).length - 4}</span>` : ''}
     </div>
@@ -448,8 +448,8 @@ function renderBuilding() {
   }
   html += `<div class="notice-banner" style="margin-top:0">
     <div class="notice-banner-body">
-      <strong>🏗️ 驻地修炼与炼器设施</strong>
-      <p class="notice-banner-text">典籍研习、闭关突破、太虚参悟与法器炼制均已开放</p>
+      <strong>🏗️ 驻地修炼与锻造设施</strong>
+      <p class="notice-banner-text">典籍研习、修炼突破、觉醒领悟与装备锻造均已开放</p>
     </div>
   </div>`;
 
@@ -464,10 +464,10 @@ function renderBuilding() {
             <div class="b-name">${esc(b.name)}</div>
             <div class="b-cat">${esc(b.description ? (b.description.length > 40 ? b.description.slice(0, 40) + '…' : b.description) : '')}</div>
             ${b.upgrade_level > 1 ? `<div class="b-cat" style="color:var(--color-primary)">Lv.${b.upgrade_level} · 已改造</div>` : ''}
-            ${b.code === 'forge' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入炼器</div>` : ''}
-            ${b.code === 'training_intelligence' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入藏经阁</div>` : ''}
-            ${b.code === 'spirit_platform' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入闭关</div>` : ''}
-            ${b.code === 'taixu_realm' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入参悟</div>` : ''}
+            ${b.code === 'forge' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入锻造</div>` : ''}
+            ${b.code === 'training_intelligence' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入技能导师馆</div>` : ''}
+            ${b.code === 'spirit_platform' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入修炼</div>` : ''}
+            ${b.code === 'taixu_realm' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入领悟</div>` : ''}
           </div>`).join('')}
       </div>`;
   });
@@ -475,20 +475,20 @@ function renderBuilding() {
 }
 
 /* ============================================================
-   藏经阁（仿军需店布局）：出售炼气期与筑基期功法 / 术法
+   技能导师馆（仿军需店布局）：出售物理技与魔法技技能书
    ============================================================ */
 const LIBRARY_BOOKS = [
-  { code: 'tuna', name: '吐纳诀', type: '功法', elem: '无', tier: '黄阶', realm: '炼气期', price: 50, stock: 20, desc: '最基础的呼吸吐纳之法，引天地灵气入体，稳固根基，气脉绵长。' },
-  { code: 'yufeng', name: '御风诀', type: '功法', elem: '无', tier: '玄阶', realm: '炼气期', price: 60, stock: 18, desc: '运气于足底，身轻如燕，步法迅捷，探路逃遁皆有妙用。' },
-  { code: 'wood_shield', name: '木盾术', type: '术法', elem: '木灵根', tier: '黄阶', realm: '炼气期', price: 70, stock: 16, desc: '催生灵力凝成一面青木盾，可挡寻常刀剑与爪牙。' },
-  { code: 'fireball', name: '火球术', type: '术法', elem: '火灵根', tier: '玄阶', realm: '炼气期', price: 80, stock: 15, desc: '凝聚一团赤焰火球掷向敌手，爆裂灼烧，炼气期术法的招牌。' },
-  { code: 'water_arrow', name: '水箭术', type: '术法', elem: '水灵根', tier: '地阶', realm: '炼气期', price: 80, stock: 15, desc: '凝水成箭，破空无声，阴湿之地威力更盛。' },
-  { code: 'gold_blade', name: '金刃术', type: '术法', elem: '金灵根', tier: '天阶', realm: '炼气期', price: 80, stock: 15, desc: '凝聚一道锋锐金刃，可近可远，削铁如泥。' },
-  { code: 'lianxi', name: '敛息术', type: '功法', elem: '无', tier: '玄阶', realm: '炼气期', price: 90, stock: 12, desc: '收敛气息灵机，隐于暗处，修士探索阴地必备之技。' },
-  { code: 'qingmu', name: '青木长生功', type: '功法', elem: '木灵根', tier: '天阶', realm: '筑基期', price: 320, stock: 8, desc: '筑基级木系功法，吐纳青木生气，绵绵不绝，伤势恢复极快。' },
-  { code: 'xuanbing', name: '玄冰真气', type: '功法', elem: '水灵根', tier: '地阶', realm: '筑基期', price: 320, stock: 8, desc: '筑基级水系功法，引水灵凝寒成冰，真气过处寒气逼人。' },
-  { code: 'zixiao', name: '紫霄雷法', type: '术法', elem: '雷灵根', tier: '天阶', realm: '筑基期', price: 420, stock: 6, desc: '筑基级雷系术法，引紫霄天雷为己用，一击之威惊动四野。' },
-  { code: 'yujian', name: '御剑术·初窥', type: '术法', elem: '金灵根', tier: '地阶', realm: '筑基期', price: 450, stock: 5, desc: '剑修入门秘录，御使飞剑千里取敌，初窥门径已非凡俗可比。' },
+  { code: 'tuna', name: '里鬼剑术', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
+  { code: 'yufeng', name: '银弹', type: '魔法技', elem: '无', tier: '普通', level: 'Lv.1+', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+  { code: 'wood_shield', name: '圣光十字', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
+  { code: 'fireball', name: '火球术', type: '魔法技', elem: '无', tier: '普通', level: 'Lv.1+', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+  { code: 'water_arrow', name: '冰霜雪人', type: '魔法技', elem: '无', tier: '高级', level: 'Lv.1+', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
+  { code: 'gold_blade', name: '崩拳', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
+  { code: 'lianxi', name: '三段斩', type: '物理技', elem: '无', tier: '普通', level: 'Lv.1+', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+  { code: 'qingmu', name: '治愈术', type: '魔法技', elem: '无', tier: '高级', level: 'Lv.1+', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+  { code: 'xuanbing', name: '鬼斩', type: '物理技', elem: '无', tier: '稀有', level: 'Lv.11+', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
+  { code: 'zixiao', name: '浮空弹', type: '物理技', elem: '无', tier: '普通', level: 'Lv.11+', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
+  { code: 'yujian', name: '加特林扫射', type: '物理技', elem: '无', tier: '稀有', level: 'Lv.11+', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
 ];
 function libStock() {
   try { return JSON.parse(localStorage.getItem('dnf_library_stock') || '{}'); } catch (e) { return {}; }
@@ -508,10 +508,10 @@ function renderLibraryModal() {
   box.innerHTML = `
   <button class="modal-close" onclick="closeModal()">✕</button>
   <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
-  <h2 class="modal-title">📖 藏经阁 <span class="built-badge">✓ 已建成</span></h2>
-  <p class="facility-desc">典藏炼气期与筑基期功法术法，由藏经阁执事誊录发售；购得后录入功法栏（栏满则入功法库），装备后方可随探险施展。</p>
-  <div class="lib-user">${esc(role.name)} · 💰 ${Number(role.gold || 0).toFixed(0)} 灵石 <span class="lib-skill-count">功法栏 ${(role.skills || []).length} / ${MAX_SKILLS} · 功法库 ${(role.skillPool || []).length}</span></div>
-  <div class="lib-hint">购买后功法自动装备入随身功法栏（上限 ${MAX_SKILLS} 种）；栏满则存入功法库，可在档案页随时装卸。境界标注仅作修为参考，购得即可参悟。</div>
+  <h2 class="modal-title">📖 技能导师馆 <span class="built-badge">✓ 已建成</span></h2>
+  <p class="facility-desc">典藏物理技与魔法技技能书，由技能导师馆导师誊录发售；购得后录入技能栏（栏满则入技能库），装备后方可随探险施展。</p>
+  <div class="lib-user">${esc(role.name)} · 💰 ${Number(role.gold || 0).toFixed(0)} 金币 <span class="lib-skill-count">技能栏 ${(role.skills || []).length} / ${MAX_SKILLS} · 技能库 ${(role.skillPool || []).length}</span></div>
+  <div class="lib-hint">购买后技能自动装备入随身技能栏（上限 ${MAX_SKILLS} 门）；栏满则存入技能库，可在档案页随时装卸。等级标注仅作参考，购得即可领悟。</div>
   <div class="lib-list">
     ${LIBRARY_BOOKS.map(b => {
       const left = stock[b.code] !== undefined ? stock[b.code] : b.stock;
@@ -521,12 +521,12 @@ function renderLibraryModal() {
         <div class="li-head">
           <span class="li-name" style="color:${skillTierColor(b)}">${esc(b.name)}</span>
           ${tierTag(b)}
-          <span class="li-tag st-${b.type === '功法' ? 'gongfa' : 'shufa'}">${esc(b.type)}</span>
-          <span class="li-realm ${b.realm === '筑基期' ? 'high' : ''}">${esc(b.realm)}</span>
+          <span class="li-tag st-${b.type === '物理技' ? 'physical' : 'magic'}">${esc(b.type)}</span>
+          <span class="li-realm ${b.tier === '稀有' || b.tier === '神器' ? 'high' : ''}">${esc(b.level)}</span>
         </div>
         <div class="li-desc">${esc(b.desc)}</div>
         <div class="li-foot">
-          <span class="li-price">💰 ${b.price} 灵石</span>
+          <span class="li-price">💰 ${b.price} 金币</span>
           <span class="li-stock">普通 · 库存 ${left}</span>
           <button class="btn btn-primary btn-sm" onclick="buyLibraryBook('${b.code}')" ${owned || left <= 0 ? 'disabled' : ''}>${owned ? '已拥有' : '购买'}</button>
         </div>
@@ -543,51 +543,51 @@ function buyLibraryBook(code) {
       const book = LIBRARY_BOOKS.find(x => x.code === code);
       if (!book) return;
       renderLibraryModal(); renderMine(); renderAdventurers();
-      addFeedBatch('📖', '藏经阁', `参悟《${book.name}》`, [
-        { delta: `-${book.price} 灵石`, color: '#ffc107' },
+      addFeedBatch('📖', '技能导师馆', `领悟《${book.name}》`, [
+        { delta: `-${book.price} 金币`, color: '#ffc107' },
         { delta: `+1 ${book.name}`, color: book.tier ? SKILL_TIER_COLOR[book.tier] : '' },
       ]);
-      toastMsg(result.character.skills.some(s => s.name === book.name) ? '📖 参悟成功！已装备入功法栏' : '📖 参悟成功！已存入功法库');
-    }).catch(e => toastMsg(e.message || '参悟失败'));
+      toastMsg(result.character.skills.some(s => s.name === book.name) ? '📖 领悟成功！已装备入技能栏' : '📖 领悟成功！已存入技能库');
+    }).catch(e => toastMsg(e.message || '领悟失败'));
     return;
   }
   const b = LIBRARY_BOOKS.find(x => x.code === code);
   if (!b) return;
-  if ((role.skills || []).some(s => s.name === b.name) || (role.skillPool || []).some(s => s.name === b.name)) { toastMsg('已拥有该功法'); return; }
-  if ((role.gold || 0) < b.price) { toastMsg('灵石不足（需 ' + b.price + '）'); return; }
+  if ((role.skills || []).some(s => s.name === b.name) || (role.skillPool || []).some(s => s.name === b.name)) { toastMsg('已拥有该技能'); return; }
+  if ((role.gold || 0) < b.price) { toastMsg('金币不足（需 ' + b.price + '）'); return; }
   const stock = libStock();
   const left = stock[code] !== undefined ? stock[code] : b.stock;
   if (left <= 0) { toastMsg('已售罄'); return; }
   stock[code] = left - 1;
   try { localStorage.setItem('dnf_library_stock', JSON.stringify(stock)); } catch (e) { /* 忽略 */ }
   role.gold = (role.gold || 0) - b.price;
-  const sk = { name: b.name, type: b.type, elem: b.elem, tier: b.tier || '黄阶', desc: b.desc };
+  const sk = { name: b.name, type: b.type, elem: b.elem, tier: b.tier || '普通', desc: b.desc };
   if ((role.skills || []).length < MAX_SKILLS) {
     if (!role.skills) role.skills = [];
     role.skills.push(sk);   // 栏位有空 → 自动装备
     if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
     renderLibraryModal();
     renderMine(); renderAdventurers();
-    addFeedBatch('📖', '藏经阁', `参悟《${b.name}》`, [
-      { delta: `-${b.price} 灵石`, color: '#ffc107' },
+    addFeedBatch('📖', '技能导师馆', `领悟《${b.name}》`, [
+      { delta: `-${b.price} 金币`, color: '#ffc107' },
       { delta: `+1 ${b.name}`, color: b.tier ? SKILL_TIER_COLOR[b.tier] : '' },
     ]);
-    toastMsg('📖 参悟《' + b.name + '》成功！已自动装备入功法栏');
+    toastMsg('📖 领悟《' + b.name + '》成功！已自动装备入技能栏');
   } else {
     if (!role.skillPool) role.skillPool = [];
-    role.skillPool.push(sk);  // 栏满 → 存入功法库，档案页可手动装备
+    role.skillPool.push(sk);  // 栏满 → 存入技能库，档案页可手动装备
     if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
     renderLibraryModal();
     renderMine(); renderAdventurers();
-    addFeedBatch('📖', '藏经阁', `参悟《${b.name}》`, [
-      { delta: `-${b.price} 灵石`, color: '#ffc107' },
+    addFeedBatch('📖', '技能导师馆', `领悟《${b.name}》`, [
+      { delta: `-${b.price} 金币`, color: '#ffc107' },
       { delta: `+1 ${b.name}`, color: b.tier ? SKILL_TIER_COLOR[b.tier] : '' },
     ]);
-    toastMsg('📖 参悟《' + b.name + '》成功！功法栏已满，已存入功法库（档案页可装备）');
+    toastMsg('📖 领悟《' + b.name + '》成功！技能栏已满，已存入技能库（档案页可装备）');
   }
 }
 /* ============================================================
-   聚灵台：服务端权威的闭关修炼与突破
+   修炼静室：服务端权威的修炼修炼与突破
    ============================================================ */
 let spiritPlatformTimer = null;
 function fmtSpiritTime(ms) {
@@ -607,23 +607,23 @@ function renderSpiritPlatformModal() {
   if (active) {
     const remaining = Math.max(0, Number(active.endsAt) - Date.now());
     const nextSettlement = active.mode === 'cultivate' ? Math.max(0, Number(active.lastSettledAt) + 1800000 - Date.now()) : 0;
-    box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 聚灵台</h2><div class="spirit-active"><div class="spirit-state">${active.mode === 'cultivate' ? '修炼中' : '突破中'}</div><div class="spirit-countdown" id="spirit-countdown">${fmtSpiritTime(remaining)}</div>${active.mode === 'cultivate' ? `<p>下一次经验结算：${fmtSpiritTime(nextSettlement)} · 每半小时 +50 经验</p><button class="btn btn-danger" onclick="exitCultivationEarly()">提前出关</button>` : `<p>闭关突破不可提前出关</p>`}</div>`;
+    box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 修炼静室</h2><div class="spirit-active"><div class="spirit-state">${active.mode === 'cultivate' ? '修炼中' : '突破中'}</div><div class="spirit-countdown" id="spirit-countdown">${fmtSpiritTime(remaining)}</div>${active.mode === 'cultivate' ? `<p>下一次经验结算：${fmtSpiritTime(nextSettlement)} · 每半小时 +50 经验</p><button class="btn btn-danger" onclick="exitCultivationEarly()">提前出关</button>` : `<p>修炼突破不可提前出关</p>`}</div>`;
     spiritPlatformTimer = setInterval(() => renderSpiritPlatformModal(), 1000);
     return;
   }
   const bonus = Math.round(Number(role.breakthroughBonus || 0) * 100);
-  box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 聚灵台 <span class="built-badge">✓ 已建成</span></h2><p class="facility-desc">引灵入体，静修精进；练气圆满后可尝试筑基。</p><div class="spirit-grid"><section><h3>闭关修炼</h3><p>100 灵石 / 小时，每半小时结算 50 经验。</p><div class="spirit-stepper"><button onclick="changeCultivationHours(-1)">−</button><strong id="spirit-hours">1</strong><span>小时</span><button onclick="changeCultivationHours(1)">+</button></div><p id="spirit-cost">消耗：100 灵石</p><button class="btn btn-primary" onclick="startCultivation()">开始修炼</button></section><section class="${ready ? '' : 'spirit-locked'}" onclick="${ready ? '' : "toastMsg('需达到练气十层圆满')"}"><h3>闭关突破</h3><p>固定 2 小时 · 基础成功率 50%</p><p>累计加成：+${bonus}% · 当前成功率：${Math.min(100, 50 + bonus)}%</p><button class="btn btn-primary" ${ready ? 'onclick="startBreakthrough()"' : 'disabled'}>开始突破</button>${ready ? '' : '<small>需达到练气十层圆满</small>'}</section></div>`;
+  box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 修炼静室 <span class="built-badge">✓ 已建成</span></h2><p class="facility-desc">打坐积累经验；Lv.10 圆满后可冲击转职。</p><div class="spirit-grid"><section><h3>日常修炼</h3><p>100 金币 / 小时，每半小时结算 50 经验。</p><div class="spirit-stepper"><button onclick="changeCultivationHours(-1)">−</button><strong id="spirit-hours">1</strong><span>小时</span><button onclick="changeCultivationHours(1)">+</button></div><p id="spirit-cost">消耗：100 金币</p><button class="btn btn-primary" onclick="startCultivation()">开始修炼</button></section><section class="${ready ? '' : 'spirit-locked'}" onclick="${ready ? '' : "toastMsg('需达到 Lv.10 圆满')"}"><h3>转职试炼</h3><p>固定 2 小时 · 基础成功率 50%</p><p>累计加成：+${bonus}% · 当前成功率：${Math.min(100, 50 + bonus)}%</p><button class="btn btn-primary" ${ready ? 'onclick="startBreakthrough()"' : 'disabled'}>开始转职</button>${ready ? '' : '<small>需达到 Lv.10 圆满</small>'}</section></div>`;
 }
-function changeCultivationHours(delta) { const el = $('#spirit-hours'); const hours = Math.max(1, Math.min(24, Number(el.textContent) + delta)); el.textContent = hours; $('#spirit-cost').textContent = `消耗：${hours * 100} 灵石`; }
+function changeCultivationHours(delta) { const el = $('#spirit-hours'); const hours = Math.max(1, Math.min(24, Number(el.textContent) + delta)); el.textContent = hours; $('#spirit-cost').textContent = `消耗：${hours * 100} 金币`; }
 async function startCultivation() { const hours = Number($('#spirit-hours').textContent); await window.spiritPlatformAction('cultivation/start', { hours }); }
 async function exitCultivationEarly() { await window.spiritPlatformAction('cultivation/exit'); }
-async function startBreakthrough() { const r = D.my_adventurer; if (Number(r.level) !== 10 || Number(r.exp) < 2000) { toastMsg('需达到练气十层圆满（2000 经验）'); return; } await window.spiritPlatformAction('breakthrough/start'); }
+async function startBreakthrough() { const r = D.my_adventurer; if (Number(r.level) !== 10 || Number(r.exp) < 2000) { toastMsg('需达到 Lv.10 圆满（2000 经验）'); return; } await window.spiritPlatformAction('breakthrough/start'); }
 function closeSpiritPlatformModal() { if (spiritPlatformTimer) clearInterval(spiritPlatformTimer); spiritPlatformTimer = null; closeModal(); }
 
 /* ============================================================
-   太虚幻境：AI 结合角色道途参悟功法或术法
+   觉醒祭坛：AI 结合职业道途领悟物理技或魔法技
    ============================================================ */
-let taixuType = '功法';
+let taixuType = '物理技';
 let taixuInsightTimer = null;
 function renderTaixuInsightProgress() {
   const role = D.my_adventurer;
@@ -634,9 +634,9 @@ function renderTaixuInsightProgress() {
   box.classList.remove('log-modal', 'forge-modal-box');
   box.innerHTML = `<div class="taixu-progress-dialog" role="dialog" aria-labelledby="taixu-progress-title">
     <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
-    <h2 class="modal-title" id="taixu-progress-title">◎ 太虚幻境 · 参悟中</h2>
-    <p class="facility-desc">心神已入太虚，灵机正在推演新的功法或术法。</p>
-    <div class="taixu-progress-state"><span class="taixu-progress-dot" aria-hidden="true"></span><strong>参悟中</strong><span>期间无法进行其他操作</span></div>
+    <h2 class="modal-title" id="taixu-progress-title">◎ 觉醒祭坛 · 领悟中</h2>
+    <p class="facility-desc">心神已入觉醒，正在推演新的物理技或魔法技。</p>
+    <div class="taixu-progress-state"><span class="taixu-progress-dot" aria-hidden="true"></span><strong>领悟中</strong><span>期间无法进行其他操作</span></div>
     <div class="taixu-progress-countdown" id="taixu-insight-countdown">${fmtSpiritTime(Number(state.endsAt) - Date.now())}</div>
     <div class="taixu-progress-meta">预计完成：${fmtTimeFull(new Date(Number(state.endsAt)).toISOString())}</div>
     <button class="btn taixu-progress-close" type="button" onclick="closeModal()">关闭窗口</button>
@@ -648,7 +648,7 @@ function renderTaixuInsightProgress() {
     const countdown = $('#taixu-insight-countdown');
     if (!active) {
       clearInterval(taixuInsightTimer); taixuInsightTimer = null;
-      if (countdown) countdown.textContent = '参悟结算中…';
+      if (countdown) countdown.textContent = '领悟结算中…';
       return;
     }
     if (countdown) countdown.textContent = fmtSpiritTime(Number(latest.taixuInsight.endsAt) - Date.now());
@@ -659,32 +659,32 @@ function openTaixuRealmModal() {
   const role = D.my_adventurer;
   if (!role) { toastMsg('请先创建角色'); return; }
   if (role.status === 'insighting' && role.taixuInsight) { renderTaixuInsightProgress(); return; }
-  taixuType = '功法';
+  taixuType = '物理技';
   const box = $('#modal-box');
   box.classList.remove('log-modal', 'forge-modal-box');
   box.innerHTML = `<div class="taixu-dialog">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
-    <h2 class="modal-title">◎ 太虚幻境 <span class="built-badge">✓ 已建成</span></h2>
-    <p class="facility-desc">观照自身道途，推演一门契合当前修为的新能力。</p>
-    <div class="taixu-capacity">功法栏 ${(role.skills || []).length} / ${MAX_SKILLS}<span>功法库 ${(role.skillPool || []).length}</span><span>当前免费 · 无冷却</span></div>
-    <div class="taixu-field-label">参悟类型</div>
-    <div class="taixu-type-switch" role="group" aria-label="参悟类型">
-      <button type="button" class="taixu-type-btn active" data-taixu-type="功法" aria-pressed="true" onclick="setTaixuType('功法')">功法</button>
-      <button type="button" class="taixu-type-btn" data-taixu-type="术法" aria-pressed="false" onclick="setTaixuType('术法')">术法</button>
+    <h2 class="modal-title">◎ 觉醒祭坛 <span class="built-badge">✓ 已建成</span></h2>
+  // 觉醒祭坛：观照自身道途，推演一门契合当前等级的新能力。
+    <div class="taixu-capacity">技能栏 ${(role.skills || []).length} / ${MAX_SKILLS}<span>技能库 ${(role.skillPool || []).length}</span><span>当前免费 · 无冷却</span></div>
+    <div class="taixu-field-label">领悟类型</div>
+    <div class="taixu-type-switch" role="group" aria-label="领悟类型">
+      <button type="button" class="taixu-type-btn active" data-taixu-type="物理技" aria-pressed="true" onclick="setTaixuType('物理技')">物理技</button>
+      <button type="button" class="taixu-type-btn" data-taixu-type="魔法技" aria-pressed="false" onclick="setTaixuType('魔法技')">魔法技</button>
     </div>
     <label class="taixu-goal-wrap" for="taixu-goal">
       <span class="taixu-field-label">期望目标</span>
-      <textarea id="taixu-goal" maxlength="100" rows="4" oninput="updateTaixuGoalCount()" placeholder="例如：适合火灵根、能够持续护体并在危急时稳住经脉"></textarea>
+      <textarea id="taixu-goal" maxlength="100" rows="4" oninput="updateTaixuGoalCount()" placeholder="例如：适合圣职者、能够持续庇护并在危急时稳住伤情"></textarea>
       <span class="taixu-goal-count" id="taixu-goal-count">0 / 100</span>
     </label>
     <div class="taixu-result" id="taixu-result" aria-live="polite"></div>
-    <button class="btn btn-primary taixu-submit" id="taixu-submit" type="button" onclick="submitTaixuInsight()">开始参悟</button>
+    <button class="btn btn-primary taixu-submit" id="taixu-submit" type="button" onclick="submitTaixuInsight()">开始领悟</button>
   </div>`;
   showModal();
 }
 function setTaixuType(type) {
-  if (type !== '功法' && type !== '术法') return;
+  if (type !== '物理技' && type !== '魔法技') return;
   taixuType = type;
   document.querySelectorAll('[data-taixu-type]').forEach(button => {
     const selected = button.dataset.taixuType === type;
@@ -702,7 +702,7 @@ function renderTaixuInsightResult(result) {
   if (!target || !result || !result.skill) return;
   const skill = result.skill;
   const color = skillTierColor(skill);
-  const storageText = result.storage === 'equipped' ? '已装备至功法栏' : '已存入功法库';
+  const storageText = result.storage === 'equipped' ? '已装备至技能栏' : '已存入技能库';
   target.innerHTML = `<div class="taixu-result-inner" style="border-left-color:${color}">
     <div class="taixu-result-head"><strong style="color:${color}">${esc(skill.name)}</strong><span style="color:${color};border-color:${color}">${esc(skill.tier)}</span></div>
     <div class="taixu-result-meta">${esc(skill.type)} · ${esc(skill.elem || '无属性')} · ${esc(storageText)}</div>
@@ -713,14 +713,14 @@ function renderTaixuInsightSuccess(result) {
   if (!result || !result.skill) return;
   const skill = result.skill;
   const color = skillTierColor(skill);
-  const storageText = result.storage === 'equipped' ? '已装备至功法栏' : '功法栏已满，已存入功法库';
+  const storageText = result.storage === 'equipped' ? '已装备至技能栏' : '技能栏已满，已存入技能库';
   const box = $('#modal-box');
   box.classList.remove('log-modal', 'forge-modal-box');
   box.innerHTML = `<div class="taixu-success-dialog" role="dialog" aria-labelledby="taixu-success-title">
     <div class="taixu-success-head">
       <div class="taixu-success-mark" aria-hidden="true">✦</div>
       <div class="taixu-success-heading">
-        <span class="taixu-success-kicker">太虚幻境 · 参悟完成</span>
+        <span class="taixu-success-kicker">觉醒祭坛 · 领悟完成</span>
         <h2 class="modal-title" id="taixu-success-title">${esc(skill.name)}</h2>
       </div>
       <span class="taixu-success-tier" style="color:${color};border-color:${color}">${esc(skill.tier)}</span>
@@ -744,27 +744,27 @@ async function submitTaixuInsight() {
     toastMsg(goal ? '期望目标不能超过 100 字' : '请输入期望目标');
     return;
   }
-  if (typeof window.taixuInsight !== 'function') { toastMsg('太虚幻境仅支持在线角色'); return; }
+  if (typeof window.taixuInsight !== 'function') { toastMsg('觉醒祭坛仅支持在线角色'); return; }
   button.disabled = true;
-  button.textContent = '正在参悟…';
-  target.innerHTML = '<div class="taixu-loading">正在观想太虚万象…</div>';
+  button.textContent = '正在领悟…';
+  target.innerHTML = '<div class="taixu-loading">正在观想觉醒万象…</div>';
   try {
     const result = await window.taixuInsight(taixuType, goal);
-    addFeedItem('◎', result.skill.name, `太虚幻境 · 参悟${result.skill.type}`, result.storage === 'equipped' ? '功法栏' : '功法库', SKILL_TIER_COLOR[result.skill.tier] || '', {
+    addFeedItem('◎', result.skill.name, `觉醒祭坛 · 领悟${result.skill.type}`, result.storage === 'equipped' ? '技能栏' : '技能库', SKILL_TIER_COLOR[result.skill.tier] || '', {
       kind: 'insight',
       tier: result.skill.tier,
       description: result.skill.desc,
     });
     renderTaixuInsightSuccess(result);
   } catch (error) {
-    target.innerHTML = `<div class="taixu-error">${esc(error && error.message || '参悟失败，请稍后重试')}</div>`;
-    button.textContent = '重新参悟';
+    target.innerHTML = `<div class="taixu-error">${esc(error && error.message || '领悟失败，请稍后重试')}</div>`;
+    button.textContent = '重新领悟';
   } finally {
     button.disabled = false;
   }
 }
 /* ============================================================
-   炼器坊（仿铁匠铺布局）：AI 器道宗师依据材料描述判断合理性并生成法器
+   铁匠铺：AI 铁匠宗师依据材料描述判断合理性并锻造装备
    ============================================================ */
 const FORGE_GOLD_COST = 100, FORGE_STAMINA_COST = 20, FORGE_CD_MS = 2 * 3600 * 1000;
 let forgeSel = [];  // 已选材料：{name, desc, kind, src: 'bag'|'equip'}
@@ -773,7 +773,7 @@ let forgeMatFilter = 'all';
 let forgeMatSort = 'default';
 let forgeMatSearch = '';
 function getForgeCD() {
-  return 0;  // 测试阶段：已取消炼器冷却（FORGE_CD_MS 保留备用）
+  return 0;  // 测试阶段：已取消锻造冷却（FORGE_CD_MS 保留备用）
 }
 function setForgeCD() { localStorage.setItem('dnf_forge_cd', String(Date.now() + FORGE_CD_MS)); }
 function fmtCD(ms) {
@@ -811,12 +811,12 @@ function forgeModalHTML(role, resultHTML) {
   return `
   <button class="modal-close" onclick="closeForgeModal()">✕</button>
   <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
-  <h2 class="modal-title">🔥 炼器坊 <span class="built-badge">✓ 已建成</span></h2>
-  <p class="facility-desc">锻造与强化法器，由器道宗师根据材料品质与组合的合理性决定结果。</p>
+  <h2 class="modal-title">🔥 铁匠铺 <span class="built-badge">✓ 已建成</span></h2>
+  <p class="facility-desc">锻造与强化装备，由铁匠宗师根据材料品质与组合的合理性决定结果。</p>
   <div class="facility-section">
     <div class="facility-sec-title">— 使用说明</div>
     <div class="facility-rows">
-      <span class="fr">💰 灵石消耗：0（测试期免费）</span>
+      <span class="fr">💰 金币消耗：0（测试期免费）</span>
       <span class="fr">💪 精力消耗：${FORGE_STAMINA_COST}</span>
       <span class="fr">⏱ 使用时长：约 1 分钟</span>
       <span class="fr">⏳ CD：已取消（测试期）</span>
@@ -825,14 +825,14 @@ function forgeModalHTML(role, resultHTML) {
   <div class="facility-section">
     <div class="facility-sec-title">⚠ 风险提示</div>
     <ul class="facility-risks">
-      <li>器道宗师将依据材料描述判断组合是否合乎炼器之道与世界观</li>
-      <li>组合合理：投入的两件材料均被消耗，产出一件契合材料特性的法器</li>
-      <li>组合不合理：炼器失败，每件材料各五成概率保留或损毁</li>
-      <li>炼器不消耗灵石；炉火炭与淬火液已燃，精力不退还</li>
+      <li>铁匠宗师将依据材料描述判断组合是否合乎锻造常理与世界观</li>
+      <li>组合合理：投入的两件材料均被消耗，产出一件契合材料特性的装备</li>
+      <li>组合不合理：锻造失败，每件材料各五成概率保留或损毁</li>
+      <li>锻造不消耗金币；炉火炭与淬火液已燃，精力不退还</li>
     </ul>
   </div>
   <div class="forge-mats">
-    <div class="facility-sec-title">— 投入材料（从随身法宝 / 储物袋中选两件）</div>
+    <div class="facility-sec-title">— 投入材料（从随身装备 / 背包中选两件）</div>
     <div class="filter-bar forge-mat-filter-bar">
       <input class="search-input forge-mat-search" id="forge-mat-search" placeholder="搜索名称 / 描述 / 种类 / 来源" value="${esc(forgeMatSearch)}" oninput="forgeMatSearch=this.value;renderForgeMats()">
       <div class="bag-toolbar forge-mat-toolbar">
@@ -851,15 +851,15 @@ function forgeModalHTML(role, resultHTML) {
     <div class="forge-mat-selected" id="forge-mat-selected">已选 0 / 2</div>
   </div>
   <div class="forge-result" id="forge-result">${resultHTML || ''}</div>
-  <button class="btn btn-primary forge-go" id="forge-go" onclick="doForge()">🔥 选择材料并炼器</button>
-  <div class="facility-user">${esc(role.name)} · ❤️ 气血 ${role.hp}/${role.max_hp} · 💪 精力 ${role.stamina}/${role.max_stamina}${!stOk ? ' — 精力不足' : ''}${!goldOk ? ' — 灵石不足' : ''}</div>
+  <button class="btn btn-primary forge-go" id="forge-go" onclick="doForge()">🔥 选择材料并锻造</button>
+  <div class="facility-user">${esc(role.name)} · ❤️ 气血 ${role.hp}/${role.max_hp} · 💪 精力 ${role.stamina}/${role.max_stamina}${!stOk ? ' — 精力不足' : ''}${!goldOk ? ' — 金币不足' : ''}</div>
   <div class="facility-foot">
     <button class="btn btn-sm" onclick="toastMsg('贡献者功能开发中')">📊 贡献者</button>
     <button class="btn btn-sm" onclick="closeForgeModal()">关闭</button>
   </div>`;
 }
 const forgeMatKey = m => `${m.name}|${m.src}|${m.idx}`;
-const forgeMatSourceLabel = m => m.src === 'equip' ? '随身法宝' : '储物袋';
+const forgeMatSourceLabel = m => m.src === 'equip' ? '随身装备' : '背包';
 function forgeMatView() {
   const all = forgeMatsPool();
   const counts = { all: all.length, common: 0, rare: 0, epic: 0, legendary: 0 };
@@ -942,18 +942,18 @@ function toggleForgeMat(btn, name, isEquip, idx) {
 }
 function showForgeResultDialog(result) {
   const materials = (result.materials || []).map(m => `<span>${esc(m.name)}</span>`).join(' + ');
-  const title = result.ok ? '炼器成功' : '炼器失败';
+  const title = result.ok ? '锻造成功' : '锻造失败';
   const output = result.item || {};
   const outputRarity = output.rarity || 'rare';
   const outputColor = RARITY_COLOR[outputRarity] || RARITY_COLOR.common;
   const outputRarityName = RARITY_NAME[outputRarity] || outputRarity;
   const summary = result.ok
-    ? `✅ 炼器成功：${materials} → <span style="color:${outputColor}">${esc(output.name || '法器')}</span> <span class="rarity-tag forge-summary-rarity" style="color:${outputColor};border-color:${outputColor}">${esc(outputRarityName)}</span>`
-    : `❌ 炼器失败：${materials}`;
+    ? `✅ 锻造成功：${materials} → <span style="color:${outputColor}">${esc(output.name || '装备')}</span> <span class="rarity-tag forge-summary-rarity" style="color:${outputColor};border-color:${outputColor}">${esc(outputRarityName)}</span>`
+    : `❌ 锻造失败：${materials}`;
   const box = $('#modal-box');
   box.classList.remove('log-modal');
   box.classList.add('forge-modal-box');
-  box.innerHTML = `<div class="forge-result-dialog ${result.ok ? 'is-success' : 'is-failure'}"><div class="forge-result-head"><div class="forge-result-mark" aria-hidden="true">${result.ok ? '✦' : '×'}</div><div class="forge-result-heading"><span class="forge-result-kicker">炼器结算</span><h2>${title}</h2></div><span class="forge-result-kind">${esc(output.kind || '炼器')}</span></div><div class="forge-result-summary ${result.ok ? 'success' : 'failure'}"><span class="forge-result-summary-mark" aria-hidden="true">${result.ok ? '✓' : '!'}</span><span>${summary}</span></div><section class="forge-result-process"><div class="forge-result-label">炼器流程</div><p>${esc(result.process || '炼器操作流程未生成。')}</p></section><button class="btn forge-result-close" onclick="closeModal()">关闭</button></div>`;
+  box.innerHTML = `<div class="forge-result-dialog ${result.ok ? 'is-success' : 'is-failure'}"><div class="forge-result-head"><div class="forge-result-mark" aria-hidden="true">${result.ok ? '✦' : '×'}</div><div class="forge-result-heading"><span class="forge-result-kicker">锻造结算</span><h2>${title}</h2></div><span class="forge-result-kind">${esc(output.kind || '锻造')}</span></div><div class="forge-result-summary ${result.ok ? 'success' : 'failure'}"><span class="forge-result-summary-mark" aria-hidden="true">${result.ok ? '✓' : '!'}</span><span>${summary}</span></div><section class="forge-result-process"><div class="forge-result-label">锻造流程</div><p>${esc(result.process || '锻造操作流程未生成。')}</p></section><button class="btn forge-result-close" onclick="closeModal()">关闭</button></div>`;
   showModal();
 }
 async function doForge() {
@@ -962,9 +962,9 @@ async function doForge() {
   if (forgeSel.length < 2) { toastMsg('请选择两件投入材料'); return; }
   if ((role.stamina || 0) < FORGE_STAMINA_COST) { toastMsg('精力不足（需 ≥ 20）'); return; }
   const go = $('#forge-go');
-  if (go) { go.disabled = true; go.textContent = '🔥 器道宗师正在炼器…'; }
+  if (go) { go.disabled = true; go.textContent = '🔥 铁匠宗师正在锻造…'; }
   const resultEl = $('#forge-result');
-  if (resultEl) resultEl.innerHTML = '<div class="forge-ing">🔥 炉火正旺，器道宗师审视材料…</div>';
+  if (resultEl) resultEl.innerHTML = '<div class="forge-ing">🔥 炉火正旺，铁匠宗师审视材料…</div>';
   let res = null;
   let onlineCommittedResult = null;
   try {
@@ -981,13 +981,13 @@ async function doForge() {
     toastMsg(msg.includes('AI 返回格式异常') ? 'AI 返回格式异常，请稍后重试' : (msg.includes('AI 未配置') ? 'AI 未配置，请检查服务端配置' : 'AI 服务暂时不可用，请稍后重试'));
   }
   if (!res) {
-    if (go) { go.disabled = false; go.textContent = '🔥 选择材料并炼器'; }
-    if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 炼器坊灵火不稳，未能开炉。</div>';
+    if (go) { go.disabled = false; go.textContent = '🔥 选择材料并锻造'; }
+    if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 铁匠铺炉火不稳，未能开炉。</div>';
     return;
   }
   if (res.ok && res.item) {
     const inputMats = forgeSel.slice();  // 记录投入材料（先于清空，供流水）
-    const item = { name: res.item.name, desc: res.item.desc, qty: 1, kind: res.item.kind || '法宝', rarity: res.item.rarity || 'rare', success: true };
+    const item = { name: res.item.name, desc: res.item.desc, qty: 1, kind: res.item.kind || '装备', rarity: res.item.rarity || 'rare', success: true };
     if (onlineCommittedResult) {
       Object.assign(role, onlineCommittedResult.character || {}, { _char_db_id: role._char_db_id, _char_updated_at: onlineCommittedResult.updated_at, is_mine: true });
     } else if (role._char_db_id && typeof window.forgeOnline === 'function') {
@@ -1001,9 +1001,9 @@ async function doForge() {
         });
         Object.assign(role, committed.character, { _char_db_id: role._char_db_id, _char_updated_at: committed.updated_at, is_mine: true });
       } catch (e) {
-        toastMsg(e.message || '炼器结算失败，材料未消耗');
-        if (go) { go.disabled = false; go.textContent = '🔥 选择材料并炼器'; }
-        if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 炼器结算失败，材料未消耗，请刷新后重试。</div>';
+        toastMsg(e.message || '锻造结算失败，材料未消耗');
+        if (go) { go.disabled = false; go.textContent = '🔥 选择材料并锻造'; }
+        if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 锻造结算失败，材料未消耗，请刷新后重试。</div>';
         return;
       }
     } else {
@@ -1012,28 +1012,28 @@ async function doForge() {
       forgeSel.forEach(x => consumeForgeMat(role, x));
       const added = bagAdd(role, item);
       if (!added) {
-        toastMsg('储物袋已满，无法收纳炼器产物');
-        if (go) { go.disabled = false; go.textContent = '🔥 选择材料并炼器'; }
-        if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 储物袋已满，炼器未完成。</div>';
+        toastMsg('背包已满，无法收纳锻造产物');
+        if (go) { go.disabled = false; go.textContent = '🔥 选择材料并锻造'; }
+        if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 背包已满，锻造未完成。</div>';
         return;
       }
     }
     setForgeCD();
     if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
     forgeSel = [];
-    // 流水：同一次炼器的材料消耗与法器产出合并展示。
-    addFeedItem('⚒️', '炼器坊', '锻造成功', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
+    // 流水：同一次锻造的材料消耗与装备产出合并展示。
+    addFeedItem('⚒️', '铁匠铺', '锻造成功', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
       kind: 'forge',
       forgeMaterials: inputMats.map(m => ({ name: m.name, rarity: m.rarity || 'common' })),
       forgeResult: { name: item.name, rarity: item.rarity || 'common' },
       description: item.desc || '', status: '成功',
     });
     const box = $('#modal-box');
-    toastMsg('✨ 炼器成功！产出「' + item.name + '」');
+    toastMsg('✨ 锻造成功！产出「' + item.name + '」');
     showForgeResultDialog({ ok: true, item, materials: inputMats, process: res.process });
     renderMine(); renderAdventurers(); renderTavern();
   } else {
-    // 炼器失败也会消耗本次精力；材料损毁仍按失败规则处理。
+    // 锻造失败也会消耗本次精力；材料损毁仍按失败规则处理。
     const inputMats = forgeSel.slice();
     let lost = [], kept = [];
     if (onlineCommittedResult) {
@@ -1041,11 +1041,11 @@ async function doForge() {
       kept = inputMats.filter(x => !lost.some(y => y.name === x.name));
     } else if (role._char_db_id && typeof window.forgeOnline === 'function') {
       try {
-        const committed = await window.forgeOnline({ ok: false, process: res.process, reason: res.reason, materials: inputMats.map(x => ({ name: x.name, src: x.src })), item: { ...(res.item || { name: '未定型法器' }), success: false } });
+        const committed = await window.forgeOnline({ ok: false, process: res.process, reason: res.reason, materials: inputMats.map(x => ({ name: x.name, src: x.src })), item: { ...(res.item || { name: '未定型装备' }), success: false } });
         Object.assign(role, committed.character, { _char_db_id: role._char_db_id, _char_updated_at: committed.updated_at, is_mine: true });
         (committed.lost || []).forEach(name => lost.push(inputMats.find(x => x.name === name) || { name }));
         kept = inputMats.filter(x => !lost.some(y => y.name === x.name));
-      } catch (e) { toastMsg(e.message || '炼器结算失败'); return; }
+      } catch (e) { toastMsg(e.message || '锻造结算失败'); return; }
     } else {
       role.stamina = Math.max(0, (role.stamina || 0) - FORGE_STAMINA_COST);
       forgeSel.forEach(x => { if (Math.random() < 0.5) { consumeForgeMat(role, x); lost.push(x); } else kept.push(x); });
@@ -1053,19 +1053,19 @@ async function doForge() {
     setForgeCD();
     if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
     // 流水：失败损毁的材料
-    if (lost.length) feedItems(lost, '炼器坊', '炼器失败损毁', '🔥', '-');
-    addFeedItem('⚒️', '炼器坊', '炼器失败', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
+    if (lost.length) feedItems(lost, '铁匠铺', '锻造失败损毁', '🔥', '-');
+    addFeedItem('⚒️', '铁匠铺', '锻造失败', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
       kind: 'forge',
       forgeMaterials: inputMats.map(m => ({ name: m.name, rarity: m.rarity || 'common' })),
-      forgeResult: { name: '未定型法器', rarity: 'common' },
+      forgeResult: { name: '未定型装备', rarity: 'common' },
       description: res.process || '炉火失衡，未能成器。', status: '失败',
     });
-    // 失败后清空已选，刷新炼器界面（不能带着旧选择再次点击炼出相同结果）
+    // 失败后清空已选，刷新锻造界面（不能带着旧选择再次点击锻造出相同结果）
     const box = $('#modal-box');
     const lostNames = lost.map(x => esc(x.name)).join('、');
     const keptNames = kept.map(x => esc(x.name)).join('、');
     forgeSel = [];
-    toastMsg('❌ 炼器失败，已重置材料选择');
+    toastMsg('❌ 锻造失败，已重置材料选择');
     showForgeResultDialog({ ok: false, item: res.item, materials: inputMats, process: res.process, reason: `${res.reason || '炉火失衡，未能成器'}${lost.length ? ' 损毁：' + lostNames : ''}${kept.length ? ' 保留：' + keptNames : ''}` });
     renderMine(); renderAdventurers(); renderTavern();
   }
@@ -1084,14 +1084,14 @@ async function aiForge(materials) {
     body: JSON.stringify({ materials }),
   });
   const j = await r.json();
-  if (!r.ok) throw new Error(j.error || '炼器失败');
+  if (!r.ok) throw new Error(j.error || '锻造失败');
   return j;
 }
 
 /* ============================================================
    我的
    ============================================================ */
-/* ---------- 最近动态：道具/灵石流水（真实记录 + 持久化） ---------- */
+/* ---------- 最近动态：道具/金币流水（真实记录 + 持久化） ---------- */
 const FEED_KEY = 'dnf_feed';
 const FEED_MAX = 100;
 function loadFeed() {
@@ -1106,20 +1106,20 @@ function normalizeFeedEntries(entries) {
   (entries || []).forEach(entry => {
     if (!entry) return;
     if (!Array.isArray(entry.changes) || !entry.changes.length) {
-      if (entry.kind === 'forge' && entry.title === '铁匠铺') out.push({ ...entry, title: '炼器坊', sub: entry.sub || '锻造成功' });
+      if (entry.kind === 'forge') out.push({ ...entry, title: entry.title || '铁匠铺', sub: entry.sub || '锻造成功' });
       else out.push(entry);
       return;
     }
     entry.changes.forEach(change => {
       const raw = String(change && change.delta || '').trim();
       if (!raw) return;
-      const gold = raw.match(/^([+-]?\d+(?:\.\d+)?)\s*(灵石|金币)$/);
+      const gold = raw.match(/^([+-]?\d+(?:\.\d+)?)\s*(金币|金币)$/);
       const item = raw.match(/^([+-]?\d+)\s+(.+)$/);
       let title = entry.title || '系统';
       let delta = raw;
       if (gold) { title = gold[2]; delta = `${gold[1]}${gold[2] === '金币' ? '.00' : ''}`; }
       else if (item && !/突破|成功|失败/.test(item[2])) { title = item[2].trim(); delta = item[1]; }
-      out.push({ icon: entry.icon, title: entry.kind === 'forge' ? '炼器坊' : title, sub: entry.kind === 'forge' ? (entry.sub || '锻造成功') : (entry.sub || ''), delta, color: change.color || '', kind: entry.kind, forgeMaterials: entry.forgeMaterials, forgeResult: entry.forgeResult, description: entry.description, time: entry.time });
+      out.push({ icon: entry.icon, title: entry.kind === 'forge' ? '铁匠铺' : title, sub: entry.kind === 'forge' ? (entry.sub || '锻造成功') : (entry.sub || ''), delta, color: change.color || '', kind: entry.kind, forgeMaterials: entry.forgeMaterials, forgeResult: entry.forgeResult, description: entry.description, time: entry.time });
     });
   });
   return out.slice(0, FEED_MAX);
@@ -1165,18 +1165,18 @@ window.feedItemChanges = feedItemChanges;
 let feedFilter = 'all', feedVisible = 10;
 function feedKind(entry) {
   const text = [entry.title, entry.sub, entry.delta, ...((entry.changes || []).map(change => change.delta))].join('');
-  if (/灵石|金币|金市/.test(text)) return 'gold';
-  if ((entry.changes || []).length || /获得|装备|道具|材料|炼器/.test(text)) return 'item';
+  if (/金币|金币|金市/.test(text)) return 'gold';
+  if ((entry.changes || []).length || /获得|装备|道具|材料|锻造/.test(text)) return 'item';
   return 'system';
 }
 function setFeedFilter(value) { feedFilter = value; feedVisible = 10; renderMine(); }
 function loadMoreFeed() { feedVisible += 10; renderMine(); }
 /* 流水着色：道具按稀有度（common灰/rare蓝/epic紫/legendary橙），
-   灵石金色，消耗红色；旧存档无 color 字段时按文案推断（无法推断的默认普通灰） */
+   金币金色，消耗红色；旧存档无 color 字段时按文案推断（无法推断的默认普通灰） */
 function feedDeltaColor(f) {
   if (!f.delta) return '';
   if (f.color) return `color:${RARITY_COLOR[f.color] || f.color}`;
-  if (/灵石/.test(f.delta)) return 'color:#ffc107';
+  if (/金币/.test(f.delta)) return 'color:#ffc107';
   if (f.delta.startsWith('-')) return 'color:var(--color-danger)';
   return 'color:#8b949e';  // 旧数据默认普通灰（原为绿色）
 }
@@ -1185,10 +1185,10 @@ function feedEntryChanges(f) {
   return f.delta ? [{ delta: f.delta, color: f.color || '' }] : [];
 }
 function feedIsItemEntry(f) {
-  return !!(f && !f.kind && f.title && !/灵石|金币|突破成功|系统/.test(f.title) && (RARITY_NAME[f.color] || /探险获得|探险消耗|装备|道具|材料/.test(f.sub || '')));
+  return !!(f && !f.kind && f.title && !/金币|金币|突破成功|系统/.test(f.title) && (RARITY_NAME[f.color] || /探险获得|探险消耗|装备|道具|材料/.test(f.sub || '')));
 }
 function feedIsCurrencyEntry(f) {
-  return !!(f && /^(灵石|金币)$/.test(String(f.title || '').trim()) && f.delta);
+  return !!(f && /^(金币|金币)$/.test(String(f.title || '').trim()) && f.delta);
 }
 function renderMine() {
   const el = $('#tab-mine');
@@ -1216,9 +1216,9 @@ function renderMine() {
   }
   if (!me) {
     el.innerHTML = html + `
-      <h3 class="col-title">创建角色 · 踏上仙途</h3>
+      <h3 class="col-title">创建角色 · 成为冒险家</h3>
       ${createCharFormHTML()}
-      <div class="hall-hint">创建后角色将保存在本浏览器（localStorage），刷新不丢失。创建后即可组队探索灵墟。</div>`;
+      <div class="hall-hint">创建后角色将保存在本浏览器（localStorage），刷新不丢失。创建后即可组队探索地下城。</div>`;
     renderSkillGrant();
     return;
   }
@@ -1233,14 +1233,14 @@ function renderMine() {
   html += `<div class="mine-layout">
     <div class="mine-card-col mine-profile-col"><div class="adv-grid">${advCardHTML(me)}</div></div>
     <div class="mine-feed-col">
-      <div class="mine-feed-head feed-toolbar"><h3 class="col-title">📋 最近动态</h3><div class="feed-toolbar-actions"><select class="feed-filter" aria-label="动态筛选" onchange="setFeedFilter(this.value)"><option value="all" ${feedFilter === 'all' ? 'selected' : ''}>全部动态</option><option value="item" ${feedFilter === 'item' ? 'selected' : ''}>物品</option><option value="gold" ${feedFilter === 'gold' ? 'selected' : ''}>灵石</option><option value="system" ${feedFilter === 'system' ? 'selected' : ''}>系统</option></select><button class="btn btn-sm" onclick="renderMine()">刷新</button></div></div>
+      <div class="mine-feed-head feed-toolbar"><h3 class="col-title">📋 最近动态</h3><div class="feed-toolbar-actions"><select class="feed-filter" aria-label="动态筛选" onchange="setFeedFilter(this.value)"><option value="all" ${feedFilter === 'all' ? 'selected' : ''}>全部动态</option><option value="item" ${feedFilter === 'item' ? 'selected' : ''}>物品</option><option value="gold" ${feedFilter === 'gold' ? 'selected' : ''}>金币</option><option value="system" ${feedFilter === 'system' ? 'selected' : ''}>系统</option></select><button class="btn btn-sm" onclick="renderMine()">刷新</button></div></div>
       <div class="feed-list">
         ${visibleFeed.map(f => `
           <div class="feed-item">
             <div class="feed-main">
               <div class="feed-line"><strong class="feed-title" style="${f.color ? feedDeltaColor({ delta: f.title, color: f.color }) : ''}">${esc(f.title)}</strong>${feedIsItemEntry(f) && RARITY_NAME[f.color] ? `<span class="feed-rarity" style="color:${RARITY_COLOR[f.color]};border-color:${RARITY_COLOR[f.color]}">${esc(RARITY_NAME[f.color])}</span>` : ''}${feedIsItemEntry(f) ? `<span class="feed-item-qty ${String(f.delta || '').startsWith('-') ? 'minus' : ''}">${esc(f.delta || '')}</span>` : ''}${feedIsCurrencyEntry(f) ? `<span class="feed-currency-qty ${String(f.delta || '').startsWith('-') ? 'minus' : ''}">${esc(f.delta || '')}</span>` : ''}<span class="feed-sub feed-source">${esc(f.sub || '')}</span></div>
               ${f.kind === 'forge' ? `<div class="feed-forge-recipe">${(Array.isArray(f.forgeMaterials) ? f.forgeMaterials : String(f.forgeMaterials || '').split(' + ').filter(Boolean).map(name => ({ name, rarity: 'common' }))).map(m => `<span style="color:${itemColor(m)}">${esc(m.name)}</span>`).join(' + ')} → ${(() => { const r = typeof f.forgeResult === 'object' ? f.forgeResult : { name: f.forgeResult || f.title, rarity: 'common' }; return `<strong style="color:${itemColor(r)}">${esc(r.name)}</strong>`; })()}</div>${f.description ? `<div class="feed-forge-desc">${esc(f.description)}</div>` : ''}` : ''}
-              ${f.kind === 'insight' ? `<div class="feed-insight-meta"><span style="color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'};border-color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'}">${esc(f.tier || '黄阶')}</span><strong>${esc(f.delta || '')}</strong></div>${f.description ? `<div class="feed-insight-desc">${esc(f.description)}</div>` : ''}` : ''}
+              ${f.kind === 'insight' ? `<div class="feed-insight-meta"><span style="color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'};border-color:${SKILL_TIER_COLOR[f.tier] || f.color || '#8b949e'}">${esc(f.tier || '普通')}</span><strong>${esc(f.delta || '')}</strong></div>${f.description ? `<div class="feed-insight-desc">${esc(f.description)}</div>` : ''}` : ''}
             </div>
             ${f.kind === 'insight' || feedIsItemEntry(f) || feedIsCurrencyEntry(f) ? '' : `<span class="feed-delta">${feedEntryChanges(f).map(c => `<span class="${c.delta.startsWith('-') ? 'minus' : ''}" style="${feedDeltaColor(c)}">${esc(c.delta)}</span>`).join(' ')}</span>`}
             <span class="feed-time">${esc(f.time)}</span>
@@ -1263,15 +1263,29 @@ function renderMine() {
 /* ============================================================
    创建角色
    ============================================================ */
-const ROOT_KEYS = { jin: { label: '金灵根', desc: '锋锐果决，与兵刃之道有缘。' }, mu: { label: '木灵根', desc: '生生不息，亲和草木生机。' }, shui: { label: '水灵根', desc: '润物无声，善纳百川。' }, huo: { label: '火灵根', desc: '狂暴炽烈，攻伐凌厉。' }, tu: { label: '土灵根', desc: '沉稳厚重，不动如山。' } };
+const ROOT_KEYS = {
+  slayer: { label: '鬼剑士', desc: '以刀剑为伴，斩尽地下城的魔物，出手凌厉，战意冲天。' },
+  fighter: { label: '格斗家', desc: '拳拳到肉的近身斗士，身手矫健，信奉硬桥硬马的力量。' },
+  gunner: { label: '神枪手', desc: '来自天界与人类的混血枪手，弹仓里装着胆量，靠枪法说话。' },
+  mage: { label: '魔法师', desc: '沟通元素的施法者，手中法杖划出火焰与冰霜，一念之间焚尽群魔。' },
+  priest: { label: '圣职者', desc: '背负圣光的守护者，既能以铁十字退敌，也能为同伴疗伤续命。' },
+};
+/* 职业 → 子职业（Lv.10 转职后由 player 选择；此处用于离线降级/默认名） */
+const SUBCLASS_BY_CLASS = {
+  鬼剑士: ['剑魂', '鬼泣', '狂战士', '阿修罗'],
+  格斗家: ['气功师', '散打', '街霸', '柔道家'],
+  神枪手: ['漫游枪手', '枪炮师', '机械师', '弹药专家'],
+  魔法师: ['元素师', '召唤师', '战斗法师', '魔道学者'],
+  圣职者: ['圣骑士', '蓝拳圣使', '驱魔师', '复仇者'],
+};
 const PERS_LIST = ['重诺', '好奇', '莽撞', '明哲', '高傲', '仗义', '孤僻', '狡诈'];
-/* 功法 / 术法体系：每人可携带最多 5 种；创建角色时按灵根发放 1 基础功法 + 1 基础术法 */
+/* 技能体系：每人可携带最多 5 种；创建角色时按职业发放 2 门初始技能 */
 const MAX_SKILLS = 5;
 const HP_REGEN_MS = 3 * 60 * 1000;
-/* ---------- 功法/术法阶位（黄阶 < 玄阶 < 地阶 < 天阶） ---------- */
-const SKILL_TIERS = ['黄阶', '玄阶', '地阶', '天阶'];
-const SKILL_TIER_COLOR = { 黄阶: '#8b949e', 玄阶: '#58a6ff', 地阶: '#a371f7', 天阶: '#f0883e' };
-const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '黄阶';  // 兼容旧存档默认黄阶
+/* ---------- 技能稀有度（普通 < 高级 < 稀有 < 神器） ---------- */
+const SKILL_TIERS = ['普通', '高级', '稀有', '神器'];
+const SKILL_TIER_COLOR = { 普通: '#8b949e', 高级: '#58a6ff', 稀有: '#a371f7', 神器: '#f0883e' };
+const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '普通';  // 兼容旧存档默认普通
 const skillTierColor = s => SKILL_TIER_COLOR[skillTier(s)] || '#8b949e';
 const tierTag = s => `<span class="skill-tier" style="color:${skillTierColor(s)};border-color:${skillTierColor(s)}">${skillTier(s)}</span>`;
 const skillListItemHTML = (sk, actionHTML = '') => `
@@ -1279,54 +1293,55 @@ const skillListItemHTML = (sk, actionHTML = '') => `
     <div class="spi-head">
       <span class="skill-name" style="color:${skillTierColor(sk)}">${esc(sk.name)}</span>
       ${tierTag(sk)}
-      <span class="skill-tag st-${sk.type === '功法' ? 'gongfa' : 'shufa'}">${esc(sk.type || '功法')}</span>
+      <span class="skill-tag st-${sk.type === '物理技' ? 'physical' : 'magic'}">${esc(sk.type || '物理技')}</span>
       ${actionHTML}
     </div>
     <span class="skill-desc">${esc(sk.desc || '')}</span>
   </div>`;
-const ROOT_SKILLS = {  jin: [
-    { name: '庚金炼体诀', type: '功法', elem: '金灵根', tier: '玄阶', desc: '以庚金之气淬炼体魄，身如精钢，刀枪难伤。' },
-    { name: '金刃术', type: '术法', elem: '金灵根', tier: '黄阶', desc: '凝聚一道锋锐金刃，可近可远，削铁如泥。' },
+const ROOT_SKILLS = {
+  slayer: [
+    { name: '里鬼剑术', type: '物理技', elem: '', tier: '普通', desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
+    { name: '三段斩', type: '物理技', elem: '', tier: '普通', desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
   ],
-  mu: [
-    { name: '青木养气诀', type: '功法', elem: '木灵根', tier: '黄阶', desc: '吐纳青木生气，绵绵不绝，伤势恢复极快。' },
-    { name: '缠藤术', type: '术法', elem: '木灵根', tier: '玄阶', desc: '催生藤蔓缠缚敌人，牵制其行动。' },
+  fighter: [
+    { name: '崩拳', type: '物理技', elem: '', tier: '普通', desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
+    { name: '背摔', type: '物理技', elem: '', tier: '普通', desc: '贴身擒抱，借力把敌人掼向地面，土石四溅。' },
   ],
-  shui: [
-    { name: '玄水凝元功', type: '功法', elem: '水灵根', tier: '地阶', desc: '引水灵凝聚真元，生生不息，神识绵长。' },
-    { name: '水箭术', type: '术法', elem: '水灵根', tier: '黄阶', desc: '凝水成箭，破空而去，无声无息。' },
+  gunner: [
+    { name: '加特林扫射', type: '物理技', elem: '', tier: '高级', desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
+    { name: '银弹', type: '魔法技', elem: '', tier: '普通', desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
   ],
-  huo: [
-    { name: '赤炎心法', type: '功法', elem: '火灵根', tier: '天阶', desc: '以心驭火，真元如焰，攻伐猛烈。' },
-    { name: '火球术', type: '术法', elem: '火灵根', tier: '黄阶', desc: '凝聚一团赤焰火球，掷向敌手，爆裂灼烧。' },
+  mage: [
+    { name: '魔力弹', type: '魔法技', elem: '', tier: '普通', desc: '指尖凝出一颗刺目的魔力弹，折线扑向敌人。' },
+    { name: '火球术', type: '魔法技', elem: '', tier: '普通', desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
   ],
-  tu: [
-    { name: '厚土镇岳诀', type: '功法', elem: '土灵根', tier: '黄阶', desc: '借大地厚土之力护体，稳如泰山。' },
-    { name: '土盾术', type: '术法', elem: '土灵根', tier: '玄阶', desc: '凝聚土盾挡于身前，硬撼重击。' },
+  priest: [
+    { name: '圣光十字', type: '物理技', elem: '', tier: '普通', desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
+    { name: '治愈术', type: '魔法技', elem: '', tier: '高级', desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
   ],
 };
 const ITEM_CHOICES = [
-  { key: 'iron_sword', name: '铁剑', kind: 'weapon', desc: '一柄锈迹斑斑的旧铁剑，剑刃缺口处泛着微光。' },
-  { key: 'cloth_robe', name: '粗布道袍', kind: 'armor', desc: '粗布缝制的道袍，洗得发白，却异常结实。' },
-  { key: 'condense_pill', name: '聚气丹', kind: 'pill', qty: 3, desc: '低阶丹药，服之可凝神聚气，聊胜于无。' },
-  { key: 'fire_talisman', name: '火球符', kind: 'talisman', desc: '黄纸朱砂所绘，注入灵力即可激发一团火球。' },
-  { key: 'spirit_hoe', name: '灵锄', kind: 'tool', desc: '药园常用之物，据说能掘开灵土。' },
-  { key: 'compass', name: '古旧罗盘', kind: 'tool', desc: '指针总是固执地指向迷雾深处。' },
-  { key: 'beast_pouch', name: '兽皮囊', kind: 'tool', desc: '妖兽皮缝制的储物袋，能装不少杂物。' },
-  { key: 'sound_talisman', name: '传音符', kind: 'talisman', desc: '一张可千里传音的符纸，仅能使用一次。' },
-  { key: 'mist_pearl', name: '避瘴珠', kind: 'tool', desc: '千年灵木结成的珠子，可避瘴气毒雾。' },
-  { key: 'spirit_lamp', name: '引灵灯', kind: 'tool', desc: '一盏昏黄的油灯，再微弱的灵气角落也能点亮。' },
+  { key: 'sword', name: '新手长刀', kind: 'weapon', desc: '刀鞘做旧，刃口还带着崩口，是初入阿拉德的冒险家最顺手的家伙。' },
+  { key: 'gauntlet', name: '格斗护拳', kind: 'weapon', desc: '缠着旧布条的护拳，护腕磨得发亮，一拳下去颇为有力。' },
+  { key: 'gun', name: '旧式手枪', kind: 'weapon', desc: '枪身磨得发亮，弹仓里只剩几发子弹，却记着主人的胆量。' },
+  { key: 'staff', name: '榆木法杖', kind: 'weapon', desc: '杖尾镶着一颗黯淡的魔法石，握在掌心里微微发温。' },
+  { key: 'cross', name: '圣光十字架', kind: 'weapon', desc: '圣职者的贴身圣物，握久了掌心会泛起一层暖意。' },
+  { key: 'torch', name: '火把', kind: 'tool', desc: '浸过松脂的火把，能照亮地下城最黑的角落。' },
+  { key: 'treasure_map', name: '寻宝图', kind: 'tool', desc: '半张泛黄的藏宝图，标注着一处古老遗迹的入口。' },
+  { key: 'hp_potion', name: '生命药水', kind: 'pill', qty: 3, desc: '恢复药剂，饮下能愈合伤口，聊胜于无。' },
+  { key: 'mp_potion', name: '魔力药剂', kind: 'pill', qty: 3, desc: '蓝色的魔力药剂，饮下精神一振，施法更有底气。' },
+  { key: 'explosive', name: '爆裂符', kind: 'talisman', desc: '以符文凝成的一次性爆裂咒，掷出即炸，杀伤可观。' },
 ];
-/* 装备类型动作：防具穿身、武器持握、丹药吞服、符箓激发、工具催动——按类别准确发挥 */
+/* 装备类型动作：防具穿身、武器挥出、符箓激发、药剂吞服、工具催动——按类别准确发挥 */
 const KIND_ACTION = {
   armor:    { hold: '披着', use: '披紧', role: '护住周身' },
-  weapon:   { hold: '握紧', use: '祭出', role: '锋芒毕露' },
-  talisman: { hold: '拈着', use: '激发', role: '灵光乍现' },
+  weapon:   { hold: '握紧', use: '挥出', role: '锋芒毕露' },
+  talisman: { hold: '拈着', use: '激发', role: '符光乍现' },
   pill:     { hold: '收着', use: '吞服', role: '药力流转' },
-  tool:     { hold: '握着', use: '催动', role: '灵机自转' },
+  tool:     { hold: '握着', use: '催动', role: '微微发亮' },
   misc:     { hold: '带着', use: '取出', role: '微微一亮' },
 };
-let charSel = { root: 'jin', pers: '重诺', gender: '男', items: new Set() };
+let charSel = { root: 'slayer', pers: '重诺', gender: '男', items: new Set() };
 window.charSel = charSel;
 
 function createCharFormHTML() {
@@ -1338,7 +1353,7 @@ function createCharFormHTML() {
       <span class="char-count">所有角色名称必须唯一；重复时提示“角色名重复”。</span>
     </div>
     <div class="form-row">
-      <label>灵根（作为角色特质，不影响属性）</label>
+      <label>初始职业（决定初始技能与成长方向）</label>
       <div class="root-select" id="rc-root">
         ${Object.entries(ROOT_KEYS).map(([k, v], i) => `
           <button type="button" class="root-card ${i === 0 ? 'active' : ''}" data-root="${k}" onclick="selectRoot(this, '${k}')">
@@ -1361,7 +1376,7 @@ function createCharFormHTML() {
         ${PERS_LIST.map((p, i) => `<button type="button" class="filter-chip ${i === 0 ? 'active' : ''}" data-pers="${p}" onclick="selectPers(this, '${p}')">${p}</button>`).join('')}
       </div>
     </div>
-    <div class="hall-hint" style="margin:0">初始四维（体魄 / 身法 / 神识 / 气运）由系统随机决定，各在 1~20 之间，无需手动分配。</div>
+    <div class="hall-hint" style="margin:0">初始四维（力量 / 敏捷 / 智力 / 幸运）由系统随机决定，各在 1~20 之间，无需手动分配。</div>
     <div class="form-row">
       <label>初始装备 / 道具（任选两件，不提供属性，仅作故事道具）</label>
       <div class="item-select" id="rc-items">
@@ -1374,7 +1389,7 @@ function createCharFormHTML() {
       <span class="char-count" id="item-count">已选 0 / 2</span>
     </div>
     <div class="form-row">
-      <button class="btn btn-primary" style="padding:8px 26px;font-size:14px" onclick="createRole()">✨ 踏入仙途</button>
+      <button class="btn btn-primary" style="padding:8px 26px;font-size:14px" onclick="createRole()">✨ 成为冒险家</button>
     </div>
   </div>`;
 }
@@ -1389,12 +1404,12 @@ function renderSkillGrant() {
   const el = $('#rc-skill-grant');
   if (!el) return;
   const sk = ROOT_SKILLS[charSel.root] || [];
-  el.innerHTML = `<div class="skill-grant-title">📜 将获得（携带上限 ${MAX_SKILLS} 种）：</div>
+  el.innerHTML = `<div class="skill-grant-title">📜 将获得（携带上限 ${MAX_SKILLS} 门）：</div>
     <div class="skill-grant-list">
       ${sk.map(s => `<div class="skill-card">
         <span class="skill-name" style="color:${skillTierColor(s)}">${esc(s.name)}</span>
         ${tierTag(s)}
-        <span class="skill-tag st-${s.type === '功法' ? 'gongfa' : 'shufa'}">${s.type}</span>
+        <span class="skill-tag st-${s.type === '物理技' ? 'physical' : 'magic'}">${s.type}</span>
         <span class="skill-desc">${esc(s.desc)}</span>
       </div>`).join('')}
     </div>`;
@@ -1436,12 +1451,12 @@ function createRole() {
     id: Date.now(), name, title: '', status: 'resting', is_mine: true, gender: charSel.gender || '男',
     hp: 100, max_hp: 100, stamina: 100, max_stamina: 100, level: 1, staminaTs: Date.now(), hpTs: Date.now(),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
-    gold: 100, character_class: '练气一层', personality: charSel.pers,
-    traits: [root.label, '初入仙途'],
-    skills: ROOT_SKILLS[charSel.root].map(s => ({ ...s })),  // 功法/术法栏（最多 5 种，创建发放 2 种）
-    skillPool: [],          // 功法库（已学未装备，可随时装卸）
-    equipment: [],           // 随身法宝（最多 5 件）
-    bag: [...charSel.items].map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind }; }),  // 储物袋（100 格）
+    gold: 100, character_class: root.label, classTitle: null, personality: charSel.pers,
+    traits: ['初入阿拉德'],
+    skills: ROOT_SKILLS[charSel.root].map(s => ({ ...s })),  // 技能栏（最多 5 门，创建发放 2 门）
+    skillPool: [],          // 技能库（已学未装备，可随时装卸）
+    equipment: [],           // 随身装备（最多 5 件）
+    bag: [...charSel.items].map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind }; }),  // 背包（100 格）
     latest_score: 0, praise_count: 0, is_followed: false,
   };
   localStorage.setItem('dnf_role', JSON.stringify(role));
@@ -1449,11 +1464,11 @@ function createRole() {
   D.my_adventurer = role;
   D.my_feed = [];  // 新角色清空旧动态
   saveFeed();
-  addFeed('💰', '仙途初始', '入世盘缠', '+100 灵石', '#ffc107');
+  addFeed('💰', '冒险启程', '入世盘缠', '+100 金币', '#ffc107');
   renderMine();
   renderAdventurers();
   renderTavern();
-  toastMsg(`🎉 角色「${role.name}」创建成功，祝道友仙途坦荡！`);
+  toastMsg(`🎉 角色「${role.name}」创建成功，祝冒险顺利！`);
 }
 function deleteRole() {
   if (!confirm('确定删除当前角色，重新开始创建？')) return;
@@ -1475,7 +1490,7 @@ function showDeathDialog(roleName, dungeonName, logId, deathSummary = '') {
       <div class="death-mark">☠</div>
       <div class="facility-tag">角色陨落 · PERMANENT</div>
       <h2 class="modal-title">角色「${esc(roleName)}」已阵亡</h2>
-      <p class="hall-hint">${esc(deathSummary || `角色在「${dungeonName}」中气血归零，道消身殒；角色数据已永久删除，死亡原因已保留在探险日志中。`)}</p>
+      <p class="hall-hint">${esc(deathSummary || `角色在「${dungeonName}」中气血耗尽，壮烈阵亡；角色数据已永久删除，死亡原因已保留在探险日志中。`)}</p>
       <div style="display:flex;gap:8px;margin-top:16px">
         <button class="btn btn-primary" style="flex:1" onclick="closeModal();openLogModal('${esc(String(logId))}')">查看死亡日志</button>
         <button class="btn btn-warning" style="flex:1" onclick="closeModal();switchTab('mine')">重新创建角色</button>
@@ -1493,7 +1508,7 @@ function loadRole() {
         window.__deadRoleName = r.name || '旧角色';
         return;
       }
-      // 兼容旧存档：补充储物袋/功法字段
+      // 兼容旧存档：补充背包/技能字段
       if (!Array.isArray(r.bag)) r.bag = [];
       if (!Array.isArray(r.equipment)) r.equipment = [];
       if (!Array.isArray(r.skills)) {
@@ -1502,19 +1517,19 @@ function loadRole() {
       }
       // 兼容旧存档：无性别字段默认男
       if (r.gender !== '女') r.gender = '男';
-      // 兼容旧存档：功法库（已学未装备）
+      // 兼容旧存档：技能库（已学未装备）
       if (!Array.isArray(r.skillPool)) r.skillPool = [];
       // 兼容旧存档：精力回复时间戳（缺失时从此刻起算，不追溯补精力）
       if (!r.staminaTs) r.staminaTs = Date.now();
       // 兼容旧存档：气血回复时间戳
       if (!r.hpTs) r.hpTs = Date.now();
-      // 兼容旧存档：技能阶位回填（按名称匹配初始技能/藏经阁，匹配不到默认黄阶）
+      // 兼容旧存档：技能阶位回填（按名称匹配初始技能/技能导师馆，匹配不到默认普通）
       const tierByName = {};
       Object.values(ROOT_SKILLS).flat().forEach(s => { if (s.tier) tierByName[s.name] = s.tier; });
       LIBRARY_BOOKS.forEach(b => { if (b.tier) tierByName[b.name] = b.tier; });
       let tierPatched = false;
       [...(r.skills || []), ...(r.skillPool || [])].forEach(s => {
-        if (s && !SKILL_TIERS.includes(s.tier)) { s.tier = tierByName[s.name] || '黄阶'; tierPatched = true; }
+        if (s && !SKILL_TIERS.includes(s.tier)) { s.tier = tierByName[s.name] || '普通'; tierPatched = true; }
       });
       D.adventurers = [r];
       D.my_adventurer = r;
@@ -1531,7 +1546,7 @@ loadLogs();  // 载入历史探险日志（本地持久化）
 if (window.__deadRoleName) {
   const deadName = window.__deadRoleName;
   D.logs.unshift({
-    id: nextLogId(), party_name: '旧存档', dungeon_name: '灵墟', status: 'failed',
+    id: nextLogId(), party_name: '旧存档', dungeon_name: '地下城', status: 'failed',
     result_summary: '角色气血归零，已在载入存档时永久删除。', created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: '', items_used: [], death: true, death_role: deadName,
     summary_text: `角色「${deadName}」因气血归零被永久删除。`,
@@ -1541,9 +1556,9 @@ if (window.__deadRoleName) {
   saveLogs();
   window.__deadRoleName = null;
 }
-loadFeed();  // 载入最近动态（道具/灵石流水）
+loadFeed();  // 载入最近动态（道具/金币流水）
 
-/* ---------- 储物袋 / 随身法宝 ---------- */
+/* ---------- 背包 / 随身装备 ---------- */
 function saveRole() {
   if (D.my_adventurer) localStorage.setItem('dnf_role', JSON.stringify(D.my_adventurer));
 }
@@ -1558,7 +1573,7 @@ function bagAdd(role, item) {
   role.bag.push({ name: cleanName, desc: cleanDesc, kind: item.kind || '杂物', qty: item.qty || 1, rarity });
   return true;
 }
-function equipFromBag(bagIdx) {   // 储物袋 -> 随身法宝
+function equipFromBag(bagIdx) {   // 背包 -> 随身装备
   const role = D.my_adventurer;
   if (!role) return;
   if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
@@ -1567,13 +1582,13 @@ function equipFromBag(bagIdx) {   // 储物袋 -> 随身法宝
   }
   const it = (role.bag || [])[bagIdx];
   if (!it) return;
-  if ((role.equipment || []).length >= 5) { toastMsg('随身法宝已满（最多 5 件），请先取下一件'); return; }
+  if ((role.equipment || []).length >= 5) { toastMsg('随身装备已满（最多 5 件），请先取下一件'); return; }
   role.bag.splice(bagIdx, 1);
   role.equipment.push({ name: it.name, desc: it.desc || '', qty: it.qty, rarity: it.rarity });
   saveRole();
   refreshAdvSec('combat');
 }
-function unequipToBag(eqIdx) {    // 随身法宝 -> 储物袋
+function unequipToBag(eqIdx) {    // 随身装备 -> 背包
   const role = D.my_adventurer;
   if (!role) return;
   if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
@@ -1582,13 +1597,13 @@ function unequipToBag(eqIdx) {    // 随身法宝 -> 储物袋
   }
   const it = (role.equipment || [])[eqIdx];
   if (!it) return;
-  if ((role.bag || []).length >= 100) { toastMsg('储物袋已满（100 格）'); return; }
+  if ((role.bag || []).length >= 100) { toastMsg('背包已满（100 格）'); return; }
   role.equipment.splice(eqIdx, 1);
   role.bag.push({ name: it.name, desc: it.desc || '', qty: it.qty, rarity: it.rarity });
   saveRole();
   refreshAdvSec('combat');
 }
-function equipSkill(poolIdx) {    // 功法库 -> 功法栏
+function equipSkill(poolIdx) {    // 技能库 -> 技能栏
   const role = D.my_adventurer;
   if (!role) return;
   if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
@@ -1597,7 +1612,7 @@ function equipSkill(poolIdx) {    // 功法库 -> 功法栏
   }
   const sk = (role.skillPool || [])[poolIdx];
   if (!sk) return;
-  if ((role.skills || []).length >= MAX_SKILLS) { toastMsg('功法栏已满（上限 ' + MAX_SKILLS + ' 种），请先卸下一门功法'); return; }
+  if ((role.skills || []).length >= MAX_SKILLS) { toastMsg('技能栏已满（上限 ' + MAX_SKILLS + ' 种），请先卸下一门技能'); return; }
   role.skillPool.splice(poolIdx, 1);
   if (!role.skills) role.skills = [];
   role.skills.push(sk);
@@ -1605,7 +1620,7 @@ function equipSkill(poolIdx) {    // 功法库 -> 功法栏
   refreshAdvSec('profile');
   toastMsg('⚔️ 已装备《' + sk.name + '》');
 }
-function unequipSkill(slotIdx) {  // 功法栏 -> 功法库
+function unequipSkill(slotIdx) {  // 技能栏 -> 技能库
   const role = D.my_adventurer;
   if (!role) return;
   if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
@@ -1619,7 +1634,7 @@ function unequipSkill(slotIdx) {  // 功法栏 -> 功法库
   role.skillPool.push(sk);
   saveRole();
   refreshAdvSec('profile');
-  toastMsg('📦 已卸下《' + sk.name + '》，存入功法库');
+  toastMsg('📦 已卸下《' + sk.name + '》，存入技能库');
 }
 
 /* ============================================================
@@ -1798,13 +1813,13 @@ function renderAdventurers() {
       </select>
       <select onchange="setAdvFilter({sort:this.value})">
         <option value="created_at" ${advFilter.sort === 'created_at' ? 'selected' : ''}>创建时间</option>
-        <option value="level" ${advFilter.sort === 'level' ? 'selected' : ''}>修为</option>
+        <option value="level" ${advFilter.sort === 'level' ? 'selected' : ''}>等级</option>
         <option value="name" ${advFilter.sort === 'name' ? 'selected' : ''}>名字</option>
-        <option value="strength" ${advFilter.sort === 'strength' ? 'selected' : ''}>体魄</option>
-        <option value="agility" ${advFilter.sort === 'agility' ? 'selected' : ''}>身法</option>
-        <option value="intelligence" ${advFilter.sort === 'intelligence' ? 'selected' : ''}>神识</option>
-        <option value="luck" ${advFilter.sort === 'luck' ? 'selected' : ''}>气运</option>
-        <option value="gold" ${advFilter.sort === 'gold' ? 'selected' : ''}>灵石</option>
+        <option value="strength" ${advFilter.sort === 'strength' ? 'selected' : ''}>力量</option>
+        <option value="agility" ${advFilter.sort === 'agility' ? 'selected' : ''}>敏捷</option>
+        <option value="intelligence" ${advFilter.sort === 'intelligence' ? 'selected' : ''}>智力</option>
+        <option value="luck" ${advFilter.sort === 'luck' ? 'selected' : ''}>幸运</option>
+        <option value="gold" ${advFilter.sort === 'gold' ? 'selected' : ''}>金币</option>
       </select>
       <button class="btn btn-sm" onclick="setAdvFilter({order:advFilter.order==='desc'?'asc':'desc'})">${advFilter.order === 'desc' ? '⬇ 降序' : '⬆ 升序'}</button>
     </div>
@@ -1823,7 +1838,7 @@ function renderAdvList() {
   const page = D.adventurerPage || { page: advFilter.page, pages: 1 };
   box.innerHTML = list.length
     ? `<div class="adv-grid">${list.map(advCardHTML).join('')}</div>${page.pages > 1 ? `<div class="log-pager">${advPagerHTML(page.page, page.pages)}</div>` : ''}`
-    : `<div class="empty">暂无修士<br><br><button class="btn btn-primary" onclick="location.hash='mine';switchTab('mine')">✨ 创建你的第一个角色</button></div>`;
+    : `<div class="empty">暂无冒险家<br><br><button class="btn btn-primary" onclick="location.hash='mine';switchTab('mine')">✨ 创建你的第一个角色</button></div>`;
 }
 
 /* ============================================================
@@ -1832,7 +1847,7 @@ function renderAdvList() {
 function renderParty() {
   const el = $('#tab-party');
   const npc = D.npcs && D.npcs.party;
-  const selectedLabel = matchDungeonChoice ? esc(matchDungeonChoice) : '随机灵墟';
+  const selectedLabel = matchDungeonChoice ? esc(matchDungeonChoice) : '随机地下城';
   let html = '';
   if (npc) {
     html += `<div class="npc-encounter">
@@ -1852,7 +1867,7 @@ function renderParty() {
   <div class="event-header party-hall-header" style="border-color:color-mix(in srgb, var(--color-primary) 35%, var(--color-border))">
     <span class="event-kicker" style="color:var(--color-primary)">ABYSS TAVERN BOARD</span>
     <h2 class="event-title">普通副本招募板</h2>
-    <p class="event-desc">选择目标灵墟后，可以进入自动匹配，或创建公开队伍邀道友同行。队长可随时出发，空位将由 AI 道友补足。</p>
+    <p class="event-desc">选择目标地下城后，可以进入自动匹配，或创建公开队伍邀冒险家同行。队长可随时出发，空位将由 AI 冒险家补足。</p>
     <div class="board-toolbar">
       <div class="stat-pill"><span class="v">${matchQueue ? (1 + (matchQueue.npcs || []).length) : 0}</span><span class="l">人匹配中</span></div>
       <div class="stat-pill"><span class="v" id="public-party-count-top">0</span><span class="l">公开招募</span></div>
@@ -1871,7 +1886,7 @@ function renderParty() {
     <div class="party-hall-section-head">
       <div>
         <span class="party-section-kicker">01 · DESTINATION</span>
-        <h3 id="party-map-heading" class="col-title">选择灵墟地图</h3>
+        <h3 id="party-map-heading" class="col-title">选择地下城地图</h3>
       </div>
       <button class="btn btn-sm party-random-map ${!matchDungeonChoice ? 'is-selected' : ''}" onclick="selectMatchDungeon(null)">🎲 随机地图</button>
     </div>
@@ -1881,7 +1896,7 @@ function renderParty() {
         <span class="party-map-copy">
           <span class="party-map-name">${esc(d.name)}</span>
           <span class="party-map-realm">${esc(d.level_desc)}</span>
-          <span class="party-map-desc">${esc(d.desc || '未知灵墟')}</span>
+          <span class="party-map-desc">${esc(d.desc || '未知地下城')}</span>
         </span>
         <span class="party-map-loot">${(d.loot || []).length} 类战利品</span>
       </button>`).join('')}
@@ -1907,7 +1922,7 @@ function renderParty() {
       : `
       <div class="party-command-row">
         <button class="btn btn-success party-command" onclick="startMatch()">⚔️ 单人匹配</button>
-        <label class="party-description-field"><span>小队描述</span><input id="public-party-description" maxlength="100" placeholder="例如：速刷材料，来能抗能打的道友"></label>
+        <label class="party-description-field"><span>小队描述</span><input id="public-party-description" maxlength="100" placeholder="例如：速刷材料，来能抗能打的冒险家"></label>
         <button class="btn party-command party-create-command" onclick="createPublicRoom()">⚑ 创建队伍</button>
       </div>
       <p class="party-action-hint">自动匹配会等待两分钟；创建公开队伍后可由队长随时出发。</p>`}
@@ -2039,7 +2054,7 @@ function logRowHTML(l) {
     <div class="lr-head">
       <span class="lr-heading">
         <span class="lr-party">${esc(l.party_name || '匹配小队')}</span>
-        <span class="lr-dungeon">${esc(l.dungeon_name || '未知灵墟')}</span>
+        <span class="lr-dungeon">${esc(l.dungeon_name || '未知地下城')}</span>
       </span>
       <span class="lr-badges">
         ${snap.isHidden ? '<span class="log-special-event gold">🌟 隐藏副本</span>' : ''}
@@ -2163,7 +2178,7 @@ function renderLogs() {
       <button class="npc-action">可以靠近看看</button>
     </div>`;
   }
-  html += `<h3 class="col-title">📜 探险日志 <span class="ver-tag" title="v5.2：藏经阁（出售炼气/筑基功法）">v5.2</span></h3>
+  html += `<h3 class="col-title">📜 探险日志 <span class="ver-tag" title="v5.2：技能导师馆（出售技能书）">v5.2</span></h3>
   <div class="filter-bar log-filter-bar">
     <input class="search-input" id="log-search" placeholder="搜索日志…（队伍 / 副本 / 内容 / 编号）" value="${esc(logSearch)}" oninput="logSearch=this.value;logPage=1;renderLogs()">
     <div class="log-filter-row">${statusChips}</div>
@@ -2284,7 +2299,7 @@ function updateRunningLogDetail(dg) {
   const live = box.querySelector('.running-live');
   if (live) live.innerHTML = `<span class="match-pulse">⏳</span> 冒险进行中，已记录 ${total} 段…`;
   const intro = box.querySelector('.log-reading-intro span:last-child');
-  if (intro) intro.textContent = `实时记录 · ${dg.party.length} 位成员正在灵墟中推进（${total} 段）`;
+  if (intro) intro.textContent = `实时记录 · ${dg.party.length} 位成员正在地下城中推进（${total} 段）`;
 }
 window.updateRunningLogDetail = updateRunningLogDetail;
 window.completeRunningLogModal = function(runId, completedLogId) {
@@ -2378,7 +2393,7 @@ function runningDetailHTML(dg) {
       <span class="log-status st-in_progress">进行中</span>
       <span class="ldm-item ldm-time">${fmtTime(new Date(dg.startedAt).toISOString())} 开始</span>
     </div></div>
-    <div class="log-reading-intro"><span class="log-reading-intro-mark" aria-hidden="true">✦</span><span>实时记录 · ${dg.party.length} 位成员正在灵墟中推进</span></div>
+    <div class="log-reading-intro"><span class="log-reading-intro-mark" aria-hidden="true">✦</span><span>实时记录 · ${dg.party.length} 位成员正在地下城中推进</span></div>
     ${dungeonLoreHTML(dg)}
     <div class="running-live"><span class="match-pulse">⏳</span> 冒险进行中，日志实时更新…</div>
     <div class="log-detail-steps log-step-list" data-total="${dg.steps.length}" data-rendered="${firstSteps.length}" ${dg.steps.length <= LOG_STEP_CHUNK ? 'data-complete="1"' : ''}>
@@ -2415,7 +2430,7 @@ function logToolbarHTML() {
   </div>`;
 }
 function logDetailHTML(l) {
-  const snap = l.dg_snapshot || { icon: '⚔️', name: l.dungeon_name || '灵墟', desc: '', steps: [], party: [] };
+  const snap = l.dg_snapshot || { icon: '⚔️', name: l.dungeon_name || '地下城', desc: '', steps: [], party: [] };
   const s = l.settlement;
   const statusName = { completed: '已完成', failed: '失败', in_progress: '进行中', generating: '生成中' }[l.status] || l.status || '';
   const partyNames = logPartyNames(l);
@@ -2432,7 +2447,7 @@ function logDetailHTML(l) {
       <span class="log-status st-${esc(l.status || '')}">${esc(statusName)}</span>
       <span class="ldm-item ldm-time">${fmtTime(l.created_at)}</span>
     </div></div>
-    <div class="log-reading-intro"><span class="log-reading-intro-mark" aria-hidden="true">✦</span><span>${esc(snap.name || l.dungeon_name || '灵墟')} · ${steps.length} 段叙事 · ${partyNames.length} 位成员</span></div>
+    <div class="log-reading-intro"><span class="log-reading-intro-mark" aria-hidden="true">✦</span><span>${esc(snap.name || l.dungeon_name || '地下城')} · ${steps.length} 段叙事 · ${partyNames.length} 位成员</span></div>
     ${l.death ? `<div class="verdict-reason fail">☠ 角色已阵亡：${esc(l.death_summary || l.summary_text || '气血归零，角色已被永久删除')}</div>` : ''}
     ${l.verdict_reason ? `<div class="verdict-reason ${l.status === 'failed' ? 'fail' : ''}">${l.status === 'failed' ? '❌ 判定：' : '✅ 判定：'}${esc(l.verdict_reason)}</div>` : ''}
     ${dungeonLoreHTML(l)}
@@ -2440,7 +2455,7 @@ function logDetailHTML(l) {
       ${firstSteps.map((st, i) => logStepHTML(st, i, partyNames)).join('') || '<div class="ad-empty">无详情</div>'}
     </div>
     ${l.summary_text ? `<div class="log-detail-summary-end"><span class="ldse-label">✨ 探险总结</span><p>${esc(l.summary_text)}</p></div>` : ''}
-    ${l.death ? `<div class="log-detail-death-end"><span class="ldse-label">☠ 死亡记录</span>${l.death_summary ? `<p class="death-overall">${esc(l.death_summary)}</p>` : ''}${s && s.members ? s.members.filter(m => m.fate === '阵亡').map(m => `<p><strong>${esc(m.name)}</strong>：${esc(m.death_reason || '气血归零，道消身殒。')}</p>`).join('') : ''}</div>` : ''}
+    ${l.death ? `<div class="log-detail-death-end"><span class="ldse-label">☠ 死亡记录</span>${l.death_summary ? `<p class="death-overall">${esc(l.death_summary)}</p>` : ''}${s && s.members ? s.members.filter(m => m.fate === '阵亡').map(m => `<p><strong>${esc(m.name)}</strong>：${esc(m.death_reason || '气血耗尽，壮烈阵亡。')}</p>`).join('') : ''}</div>` : ''}
     <div class="log-detail-end">— 完 —</div>
     ${s ? memberStatusPanelHTML(s, l.id) : ''}
   </div>`;
@@ -2464,11 +2479,11 @@ function memberStatusPanelHTML(s, logId) {
           </div>
           <div class="msc-line">
             ${m.damage ? `<span class="msc-dmg">💔 气血-${m.damage}</span>` : ''}
-            ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 灵石</span>` : ''}
+            ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 金币</span>` : ''}
             ${(m.statBuffs || []).map(b => `<span class="msc-buff">${esc(b)}</span>`).join('')}
           </div>
           ${m.newTraits && m.newTraits.length ? `<div class="msc-traits"><span class="msc-loot-label">新特质：</span>${m.newTraits.map(t => `<span class="msc-trait" title="${esc(t.desc || '')}">${esc(t.name || t)}</span>`).join('')}</div>` : ''}
-          ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)} · ${esc(skill.type)}${skill.storage === 'pool' ? '（功法库）' : ''}</span>`).join('')}</div>` : ''}
+          ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)} · ${esc(skill.type)}${skill.storage === 'pool' ? '（技能库）' : ''}</span>`).join('')}</div>` : ''}
           ${m.fate === '阵亡' && m.death_reason ? `<div class="msc-death">☠ ${esc(m.death_reason)}</div>` : ''}
           ${m.loot && m.loot.length ? `<div class="msc-loot"><span class="msc-loot-label">新装备：</span>${m.loot.map(it => `<span class="msc-loot-item" title="${esc(it.desc || '')}"><span style="color:${itemColor(it)}">${esc(it.name)}</span> ×${it.qty || 1} <span class="rarity-tag" style="color:${RARITY_COLOR[it.rarity]};border-color:${RARITY_COLOR[it.rarity]}">${RARITY_NAME[it.rarity] || it.rarity}</span></span>`).join('')}</div>` : ''}
         </div>`).join('')}
@@ -2522,122 +2537,122 @@ function likeMember(logId, name) {
 const AI_MODE = 'remote';
 const MAX_CONCURRENT_DUNGEONS = 10;
 const DUNGEON_POOL = [
-  { name: '枯骨林', hiddenName: '白骨深渊·万骨冢', level_desc: '炼气', icon: '🦴', desc: '枯骨遍地、阴风阵阵的乱葬林，亡魂在碑影间低语。', hiddenDesc: '林间怨气远超寻常——那万人坑的深处，有什么东西在呼唤。这是寻常修士不会踏足的隐藏凶地。',
-    lore: '相传此地原是上古战场的一处万人坑，战死的士卒怨气不散，化作白骨与亡魂在林中徘徊。千年来无人敢深入，只有拾荒者在外围捡些残破的兵器换钱。',
-    explore: ['瘴气弥漫的枯骨坡地', '横七竖八的断碑残棺', '亡魂游荡的骨林深处'],
+  { name: '洛兰', hiddenName: '洛兰·哥布林洞穴', level_desc: 'Lv.1-3', icon: '🌲', desc: '赫顿玛尔外缘的森林，哥布林在树影间出没，是新手冒险家的第一课。', hiddenDesc: '林间的小径尽头，洞穴里传来窸窣的声响——那成群结队的哥布林，似乎正盘踞在更深处。这是寻常冒险家不会踏足的隐藏凶地。',
+    lore: '相传此地原是哥布林的一处巨大巢穴，聚居的哥布林被魔法使驱动，在林中设下陷阱与路障。赫顿玛尔的守卫只在边缘巡逻，无人敢深入洞穴。',
+    explore: ['雾气弥漫的森林小径', '横七竖八的枯木与陷阱', '哥布林啼叫的洞穴深处'],
     enemies: [
-      { name: '腐骨妖狼', desc: '由散落骨骸拼凑而成的妖狼，骨缝间渗出磷火，极擅伏击。' },
-      { name: '拾骨亡魂', desc: '披着残破战甲的亡魂，仍执着地搜刮生者的血肉，怨气极重。' },
-      { name: '骨甲骷髅兵', desc: '生前是悍卒，死后仍保持着军阵的杀意，进退有度。' },
-      { name: '白骨秃鹫', desc: '盘旋于骨林上空的巨鹫，羽翼由骨片拼成，俯冲啄食时带着呜呜风声。' },
-      { name: '噬骨蛆潮', desc: '骨缝间涌出的蛆群，白花花一片，所过之处连骨髓都被啃食殆尽。' },
-      { name: '执戈老兵魂', desc: '生前是执戈冲锋的悍卒，死后仍不肯放下长戈，见生者便列阵冲锋。' },
+      { name: '哥布林', desc: '矮小的绿皮哥布林，手持木棒，狡诈又贪财，最擅长设伏。' },
+      { name: '哥布林长矛兵', desc: '持着粗制长矛的哥布林，仍执着地与人缠斗，性情凶悍。' },
+      { name: '哥布林弓手', desc: '藏在树后的哥布林神射手，箭矢虽钝却精准刁钻。' },
+      { name: '野牛', desc: '在林间游荡的野牛，受惊后横冲直撞，力量惊人。' },
+      { name: '巨蜂', desc: '树洞间涌出的巨蜂，成群结队，被螫处片刻便红肿。' },
+      { name: '哥布林掷矛手', desc: '臂力过人的哥布林，投出的短矛呜呜生风。' },
     ],
     bosses: [
-      { name: '白骨将军', desc: '万人坑最深处的执念所化，披着锈蚀战甲，战旗残破却杀气凛然。', realm: '筑基初期', reward: { name: '将军虎符', desc: '锈蚀的铜符，据说能号令枯骨，残存着上古战场的军威。' } },
-      { name: '噬骨怨灵', desc: '千万亡魂凝成的怨灵，所过之处骨骼尽碎，哀嚎声直入识海。', realm: '筑基中期', reward: { name: '怨灵结晶', desc: '万千亡魂凝成的黑晶，握在手中隐隐传来呜咽。' } },
+      { name: '哥布林族长', desc: '洞穴最深处的绿皮头目，披着兽皮战甲，挥着粗铁棒，杀气凛然。', level: 3, reward: { name: '族长战盔', desc: '锈迹斑斑的铁盔，据说曾是某位冒险家遗落的装备。' } },
+      { name: '哥布林首领·坎巴', desc: '真正的哥布林头领从阴影里走出，吹着骨哨召集手下包围上来。', level: 4, reward: { name: '坎巴的骨哨', desc: '用兽骨磨成的短哨，吹响时仿佛能听见哥布林的呼喝。' } },
     ],
-    loot: [{ name: '兽皮', desc: '妖兽皮缝制的粗料，能卖些灵石。' }, { name: '骨笛', desc: '以灵骨磨制的短笛，呜呜作响，据说能安抚亡魂。' }, { name: '灵骨碎片', desc: '一块莹白的骨片，蕴含残存灵气。' }] },
-  { name: '迷雾泽', hiddenName: '迷雾泽·沉镇幽影', level_desc: '炼气', icon: '🌫️', desc: '终年不散的毒雾笼罩泽地，水下潜伏着不知名的猎手。', hiddenDesc: '毒雾浓得化不开，水下的药镇废墟在雾气中若隐若现——瘟疫的源头，似乎从未真正死去。',
-    lore: '旧时这里是一座药镇，一场瘟疫让全镇覆灭，残存的怨念与毒雾纠缠成这片沼泽。镇子的废墟沉在水下，偶尔还能看到青黑的屋脊浮出水面。',
-    explore: ['雾锁断桥的深泽', '浮萍下的暗流通道', '废弃的采药人茅屋'],
+    loot: [{ name: '哥布林皮', desc: '粗糙的兽皮，能卖给铁匠换些金币。' }, { name: '破损的木棒', desc: '哥布林用旧的木棒，聊胜于无。' }, { name: '碎布护符', desc: '一块脏兮兮的护符，上面歪歪扭扭画着哥布林的图腾。' }] },
+  { name: '幽暗密林', hiddenName: '幽暗密林·牛头怪巢穴', level_desc: 'Lv.4-6', icon: '🌫️', desc: '终年不散的雾气笼罩密林，潜伏着成群的牛头怪与毒虫。', hiddenDesc: '雾浓得化不开，林深处的牛头怪领地戒备森严——传闻那头领的巢穴里，堆满了冒险家的遗物。',
+    lore: '旧时这里曾是牛头怪的聚集地，成群牛头怪以力量称霸密林，与哥布林争夺地盘。林子的废墟沉在水雾里，偶尔能看到巨大的牛角挑出树冠。',
+    explore: ['雾锁断桥的密林', '浮萍下的暗流树洞', '废弃的猎人木屋'],
     enemies: [
-      { name: '毒瘴水蟒', desc: '盘踞深泽的巨蟒，毒腺喷出的瘴气能腐蚀护体灵光。' },
-      { name: '迷雾蛙群', desc: '成群结队的毒蛙，皮肤分泌的黏液是毒雾的源头之一。' },
-      { name: '泽地巨蚊', desc: '吸血巨蚊，口器如针，叮咬处片刻便红肿溃烂。' },
-      { name: '溺影水鬼', desc: '溺亡采药人的怨魂，湿发如蛇，专拖活人入水。' },
-      { name: '雾隐毒蛛', desc: '藏身水草间的巨蛛，通体灰白，毒液能蚀穿寻常护体罡气。' },
-      { name: '腐沼鳄鲵', desc: '潜伏泥沼的巨鲵，体表覆满腐苔，张口便是一股腥臭的毒气。' },
+      { name: '牛头怪士兵', desc: '盘踞密林的巨力牛头怪，手里的巨斧能劈开树干。' },
+      { name: '剧毒蜂群', desc: '成群结队的毒蜂，尾针带毒，是密林雾瘴的源头之一。' },
+      { name: '森林毒蛛', desc: '藏身树冠间的巨蛛，通体灰白，毒液能腐蚀皮甲。' },
+      { name: '雾中猎手', desc: '迷失在林中的雇佣兵，仍执着地巡逻着早已无人看守的营地。' },
+      { name: '野狼群', desc: '受惊后结成狼群的野狼，专挑落单的冒险家下手。' },
+      { name: '牛头怪勇士', desc: '体格更壮的牛头怪，攻击迅猛，一记头槌撞断大树。' },
     ],
     bosses: [
-      { name: '瘟疫之源·雾母', desc: '瘟疫的源头化作人形，周身毒雾缭绕，所立之处草木皆枯。', realm: '筑基初期', reward: { name: '雾灵珠', desc: '雾母本体凝成的珠子，内里雾气流转不息。' } },
-      { name: '沉镇怨首·病柳', desc: '药镇的老柳树饮尽全镇死者的血，化作盘踞水下的凶物。', realm: '筑基中期', reward: { name: '瘟疫古方', desc: '一张残缺的羊皮古方，墨迹斑驳，记载着失传的解毒秘术。' } },
+      { name: '牛头怪首领·洛克', desc: '密林的霸主，披着瘢痕累累的兽皮，双角缠着铁链。', level: 6, reward: { name: '洛克的铁角', desc: '缠着铁链的大号牛角，敲在盾上呜呜作响。' } },
+      { name: '落雷哥布林', desc: '不知从何处学会操控雷电的哥布林，引动天雷轰落，威势骇人。', level: 7, reward: { name: '落雷之石', desc: '握在手心会微微发麻的雷石，据说能储存一丝电劲。' } },
     ],
-    loot: [{ name: '龙涎草', desc: '生于深泽的灵草，气味清冽，可入丹。' }, { name: '避瘴珠', desc: '千年灵木结成的珠子，可避瘴气毒雾。' }, { name: '雾隐石', desc: '灰蒙蒙的石子，握在掌心时周围雾气会微微散开。' }] },
-  { name: '赤炎谷', hiddenName: '赤炎谷·地火核心', level_desc: '炼气', icon: '🔥', desc: '地火翻涌的灼热山谷，火灵草木丛中栖息着炽焰妖兽。', hiddenDesc: '山谷深处的熔岩湖彻底沸腾——传说中沉于湖底的上古火系至宝，似乎正在苏醒。',
-    lore: '千年前天火坠落于此，地火至今未熄。火属性修士视此为圣地，凡人却只敢在外围采些火灵草。谷底的熔岩湖中，传说沉着一件上古火系至宝。',
-    explore: ['熔岩裂谷的栈道', '火灵草丛生的热泉', '被岩浆封死的洞窟'],
+    loot: [{ name: '牛角', desc: '牛头怪脱落的巨角，又硬又沉。' }, { name: '厚兽皮', desc: '牛头怪的毛皮，是上好的制甲材料。' }, { name: '猎人徽章', desc: '一枚褪色的雇佣兵徽章，不知主人今在何处。' }] },
+  { name: '雷鸣废墟', hiddenName: '雷鸣废墟·烈焰谷', level_desc: 'Lv.7-9', icon: '🔥', desc: '被雷火与烈焰吞噬的废墟，怪兽在断瓦间咆哮，火元素四处游荡。', hiddenDesc: '废墟深处的熔岩裂缝彻底炸开——传说沉在谷底的上古烈焰，似乎正在苏醒。',
+    lore: '千年前一场来历不明的雷火席卷了这座小镇，大火烧了数月不止。怪兽盘踞在焦黑的废墟中，只有胆大的拾荒者敢在外围捡些烧熔的金属。',
+    explore: ['熔岩裂谷的栈道', '焦炭树林中熄灭的火堆', '被熔岩封死的仓库场'],
     enemies: [
-      { name: '赤炎蜥蜴', desc: '火灵草养大的蜥蜴，鳞甲能短暂喷出烈焰。' },
-      { name: '熔岩傀儡', desc: '地火凝聚的傀儡，拳脚带着滚烫的岩浆。' },
+      { name: '烈焰哥布林', desc: '驯服火焰的哥布林，投出的火焰瓶能在身旁炸开一朵火墙。' },
+      { name: '熔岩石像', desc: '地火凝聚的石像，拳脚带着滚烫的岩浆。' },
       { name: '火鸦群', desc: '成群的火鸦，翅羽燃着赤焰，俯冲时如流星坠地。' },
-      { name: '地火甲虫', desc: '背甲灼红如炭的甲虫，受惊时喷出灼热气浪。' },
-      { name: '火灵精', desc: '火灵草间游荡的赤色灵体，触之灼伤，成群出没。' },
-      { name: '岩浆鳄', desc: '半身浸在熔岩中的巨鳄，皮甲上岩浆流淌，力大无穷。' },
+      { name: '火焰史莱姆', desc: '半透明的火团，受惊时喷出灼热气浪。' },
+      { name: '小火焰精灵', desc: '废墟间游荡的赤色灵体，触之灼伤，成群出没。' },
+      { name: '熔岩龟', desc: '半身浸在熔岩中的巨龟，背甲上岩浆流淌，力大无穷。' },
     ],
     bosses: [
-      { name: '地火之灵', desc: '天火残魂孕育的灵体，通体赤红，举手投足皆引动地火。', realm: '筑基初期', reward: { name: '地火精魄', desc: '地火之灵的核心，散发的热意永不消散。' } },
-      { name: '熔核巨蜥', desc: '沉睡在熔岩湖底的巨蜥，苏醒时整座山谷都在震颤。', realm: '筑基中期', reward: { name: '熔核晶', desc: '巨蜥心口凝出的晶核，内里仿佛封着一团流动的岩浆。' } },
+      { name: '烈焰·熔岩巨人', desc: '从熔岩中爬出的巨人，全身赤红，举手投足皆引动地火。', level: 9, reward: { name: '熔岩核心', desc: '巨人胸口的红热晶核，散发的热意经久不散。' } },
+      { name: '毁灭者·佛里特', desc: '潜伏在熔岩谷深处的恶魔，苏醒时整片废墟都在震颤。', level: 10, reward: { name: '佛里特的护符', desc: '恶魔贴身佩戴的护符，内里仿佛封着一团流动的岩浆。' } },
     ],
-    loot: [{ name: '火灵草', desc: '赤炎谷特有的灵草，叶脉赤红如血。' }, { name: '火晶石', desc: '熔岩中凝结的晶石，握在手里微微发烫。' }, { name: '灰烬木', desc: '被地火淬炼过的焦木，质地坚硬。' }] },
-  { name: '万剑冢', hiddenName: '万剑冢·剑冢之心', level_desc: '炼气', icon: '🗡️', desc: '上古剑修陨落之地，万千残剑倒插于山丘，剑意彻骨。', hiddenDesc: '万千残剑同时震颤低鸣——剑冢"呼吸"的时刻到了，封存千年的剑意正在核心处苏醒。',
-    lore: '上古剑宗覆灭之夜，十万弟子以身为祭，将宗门万剑埋入山丘，剑意封存千年。每隔百年，剑冢便会呼吸一次，吐出几柄认主的古剑。',
-    explore: ['剑丘之巅的试炼台', '锈剑密布的剑林', '剑修遗府的石阶'],
+    loot: [{ name: '火晶石', desc: '熔岩中凝结的晶石，握在手里微微发烫。' }, { name: '熔渣铁', desc: '被熔岩煅烧过的铁块，质地却异常坚硬。' }, { name: '焦黑的骨笛', desc: '不知何人遗留的短笛，吹起来呜呜作响。' }] },
+  { name: '格拉卡', hiddenName: '格拉卡·烈焰祭坛', level_desc: 'Lv.10-12', icon: '🗡️', desc: '被烈焰与狂暴怪兽占据的古城，烈焰哥布林的巢穴，每一寸土地都滚烫。', hiddenDesc: '古城深处传来震天怒吼——烈焰哥布林王正在祭坛上发威，封存百年的狂暴之力正在苏醒。',
+    lore: '格拉卡原是边陲重镇，一场大灾变后沦为烈焰的领地。狂暴的哥布林在城中心筑起祭坛，把抢来的战利品垒成小山，每隔一段时日便举行血祭。',
+    explore: ['焦黑的城门废墟', '燃烧的广场中央', '烈焰祭坛的石阶'],
     enemies: [
-      { name: '剑灵残影', desc: '陨落剑修的残魂，执念于剑，出手便是凌厉剑意。' },
-      { name: '锈剑傀儡', desc: '残剑拼成的傀儡，浑身锈迹却快如闪电。' },
-      { name: '剑意风暴', desc: '封存的剑意失控化作风暴，卷入者如遭千剑穿身。' },
-      { name: '断剑亡魂', desc: '以身殉剑的剑修残念，双臂化为残剑，出招便是同归于尽的路数。' },
-      { name: '剑匣机关兽', desc: '半毁的剑匣化形而成，开匣一瞬万剑齐发。' },
-      { name: '噬剑铁蠹', desc: '啃食残剑为生的铁蠹，甲壳坚逾精钢，口器能咬断剑刃。' },
+      { name: '烈焰哥布林精英', desc: '体格健壮的烈焰哥布林，手持镶火的刀，力大凶狠。' },
+      { name: '自爆哥布林', desc: '抱着炸药桶的哥布林，见人就点燃引线，不计后果地冲上来。' },
+      { name: '巨石投掷手', desc: '站在城墙上抛掷巨石的哥布林，一下能砸穿盾牌。' },
+      { name: '狂暴猎犬', desc: '被喂出狂躁症的恶犬，双眼赤红，撕咬极狠。' },
+      { name: '火焰之刃', desc: '通体凝着火焰的剑士亡魂，出招便是凌厉的火焰刃气。' },
+      { name: '狂暴牛头王', desc: '身披重甲的牛头怪王者，皮糙肉厚，横冲直撞。' },
     ],
     bosses: [
-      { name: '剑冢守墓人', desc: '镇守剑冢千年的老者残影，怀中古剑温养千年，一剑出则风云变色。', realm: '筑基初期', reward: { name: '守墓剑令', desc: '守墓人随身剑令，古意盎然，可令残剑短暂听命。' } },
-      { name: '万剑之主·残念', desc: '剑宗宗主的执念，万剑环绕，剑意通天彻地。', realm: '筑基中期', reward: { name: '剑冢之心', desc: '万剑冢的核心，入手沉重，内里似有万剑低鸣。' } },
+      { name: '烈焰哥布林王', desc: '祭坛上的哥布林之王，一手举火炬，一手挥巨棒，吼声震得城墙发颤。', level: 12, reward: { name: '王者的火冠', desc: '烈焰哥布林王的鎏金王冠，仍残留着灼人的温度。' } },
+      { name: '狂暴·龙王', desc: '被狂暴之力侵蚀的牛头怪王者，双眼血红，踏着烈焰咆哮。', level: 13, reward: { name: '暴怒之核', desc: '兽王心口凝出的红晶，内里仿佛封着一团怒火。' } },
     ],
-    loot: [{ name: '剑灵碎片', desc: '古剑残魂凝成的碎片，隐隐震颤。' }, { name: '残剑刃', desc: '断剑残刃，仍有余锋。' }, { name: '剑修遗简', desc: '残破玉简，隐约刻着半篇剑诀。' }] },
-  { name: '幽冥渊', hiddenName: '幽冥渊·渊底裂隙', level_desc: '炼气', icon: '🌑', desc: '阴煞之气凝成黑雾的深渊，鬼修巢穴，越深越冷。', hiddenDesc: '今晚正是月圆——渊底传来低沉的呼吸声，阴阳两界的裂隙，正在缓缓张开。',
-    lore: '幽冥渊是阴阳两界的裂隙，阴煞之气常年倒灌。曾有鬼修在此开宗立派，后被正道联军剿灭，但深渊深处始终有东西在沉睡——每逢月圆，渊底便传来低沉的呼吸声。',
-    explore: ['鬼火摇曳的崖壁栈道', '白骨铺就的渊底甬道', '被封印的鬼修洞府'],
+    loot: [{ name: '燃烧的晶核', desc: '烈焰中凝结的晶石，握在掌心微微发烫。' }, { name: '镶火刀鞘', desc: '破旧的刀鞘，边缘镶着细细的火纹。' }, { name: '格拉卡手记', desc: '冒险家留下的残页，详尽记着城中的路。' }] },
+  { name: '天空之城·龙人之塔', hiddenName: '天空之城·龙人暗层', level_desc: 'Lv.13-15', icon: '🐲', desc: '悬于云海之上的古塔，龙人守卫穿梭其间，塔顶便是通往天界的缺口。', hiddenDesc: '塔内的暗门缓缓开启——盘踞塔心的龙人将领，正等待有人闯上门来。',
+    lore: '天空之城是连接人界与天界的悬空巨塔，龙人一族世代把守着塔门。塔身越往上，守卫越强，寻常冒险家连第一层都难以踏足。',
+    explore: ['云海浮桥', '盘旋而上的塔心回廊', '龙人祭坛的残破石阶'],
     enemies: [
-      { name: '幽冥鬼爪', desc: '从阴影中探出的鬼爪，五根枯骨般的指节力可碎铁。' },
-      { name: '鬼潮', desc: '成百上千的低阶亡魂汇成的潮水，所过之处生机尽灭。' },
-      { name: '缚魂阴煞', desc: '以魂锁缚人的阴煞，被缠上者神识如坠冰窟。' },
-      { name: '吊颈孤魂', desc: '悬在崖壁半空的孤魂，目光空洞，靠近者喉间发紧。' },
-      { name: '阴火狐', desc: '口吐幽蓝鬼火的狐妖，狡诈善惑，专诱活人误入绝路。' },
-      { name: '白骨夜叉', desc: '手持骨叉的夜叉，赤目獠牙，力可开碑裂石。' },
+      { name: '龙人守卫', desc: '手持长枪的龙人，鳞甲坚硬，还恪守着古老的军规。' },
+      { name: '龙人士兵', desc: '披着龙牙铠甲的龙人战士，出枪如火。' },
+      { name: '天界石像', desc: '塔中残存的守卫石像，符文明灭，依旧尽职地驱逐入侵者。' },
+      { name: '云海龙鹰', desc: '悬空巨塔四周盘旋的龙鹰，俯冲之下掀起烈风。' },
+      { name: '龙人弓手', desc: '站在塔檐上的龙人射手，箭矢破空而至。' },
+      { name: '塔灵', desc: '古塔凝聚出的灵体，会操控塔中的机关困住来者。' },
     ],
     bosses: [
-      { name: '缚魂鬼母', desc: '鬼修宗门残存的祖师，半身已与阴煞同化，魂锁漫天。', realm: '筑基初期', reward: { name: '缚魂索', desc: '鬼母以千年阴煞凝成的魂索，缠上便难挣脱。' } },
-      { name: '渊底·沉眠者', desc: '深渊最深处沉睡的东西终于睁眼，阴煞之气随它的呼吸暴涨。', realm: '筑基中期', reward: { name: '渊底之瞳', desc: '沉眠者遗落的眼瞳，通体漆黑，凝视时如坠深渊。' } },
+      { name: '龙人将军', desc: '驻守塔腰的龙人将领，一身银甲，长枪所指无人敢挡。', level: 15, reward: { name: '龙人将军枪', desc: '将军在塔征战多年的银枪，枪缨早已磨秃。' } },
+      { name: '龙人法师·雷波', desc: '操控天雷的龙人法师，挥手间电光裂空，是通往塔顶的最后一道门槛。', level: 16, reward: { name: '雷波法杖', desc: '镶嵌着雷晶的法杖，握在手中隐隐发麻。' } },
     ],
-    loot: [{ name: '幽冥寒铁', desc: '渊底寒铁，入手冰冷彻骨。' }, { name: '阴煞珠', desc: '凝聚阴煞之气的珠子，魔修趋之若鹜。' }, { name: '魂灯残油', desc: '半盏魂灯残油，可照见幽冥之物。' }] },
-  { name: '雷音山', hiddenName: '雷音山·雷池尽头', level_desc: '炼气', icon: '⚡', desc: '常年雷云密布的孤峰，天雷淬体，雷系灵物遍地。', hiddenDesc: '雷云低得压到了山巅，雷池中的雷灵砂剧烈沸腾——那名失败的上古雷修，似乎要在今日再渡一次劫。',
-    lore: '这座孤峰常年被雷云笼罩，据说是上古雷修渡劫失败之地，雷意千年不散。每年雨季，峰顶的雷池会凝结出雷灵砂，引来无数修士铤而走险。',
-    explore: ['雷云下的通天石阶', '被雷劈开的古树洞', '雷池边缘的乱石滩'],
+    loot: [{ name: '龙鳞', desc: '龙人脱落的鳞片，又韧又亮，是上好的防具材料。' }, { name: '云海之晶', desc: '塔顶凝结的晶石，内里流着淡淡云彩。' }, { name: '古塔残卷', desc: '半卷泛黄的塔内手记，字迹磨损难辨。' }] },
+  { name: '天帷巨兽·神殿外围', hiddenName: '天帷巨兽·雷暴神殿', level_desc: 'Lv.16-18', icon: '⚡', desc: '趴在云海上的巨兽背脊，神殿在雷暴中矗立，守护着通往天界的门扉。', hiddenDesc: '雷云低得压到神殿尖顶，雷暴化作的守护灵正在苏醒——它似乎把所有人都当成了闯入者。',
+    lore: '天帷巨兽驮着一整座神殿在云海中巡游，神殿外壁常年被雷暴环绕。据说穿过神殿便能到达天界，但千百年来无人做到。',
+    explore: ['雷暴笼罩的献祭广场', '被雷劈开的巨兽背脊', '神殿边缘的乱石祭坛'],
     enemies: [
       { name: '雷兽', desc: '沐浴天雷而生的异兽，皮毛间电弧流窜。' },
-      { name: '雷暴傀儡', desc: '雷池畔的傀儡，受雷意驱动，出手便引动雷霆。' },
+      { name: '雷暴石像', desc: '神殿前的石像，受雷意驱动，出手便引动雷霆。' },
       { name: '天雷余威', desc: '残留的雷意凝成人形，触之如遭雷击。' },
       { name: '雷音蝠群', desc: '雷电环绕的蝙蝠群，尖啸声与雷鸣共振，震得人气血翻涌。' },
-      { name: '紫电蛇', desc: '通体缠绕紫色电弧的雷蛇，速度极快，咬中便是一道电光入体。' },
+      { name: '紫电蛇', desc: '通体缠绕紫色电弧的蛇兽，速度极快，咬中便是一道电光入体。' },
       { name: '雷纹石人', desc: '雷纹密布的山石化形，一拳砸下带着闷雷之声。' },
     ],
     bosses: [
-      { name: '雷池化身', desc: '雷池中的雷意凝成的化身，通体电光，威严如天神降世。', realm: '筑基初期', reward: { name: '雷池玉髓', desc: '雷池深处的玉髓，入手酥麻，蕴含纯净雷灵。' } },
-      { name: '渡劫残魂', desc: '上古雷修的残魂，执念于那场失败的天劫，见人便引雷共渡。', realm: '筑基中期', reward: { name: '劫雷木心', desc: '被劫雷劈过千年的古木心，木纹里封着一道未散的劫雷。' } },
+      { name: '雷暴·守护灵', desc: '神殿前的雷暴凝成的守护之灵，通体电光，威严如神祇降世。', level: 18, reward: { name: '雷暴玉髓', desc: '雷暴之灵核心处的玉髓，入手酥麻，蕴含纯净雷力。' } },
+      { name: '光之兵·范哲利斯', desc: '镇守神殿外围的光之魔将，光刃所指，阴影片片剥落。', level: 19, reward: { name: '范哲利斯光刃', desc: '魔将遗落的残刃，刃口始终泛着一道冷光。' } },
     ],
-    loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '雷灵砂', desc: '雷池畔的砂砾，触碰时指尖微微发麻。' }, { name: '引雷针', desc: '一指长的银针，雨夜时会自己指向天空。' }] },
-  { name: '落仙台', hiddenName: '落仙台·仙宫秘境', level_desc: '炼气', icon: '🏯', desc: '仙人陨落之地，残破仙宫悬浮于云海之上，逆天机缘与绝命凶险并存。', hiddenDesc: '云海翻涌，仙宫深处的道则碎片亮起——那位仙人陨落时的执念，正在等待一个"有缘人"。',
-    lore: '上古仙人于此地飞升失败，肉身崩解，仙宫残骸悬浮于云海之上。仙人的道则碎片散落各处，既是逆天机缘，也是绝命凶险——靠近仙宫核心的修士，无一例外地消失了。',
-    explore: ['云海浮桥', '仙宫残殿', '仙人悟道石'],
+    loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '雷石砂', desc: '神殿前的砂砾，触碰时指尖微微发麻。' }, { name: '引雷针', desc: '一指长的银针，雷雨天会自己指向天空。' }] },
+  { name: '天帷巨兽·登陆场', hiddenName: '天帷巨兽·献祭神殿', level_desc: 'Lv.19', icon: '🏯', desc: '巨兽背脊尽头的空港，残破殿宇立于云海之上，是通往天界的最后关口。', hiddenDesc: '云海翻涌，神殿深处的机关全部亮起——传说那位陨落的天界使者的执念，正在等待一个闯入者。',
+    lore: '这里是天帷巨兽背脊的尽头，天界使者在远征中坠落于此，残躯至今仍镇着通往天界的门户。殿宇残骸悬浮在云海上，靠近核心的冒险家，无一例外地失去了音讯。',
+    explore: ['云海浮桥', '残破的献祭神殿', '天界使者的封存之所'],
     enemies: [
-      { name: '仙宫守卫傀儡', desc: '仙宫残留的守卫傀儡，符文明灭，依旧尽职地驱逐入侵者。' },
-      { name: '心魔幻象', desc: '仙人道则滋生的幻象，映照出每个修士心底最深的执念。' },
-      { name: '上古残阵', desc: '残缺的仙家阵法，无人主持却仍在缓缓运转。' },
-      { name: '云海螭龙', desc: '云海灵气凝成的螭龙残影，翻腾之间掀起风雷。' },
-      { name: '道音钟灵', desc: '仙宫残钟化出的灵体，每一声钟鸣都直震神魂。' },
-      { name: '玉简书灵', desc: '仙家玉简化形，以道文为刃，字字皆是杀机。' },
+      { name: '神殿守卫傀儡', desc: '殿内残留的守卫傀儡，机关铭文明灭，依旧尽职地驱逐入侵者。' },
+      { name: '迷失幻影', desc: '守护执念滋生的幻影，映照出每个冒险家心底最深的恐惧。' },
+      { name: '上古机关阵', desc: '残缺的机关阵法，无人主持却仍在缓缓运转。' },
+      { name: '云海天鹰', desc: '云海灵气凝成的天鹰残影，翻腾之间掀起风雷。' },
+      { name: '光之祈祷者', desc: '殿中残存的光之祈祷者，每一声祷唱都直震神魂。' },
+      { name: '圣物书灵', desc: '圣书化形的灵体，以圣文为刃，字字皆是杀机。' },
     ],
     bosses: [
-      { name: '仙宫镇守者', desc: '仙宫最后的镇守者，半身已石化，眼中神光却未熄灭。', realm: '筑基初期', reward: { name: '仙宫令牌', desc: '镇守者腰间的令牌，镌刻着仙宫纹章，灵气自蕴。' } },
-      { name: '仙人残念·道则', desc: '仙人陨落时遗下的道则残念，举手投足皆是大道轰鸣。', realm: '筑基中期', reward: { name: '道则碎片', desc: '仙人道则凝成的碎片，内里日月流转，是逆天机缘。' } },
+      { name: '神殿镇守者', desc: '神殿最后的镇守者，半身已石化，眼中圣光却未熄灭。', level: 19, reward: { name: '神殿令牌', desc: '镇守者腰间的令牌，镌刻着古老的纹章，圣光自蕴。' } },
+      { name: '天界使者·残念', desc: '陨落使者的执念，举手投足皆是圣光轰鸣。', level: 19, reward: { name: '使者圣徽', desc: '使者残念凝成的圣徽，内里日月流转，是不可错过的机缘。' } },
     ],
-    loot: [{ name: '仙府残卷', desc: '仙宫残卷，字迹流转不定。' }, { name: '悟道茶', desc: '仙人遗落的茶饼，泡开时有道韵流转。' }, { name: '星图残片', desc: '星图一角，凑齐三块可开启隐藏试炼。' }] },
+    loot: [{ name: '神殿残卷', desc: '殿内残卷，字迹流转不定。' }, { name: '圣辉茶饼', desc: '使者遗落的茶饼，泡开时有圣光流转。' }, { name: '星图残片', desc: '星图一角，凑齐三块可开启隐藏试炼。' }] },
 ];
 const AI_COMPANIONS = window.AI_COMPANION_CARDS || { DEFAULT_CARDS: [], NPC_NAME_POOL: [] };
 const NPC_NAME_POOL = AI_COMPANIONS.NPC_NAME_POOL.length ? AI_COMPANIONS.NPC_NAME_POOL : ['墨尘', '柳烟', '顾长风', '苏砚', '楚惊鸿', '姜雪', '陆离', '晏无咎', '纪云深', '裴照', '萧瑟', '洛清欢'];
-const TRAIT_POOL = ['灵觉敏锐', '胆大心细', '夜视之眼', '听风辨位', '老练猎手', '心狠手辣', '寻宝直觉', '百毒不侵', '气运缠身'];
+const TRAIT_POOL = ['明察秋毫', '胆大心细', '夜视之眼', '听风辨位', '老练猎手', '心狠手辣', '寻宝直觉', '百毒不侵', '好运缠身'];
 const BAD_TRAIT_POOL = ['重伤未愈', '惊吓过度', '中了尸毒', '心有余悸'];
 // 物品描述驱动的本地效果（真实 AI 模式下由 LLM 依据描述生成，此表仅作离线降级）
 const ITEM_BONUS = [
@@ -2667,11 +2682,11 @@ const EQUIP_USE = {
     fail: ['{actor}{itemUseVerb}{item}，四处试探，可惜{itemDesc}在此地并不灵验。'],
   },
 };
-/* 术法/功法释放句：是否使用及成败由 AI 判定，成功后按技能描述（{skillDesc}）演绎 */
+/* 物理技/魔法技释放句：是否使用及成败由 AI 判定，成功后按技能描述（{skillDesc}）演绎 */
 const SKILL_USE = {
   explore: {
     ok: ['{actor}默运{skillType}「{skill}」，{skillDesc}。灵光如涓流般散开，{where}中的暗处竟被照得通透，众人顺势前行。', '{actor}凝神掐诀，{skill}应念而动——{skillDesc}。余韵扫过{where}，连雾气都淡了几分。'],
-    fail: ['{actor}试图催动{skill}，可惜灵机驳杂，{skillDesc}所言的威势未能凝聚，只得收功另寻他法。'],
+    fail: ['{actor}试图催动{skill}，可惜能量驳杂，{skillDesc}所言的威势未能凝聚，只得收势另寻他法。'],
   },
   battle: {
     ok: ['{actor}一声低喝，{skillType}「{skill}」轰然施放——{skillDesc}！灵光暴涨，{enemy}被正面击中，嘶吼着连连后退，众人趁势压上！', '电光石火间，{actor}掐诀引动{skill}，{skillDesc}。一式既出，{enemy}的攻势竟被生生打断！'],
@@ -2682,21 +2697,20 @@ const SKILL_USE = {
     fail: ['{actor}拼尽全力施放{skill}，可惜{enemy}凶威太盛，灵光被生生压下，{skillDesc}的奥妙未能尽展。'],
   },
   loot: {
-    ok: ['{actor}以{skill}探路，{skillDesc}。灵机指引之下，竟在废墟深处又寻出一件隐秘之物。', '{actor}随手一引{skill}，{skillDesc}。气息扫过断壁残垣，一处暗格应声而开。'],
-    fail: ['{actor}试着一催{skill}，可惜此地灵机沉寂，{skillDesc}也未能建功。'],
+    ok: ['{actor}以{skill}探路，{skillDesc}。气息指引之下，竟在废墟深处又寻出一件隐秘之物。', '{actor}随手一引{skill}，{skillDesc}。气息扫过断壁残垣，一处暗格应声而开。'],
+    fail: ['{actor}试着一催{skill}，可惜此地气息沉寂，{skillDesc}也未能建功。'],
   },
 };
-/* 灵根契合修正：技能属性与角色灵根相同 → 增益；相异或无属性 → 0（不惩罚） */
+/* 属性契合修正：技能自身带属性时恒定小增益；无属性 → 0（不惩罚） */
 function elemMatchMod(actor, sk) {
-  const root = ((actor.traits || [])[0] || '').replace(/灵根$/, '灵根');
   const elem = (sk && sk.elem) || '';
-  if (!elem || elem === '无' || !root) return 0;
-  return elem === root ? 2 : 0;
+  if (!elem || elem === '无') return 0;
+  return 2;
 }
 /* 副本阶段计划：普通 10 步（10 段以上即可，允许一行一段）；隐藏副本（首领 10% 概率触发）额外含首领阶段，共 12 步 */
 /* 副本阶段计划：整局 10~40 段，每段 ≤250 字（不设最低字数，长短随叙事节奏）；
    步数按阶段加权分配——入谷/归途各 1 段固定，其余按 探索/战斗/搜刮/首领 权重随机分配；
-   首领阶段：普通副本 10% 概率遇到（1 段起），隐藏副本必定遭遇（普通首领筑基初期 + 隐藏首领筑基中期）；
+   首领阶段：普通副本 10% 概率遇到（1 段起），隐藏副本必定遭遇（普通首领 Lv.10 + 隐藏首领 Lv.12）；
    本局敌人为 0 种时跳过战斗阶段 */
 function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
   const hasBoss = isHidden || specialEvent || Math.random() < 0.1;
@@ -2722,7 +2736,7 @@ function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
   if (hasBattle) p.push({ key: 'battle', label: '战斗', steps: battle, check: true });
   if (hasBoss) p.push({ key: 'boss', label: '首领', steps: boss, check: true });
   p.push({ key: 'loot', label: '搜刮', steps: loot, check: true });
-  // 突破试炼：练气十层满修为触发后，在归途前安排一段突破试炼（成功判定 1~2 段）
+  // 转职试炼：Lv.10 满经验触发后，在归途前安排一段转职试炼（成功判定 1~2 段）
   if (breakthrough) p.push({ key: 'breakthrough', label: '突破', steps: 1 + Math.floor(Math.random() * 2), check: true });
   p.push({ key: 'closing', label: '归途', steps: 1, check: false });
   return p;
@@ -2773,7 +2787,7 @@ function buildNarrativeFocusPlan(dg) {
   return ordered;
 }
 const STAGE_ATTR = { explore: ['intelligence', 'luck'], battle: ['strength', 'agility'], boss: ['strength', 'agility', 'luck'], loot: ['luck', 'intelligence'], breakthrough: ['luck', 'intelligence'] };
-const ATTR_NAME = { strength: '体魄', agility: '身法', intelligence: '神识', luck: '气运' };
+const ATTR_NAME = { strength: '力量', agility: '敏捷', intelligence: '智力', luck: '幸运' };
 
 // 暴露到 window：联机模式下 online.js 需与主脚本共享这些状态（进行中副本/匹配队列）
 window.matchQueue = null;
@@ -2829,7 +2843,7 @@ function restoreRuns() {
 /* 中断副本 → 失败日志（页面临时关闭导致未完成，至少留下记录） */
 function interruptRunToLog(s) {
   const log = {
-    id: nextLogId(), party_name: '匹配小队_' + (s.id || 0), dungeon_name: s.dungeon ? s.dungeon.name : '灵墟',
+    id: nextLogId(), party_name: '匹配小队_' + (s.id || 0), dungeon_name: s.dungeon ? s.dungeon.name : '地下城',
     status: 'failed', result_summary: '探险中断：页面关闭导致本次探险未能完成，仅保留此前推进的剧情。', created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: '', items_used: [], cancel_reason: '页面关闭中断', summary_text: '',
     dg_snapshot: { icon: s.dungeon.icon, name: s.dungeon.name, baseName: s.dungeon.baseName, isHidden: !!s.dungeon.isHidden, desc: s.dungeon.desc, steps: s.steps || [], party: (s.party || []).map(m => ({ name: m.name, is_mine: !!m.is_mine })) },
@@ -2878,8 +2892,8 @@ function genNpc(name) {
     hp: 100 + Math.floor(Math.random() * 60), max_hp: 160, stamina: 100, max_stamina: 100, hpTs: Date.now(),
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
-    gold: 0, character_class: '练气' + (1 + Math.floor(Math.random() * 10)) + '层', personality: PERS_LIST[Math.floor(Math.random() * PERS_LIST.length)],
-    traits: [ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, '初入仙途'],
+    gold: 0, character_class: ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, personality: PERS_LIST[Math.floor(Math.random() * PERS_LIST.length)],
+    traits: [ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, '初入阿拉德'],
     equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i),
     latest_score: 0, praise_count: 0, is_followed: false,
   };
@@ -2930,10 +2944,8 @@ function matchTick() {
 }
 
 /* ---------- 开本 ---------- */
-/* 练气层数文字：1→一层 … 10→十层 */
-const QI_LAYER = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
-/* 本局敌人挑选：从副本敌人池随机抽 0~3 种，每种随机修为（练气 1~10 层分布）；
-   特殊事件时敌人数量保底 1 种且修为整体上调（+2~4 层） */
+/* 本局敌人挑选：从副本敌人池随机抽 0~3 种，每种随机等级（1~10）；
+   特殊事件时敌人数量保底 1 种且等级整体上调（+2~4 级） */
 function rollEnemies(dungeon, specialEvent) {
   const pool = (dungeon.enemies || []).slice();
   const n = specialEvent ? 1 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 4);  // 特殊事件 1~3 种，普通 0~3 种
@@ -2942,9 +2954,9 @@ function rollEnemies(dungeon, specialEvent) {
     picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   }
   return picked.map(e => {
-    let layer = 1 + Math.floor(Math.random() * 10);
-    if (specialEvent) layer = Math.min(10, layer + 2 + Math.floor(Math.random() * 3));  // 修为 +2~4 层
-    return { ...e, realm: '练气' + QI_LAYER[layer] + '层' };
+    let level = 1 + Math.floor(Math.random() * 10);
+    if (specialEvent) level = Math.min(19, level + 2 + Math.floor(Math.random() * 3));  // 等级 +2~4
+    return { ...e, level };
   });
 }
 /* AI 开本结果归一化：隐藏/特殊事件/突破与敌人名单由 AI 决定，敌人必须来自副本池 */
@@ -2956,8 +2968,10 @@ function normalizeAiSetupClient(setup, base) {
     const src = pool.find(x => String(x.name || '').trim() === name);
     if (!src || seen.has(name)) return null;
     seen.add(name);
-    const realm = String(entry && entry.realm || '').trim();
-    return { ...src, realm: /^(练气[一二三四五六七八九十]+层|筑基(初期|前期|中期|后期))$/.test(realm) ? realm : '练气一层' };
+    let level = Number(entry && (entry.level != null ? entry.level : entry.realm));
+    if (!Number.isFinite(level) || level <= 0) level = 1 + Math.floor(Math.random() * 10);
+    level = Math.max(1, Math.min(19, Math.round(level)));
+    return { ...src, level };
   }).filter(Boolean);
   const specialEvent = !!(setup && setup.specialEvent);
   return {
@@ -2976,9 +2990,9 @@ function pickDungeon(role) {
 async function startDungeon(role, npcs, choice) {
   if (activeDungeons.length >= MAX_CONCURRENT_DUNGEONS) { toastMsg('服务器副本已满，稍后自动开本'); setTimeout(() => startDungeon(role, npcs, choice), 5000); return; }
   if ((role.stamina || 0) < 10) { toastMsg('精力不足（进入副本需 10 精力，每分钟回复 1 点）'); return; }
-  // 自选地图优先；未选择则按修为随机挑选
+  // 自选地图优先；未选择则按等级随机挑选
   const base = (choice && DUNGEON_POOL.find(d => d.name === choice)) || pickDungeon(role);
-  // 隐藏副本/特殊事件/突破试炼/敌人数量与修为由 AI 开局推演决定；失败时使用安全默认
+  // 隐藏副本/特殊事件/转职试炼/敌人数量与等级由 AI 开局推演决定；失败时使用安全默认
   let setup = { isHidden: false, specialEvent: false, breakthrough: false, enemies: [] };
   try {
     const r = await fetch('/api/ai/setup', {
@@ -2995,7 +3009,7 @@ async function startDungeon(role, npcs, choice) {
   const specialEvent = setup.specialEvent;
   const breakthrough = setup.breakthrough;
   const enemies = setup.enemies;
-  const bosses = (base.bosses || []).map((b, i) => ({ ...b, realm: i === 1 ? '筑基中期' : '筑基初期' }));
+  const bosses = (base.bosses || []).map((b, i) => ({ ...b, level: i === 1 ? 12 : 11 }));;
   const dungeon = {
     ...base,
     name: isHidden ? (base.hiddenName || base.name) : base.name,
@@ -3049,7 +3063,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
   }).filter(Boolean);
   return { outcome, damage, itemUse, skillUse, loot };
 }
-/* AI 返回的装备/丹药使用：只从本步主角自己的随身法宝与储物袋里解析 */
+/* AI 返回的装备/药剂使用：只从本步主角自己的随身装备与背包里解析 */
 function resolveAiItemUse(dg, actor, entry) {
   if (!entry || !entry.name) return null;
   for (const list of [actor.equipment || [], actor.bag || []]) {
@@ -3062,7 +3076,7 @@ function resolveAiSkillUse(actor, entry) {
   if (!entry || !entry.name) return null;
   const skill = (actor.skills || []).find(s => s && s.name === entry.name);
   if (!skill) return null;
-  return { name: skill.name, type: skill.type || '功法', tier: skillTier(skill), elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
+  return { name: skill.name, type: skill.type || '物理技', tier: skillTier(skill), elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
 }
 /* AI 单步掉落登记：合并数量与稀有度，并同步写入 gainedLoot */
 function recordAiLoot(dg, actor, entries) {
@@ -3141,14 +3155,14 @@ async function dungeonTick(dg) {
     lootNames.forEach(n => { if (!dg.gainedLoot.some(x => x.name === n)) dg.gainedLoot.push({ name: n, desc: '' }); });
   }
   const cleanText = text.replace(/【获得：[^】]*】/g, '').trim();
-  // 消耗品（丹药/符箓）：AI 判定成功且本步使用 → 记录待结算扣除
+  // 消耗品（药剂/符箓）：AI 判定成功且本步使用 → 记录待结算扣除
   if (itemUse && itemUse.success && (itemUse.item.kind === 'pill' || itemUse.item.kind === 'talisman')) {
     if (!dg.consumed) dg.consumed = [];
     dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common' });
   }
-  // 突破试炼：本步判定成功（good/crit）→ 突破功成标记，结算时晋级筑基前期
+  // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier || '黄阶', elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier || '普通', elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
   applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
@@ -3178,53 +3192,43 @@ function itemBonus(dg, stage) {
 function traitBonus(actor) {
   let b = 0;
   (actor.traits || []).forEach(t => {
-    if (t.includes('灵觉') || t.includes('夜视') || t.includes('听风')) b += 1;
+    if (t.includes('明察') || t.includes('夜视') || t.includes('听风')) b += 1;
     if (t.includes('心狠') || t.includes('老练')) b += 1;
-    if (t.includes('寻宝') || t.includes('气运')) b += 1;
+    if (t.includes('寻宝') || t.includes('好运')) b += 1;
     if (t.includes('胆大心细')) b += 1;
   });
   return Math.min(b, 2);
 }
-/* 境界加成：境界越高战力越强（每 2 级 +1，封顶 +9）——练气一二层 0，筑基前后 +4~5，金丹 +6~7，元婴 +8~9 */
+/* 等级加成：每 2 级 +1（封顶 +9） */
 function realmBonus(actor) {
   return Math.min(9, Math.floor(((actor.level || 1) - 1) / 2));
 }
-/* 敌人修为字符串 → 数值标尺（练气一层=1 … 练气十层=10；筑基初期=11、中期=12、后期=13；金丹=14~16；元婴=17~19） */
-function enemyRealmVal(realm) {
-  const s = String(realm || '');
-  const qi = s.match(/练气([一二三四五六七八九十]+)层/);
-  if (qi) return QI_LAYER.indexOf(qi[1]);
-  const zj = s.match(/筑基(初期|前期|中期|后期)/);
-  if (zj) return 11 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[zj[1]] || 0);
-  const jd = s.match(/金丹(初期|前期|中期|后期)/);
-  if (jd) return 14 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[jd[1]] || 0);
-  const yy = s.match(/元婴(初期|前期|中期|后期)/);
-  if (yy) return 17 + ({ 初期: 0, 前期: 0, 中期: 1, 后期: 2 }[yy[1]] || 0);
-  return 0;  // 未知修为 → 无修正
+/* 敌人强度换算：优先读取数值等级，兼容 "Lv.N" 字符串 */
+function realmWordToLevel(text) {
+  const s = String(text || '');
+  const num = Number(s);
+  if (Number.isFinite(num) && num > 0) return num;
+  const lv = s.match(/Lv\.?(\d+)/i); if (lv) return parseInt(lv[1], 10);
+  return 0;
 }
-/* 角色 level → 同标尺数值（1~10 练气、11~13 筑基、14~16 金丹、17+ 元婴） */
-function actorRealmVal(actor) {
-  const lv = actor.level || 1;
-  if (lv <= 10) return lv;
-  if (lv <= 13) return 11 + (lv - 11);
-  if (lv <= 16) return 14 + (lv - 14);
-  return 17 + Math.min(2, lv - 17);
+function enemyRealmVal(input) {
+  if (typeof input === 'number') return input;
+  if (typeof input === 'object') {
+    if (input && Number.isFinite(Number(input.level)) && Number(input.level) > 0) return Number(input.level);
+    return realmWordToLevel(input && input.realm);
+  }
+  return realmWordToLevel(input);
 }
-/* 境界差修正：自身修为高于敌人每层 +1（封顶 +4），低于敌人每层 -1（封顶 -4）；敌人修为未知则 0 */
-function realmDiffMod(actor, enemy) {
-  if (!enemy) return 0;
-  const ev = enemyRealmVal(enemy.realm);
-  if (!ev) return 0;
-  return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev));
-}
+function actorRealmVal(actor) { const lv = Number(actor && actor.level); return Number.isFinite(lv) && lv > 0 ? lv : 1; }
+function realmDiffMod(actor, enemy) { if (!enemy) return 0; const ev = enemyRealmVal(enemy); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
 
 /* ---------- 本地叙事引擎（AI 润色降级；remote 模式由 LLM 按同结构生成） ---------- */
 /* 句子库：每步由 环境句+行动句+结果句+收尾句 拼成 150~280 字段落，17 步合计约 3000~5000 字 */
 const NARR = {
   opening: [
-    '灵墟入口的雾气在拂晓时最淡。{actor}与{support}并肩立在队首，{support2}在后方清点储物袋。回望来路，仙坊的灯火已经缩成一点。众人交换了眼神——这一趟，谁也没有十足把握。',
-    '{actor}把随身之物一一清点：{items}。{support}凑过来拍了拍{his}肩膀：「{supportPers}如你，自有天助。」{support2}也默默检查着各自的法宝，一时无人言语。',
-    '入口的碑文已风化得几乎看不清，{actor}伸手抚过冰凉的碑面，{support}则蹲下身查看碑座，{support2}在旁警戒。{actor}的神识隐约触到一段残缺的警示：「{warning}」。队伍不由得放慢了脚步。',
+    '地下城入口的雾气在拂晓时最淡。{actor}与{support}并肩立在队首，{support2}在后方清点背包。回望来路，赫顿玛尔的灯火已经缩成一点。众人交换了眼神——这一趟，谁也没有十足把握。',
+    '{actor}把随身之物一一清点：{items}。{support}凑过来拍了拍{his}肩膀：「{supportPers}如你，自有天助。」{support2}也默默检查着各自的装备，一时无人言语。',
+    '入口的碑文已风化得几乎看不清，{actor}伸手抚过冰凉的碑面，{support}则蹲下身查看碑座，{support2}在旁警戒。{actor}隐约辨认出一段残缺的警示：「{warning}」。队伍不由得放慢了脚步。',
     '晨光斜斜照进{name}，{actor}立在队首，{support}与{he}背靠背互为犄角，{support2}收在后队压阵。{actor}{itemHold}{items}，向众人点了点头：「进。」',
   ],
   explore: {
@@ -3240,22 +3244,22 @@ const NARR = {
       '生性{person}的{actor}没有冒进，{support}在旁以{attr}查探暗处，两人确认无误，才示意众人跟上。',
       '{actor}蹲下身，指尖捻起一把泥土细细分辨，{support}则在丈外把风，两人分工明确，默契十足。',
       '{actor}侧耳听了一阵，{support}也已察觉——两人同时抬手，让队伍噤声。',
-      '{actor}默运功法，{skill}悄然在指尖流转，替众人驱散开一丝雾气。',
+      '{actor}默运技能，{skill}悄然在指尖流转，替众人驱散开一丝雾气。',
     ],
     out: {
-      crit: ['在{support}的策应下，{actor}循着灵机找到了{where}的隐秘通道！{items}与{supportItems}同时共鸣，众人不仅毫发无伤，还窥见了此地深处的机缘所在。', '迷雾中，{actor}与{support}一前一后互为照应，竟生生辨出一条生路，{items}与{supportItems}随之共鸣，额外引出两处暗藏的灵脉支点，众人收获意外之喜。'],
+      crit: ['在{support}的策应下，{actor}循着气息找到了{where}的隐秘通道！{items}与{supportItems}同时共鸣，众人不仅毫发无伤，还窥见了此地深处的宝藏所在。', '迷雾中，{actor}与{support}一前一后互为照应，竟生生辨出一条生路，{items}与{supportItems}随之共鸣，额外引出两处暗藏的宝藏，众人收获意外之喜。'],
       good: ['{actor}与{support}一探一护，凭借过人的{attr}辨明方向，队伍安然穿过{where}，还顺带记下了沿途的地势。', '{actor}在前方谨慎探路，{support}在侧翼替{he}排开暗处的荆棘与禁制，几次险象环生都被两人一一化解。'],
       mid: ['{actor}在{where}中与暗处的窥伺周旋，{support}数次出手替{he}挡开危机，靠着{items}勉强稳住局面，虽折了些许时辰，总算没有失手。', '队伍行至{where}，{actor}与{support}轮番试探都无功而返，最后两人合力以{attr}强行开路，勉强通过，衣裳早已被冷汗浸透。'],
       bad: ['{where}远比想象中凶险，{actor}判断失误，{support}为掩护{he}被禁制擦伤，队伍被逼退数里，众人士气一沉。', '行至{where}深处，{actor}一时失察，{support}眼疾手快推开{he}，自己却撞上前人设下的禁制，轰然一声，飞沙走石，队伍狼狈后撤。'],
       fumble: ['{where}骤然杀机四伏！{actor}惊变之下进退失据，{support}扑上来替{he}挡下致命一击，自己却被反震之力掀翻在地，重伤呕血。队伍溃退。'],
     },
-    follow: ['众人相视一笑，重整旗鼓继续向前。', '队伍稍作休整，服下丹药，继续往深处行去。', '经此一役，队伍之间的配合明显默契了几分。', '前路依旧未知，但众人心中已不再忐忑。'],
+    follow: ['众人相视一笑，重整旗鼓继续向前。', '队伍稍作休整，服下药剂，继续往深处行去。', '经此一役，队伍之间的配合明显默契了几分。', '前路依旧未知，但众人心中已不再忐忑。'],
     detail: ['雾气在衣袍边沿凝成细小的水珠，{actor}与{support}背靠着背，低声商议下一步的走法。', '{support}忽然拉了拉{actor}的衣袖，指向{where}深处——那里有什么东西在发光。', '队伍在石壁下歇脚，{actor}把一路所见讲给{support}听，两人你一言我一语，竟拼凑出完整的线索。', '风穿过{where}的缝隙，呜呜作响，{support}下意识握紧了{actor}的手腕，两人相视一笑，又松开。'],
     solo: {
       setup: ['队伍深入{where}，{actor}独自行在前方，脚下泥泞发出黏腻的声响。', '前方{where}的雾气忽然浓了一倍，{actor}屏息凝神，放缓了脚步。', '行至{where}，地面微颤，{actor}按住佩物的手微微收紧，警觉地环顾四周。', '{where}的岔路一分为三，{actor}蹲下查看石壁的刻痕，若有所思。'],
       act: ['{actor}凝神戒备，{items}灵光隐隐流转，似有感应。', '生性{person}的{actor}没有冒进，先以{attr}试探四周，才继续前行。', '{actor}蹲下身，指尖捻起一把泥土细细分辨，神色渐渐凝重。', '{actor}侧耳听了一阵，忽然抬手，示意身后众人噤声。'],
       out: {
-        crit: ['{actor}循着灵机，竟发现了{where}深处的隐秘通道！{items}大放异彩，{he}窥见了此地不为人知的机缘。', '{actor}的{attr}这一刻恍若天授，迷雾中被{he}生生辨出生路，{items}随之共鸣，额外引出一处暗藏机缘。'],
+        crit: ['{actor}循着气息，竟发现了{where}深处的隐秘通道！{items}大放异彩，{he}窥见了此地不为人知的宝藏。', '{actor}的{attr}这一刻恍若天授，迷雾中被{he}生生辨出生路，{items}随之共鸣，额外引出一处暗藏宝藏。'],
         good: ['{actor}凭借过人的{attr}辨明方向，{items}相助下安然穿过{where}。', '{actor}谨慎探路，几次险象环生都被{he}一一化解。'],
         mid: ['{actor}在{where}与暗处的窥伺周旋，靠着{items}勉强稳住局面，虽折了些时辰，总算没有失手。', '{actor}几次试探都无功而返，最后以{attr}强行开路，勉强通过。'],
         bad: ['{where}远比想象中凶险，{actor}判断失误，被逼退数里，自己也挂了彩。', '{actor}一时失察，撞上前人设下的禁制，轰然一声，狼狈后撤。'],
@@ -3315,7 +3319,7 @@ const NARR = {
       '{actor}小心地拨开碎石，{support}及时递来{supportItems}，替{he}撬开那道缝隙。',
     ],
     out: {
-      crit: ['在{support}的协助下，{actor}在{where}角落发现一道宝光，{items}竟牵引着灵机，翻出一份意外的大收获！众人围拢过来，无不倒吸一口凉气。', '{actor}与{support}一前一后地搜刮，{items}与{supportItems}同时嗡鸣，指引出一处隐藏的储物禁制，众人满载而归！'],
+      crit: ['在{support}的协助下，{actor}在{where}角落发现一道宝光，{items}竟牵引着气息，翻出一份意外的大收获！众人围拢过来，无不倒吸一口凉气。', '{actor}与{support}一前一后地搜刮，{items}与{supportItems}同时嗡鸣，指引出一处隐藏的暗格，众人满载而归！'],
       good: ['{actor}与{support}配合翻找，在{where}的废墟中寻得不少可用之物，队伍收获颇丰。', '{actor}细心搜刮，{support}在旁递上工具、记下清单，两人配合，收获了几件还算值钱的物什。'],
       mid: ['众人翻找战场，{actor}与{support}合力也只寻得些零碎物件，聊胜于无。', '搜刮一番，{actor}与{support}在{where}捡到几样寻常之物，收获平平，不过聊以安慰。'],
       bad: ['仓皇之间来不及仔细搜刮，{actor}与{support}只来得及抓走最显眼的几样，余下的尽数错过。', '战场一片狼藉，{actor}与{support}翻找半天也只寻得些许残渣，众人摇头叹气。'],
@@ -3327,7 +3331,7 @@ const NARR = {
       setup: ['尘埃落定，战场一片狼藉，{actor}独自在废墟间穿行。', '硝烟散尽，{actor}这才有心思打量{where}的残骸与遗物。', '激战过后，{actor}靠着岩壁缓了口气，目光落向{where}的角落。'],
       act: ['{actor}率先起身，在废墟中翻找起来。', '{actor}以{attr}扫视全场，很快锁定了几个可能藏有东西的角落。', '生性{person}的{actor}对值钱之物格外敏感，绕着战场转了两圈。', '{actor}小心地拨开碎石与残骸，一件件辨认。'],
       out: {
-        crit: ['{actor}眼尖地在{where}角落发现一道宝光，{items}竟牵引着灵机，翻出一份意外的大收获！', '搜刮战场，{actor}气运当头，{items}忽然嗡嗡作响，指引出一处隐藏的储物禁制！'],
+        crit: ['{actor}眼尖地在{where}角落发现一道宝光，{items}竟牵引着气息，翻出一份意外的大收获！', '搜刮战场，{actor}好运当头，{items}忽然嗡嗡作响，指引出一处隐藏的暗格！'],
         good: ['战后清点，{actor}在{where}的废墟中寻得不少可用之物，收获颇丰。', '{actor}细心搜刮，凭借{attr}发现了几个还算值钱的物什。'],
         mid: ['众人翻找战场，{actor}只寻得些零碎物件，聊胜于无。', '搜刮一番，{actor}在{where}捡到几样寻常之物，收获平平，不过聊以安慰。'],
         bad: ['仓皇之间来不及仔细搜刮，{actor}只来得及抓走最显眼的几样，余下的尽数错过。', '战场一片狼藉，{actor}翻找半天也只寻得些许残渣，众人摇头叹气。'],
@@ -3339,7 +3343,7 @@ const NARR = {
   closing: [
     '归途比来时轻松了许多。{actor}与{support}并肩走在队尾，怀里揣着此行所得，回望{name}的入口，雾气已经重新合拢。{support}忽然说：「下次还一起。」{actor}失笑：「那还用说。」',
     '夕阳西下，队伍终于走出{name}。{actor}清点人数，一个不少，长出一口气——{support}把{he}背上磨破的肩头拍了拍：「走吧，回去喝酒。」',
-    '{actor}最后看了一眼{name}，将受伤的{support}背稳，向着仙坊的灯火走去。此行有得有失，但每个人都活着，这便够了。',
+    '{actor}最后看了一眼{name}，将受伤的{support}背稳，向着赫顿玛尔的灯火走去。此行有得有失，但每个人都活着，这便够了。',
     '夜色四合，{name}重新归于沉寂。{actor}一行人踏着星光归去，{support}哼起了不知名的小调，被{support2}笑着推了一把，队伍的笑声洒了一路。',
   ],
   boss: {
@@ -3368,18 +3372,18 @@ const NARR = {
     },
   },
   breakthrough: {
-    env: ['{actor}体内灵机盈满，丹田如沸，练气圆满的关隘在识海中轰鸣。', '灵光在{actor}周身明灭，突破筑基的机缘近在眼前，稍纵即逝。'],
-    detail: ['{actor}屏息凝神，将一身修为尽数推向那层无形的壁障。', '天地灵气疯狂涌入{actor}体内，筑基之关，在此一举。'],
-    ok: ['{actor}闷哼一声，灵台轰然洞开——道基重塑，灵光入体，那层壁障竟被生生冲破！筑基已成！', '壁障碎裂的刹那，{actor}只觉眼前豁然开朗，磅礴灵力灌顶而下，稳稳踏入筑基前期！'],
-    fail: ['可惜气机稍滞，{actor}那凌空一脚未能踏破关隘，气血翻涌逆冲，只得先收功压住伤势，筑基之机失之交臂。', '{actor}连试数番，壁障纹丝不动，反倒震得自身气血紊乱，此番冲击只得作罢。'],
-    setup: ['{actor}盘膝而坐，周身灵光暴涨，冲击筑基的关隘即将来临。', '灵机在{actor}四肢百骸奔涌，破境之时已到。'],
-    act: ['{actor}将丹田灵力凝成一股，狠狠撞向那道无形壁障！', '{actor}咬牙催动全身修为，孤注一掷冲关！'],
+    env: ['{actor}体内的力量渐趋圆满，Lv.10 的转职关隘在共鸣中隐隐浮现。', '光芒在{actor}周身明灭，转职的机缘近在眼前，稍纵即逝。'],
+    detail: ['{actor}屏息凝神，将一身本领尽数推向那层无形的壁障。', '天地之力疯狂涌入{actor}体内，转职之关，在此一举。'],
+    ok: ['{actor}闷哼一声，身上的职业印记轰然洞开——全新的力量涌入，那层壁障竟被生生冲破！转职已成！', '壁障碎裂的刹那，{actor}只觉眼前豁然开朗，磅礴的力量灌顶而下，稳稳踏入了新的职业！'],
+    fail: ['可惜气机稍滞，{actor}那凌空一脚未能踏破关隘，气血翻涌逆冲，只得先收力压住伤势，转职之机失之交臂。', '{actor}连试数番，壁障纹丝不动，反倒震得自身气血紊乱，此番冲击只得作罢。'],
+    setup: ['{actor}盘膝而坐，周身光芒暴涨，冲击转职的关隘即将来临。', '气息在{actor}四肢百骸奔涌，转职之时已到。'],
+    act: ['{actor}将一身力量凝成一股，狠狠撞向那道无形壁障！', '{actor}咬牙催动全部本领，孤注一掷冲关！'],
     out: {
-      crit: ['那道壁障轰然破碎，{actor}只觉道基重塑、灵台通明，一身修为稳稳踏入筑基前期！'],
-      good: ['沉闷一响，壁障终于裂开一线，{actor}顺势破境，踏入筑基前期！'],
-      mid: ['壁障摇摇欲坠却未破开，{actor}灵力耗尽，只得暂收修为，等下次机缘。'],
-      bad: ['冲关反噬，{actor}气血翻涌，咳出一口血，突破失败。'],
-      fumble: ['道基差点崩碎！{actor}被反噬震得重伤晕厥，此生怕是再难更进一步了。'],
+      crit: ['那道壁障轰然破碎，{actor}只觉力量重塑、气机贯通，一身本领稳稳踏入新的境界！'],
+      good: ['沉闷一响，壁障终于裂开一线，{actor}顺势破境，踏入新的职业巅峰！'],
+      mid: ['壁障摇摇欲坠却未破开，{actor}力竭，只得暂收锋芒，等下次机缘。'],
+      bad: ['冲关反噬，{actor}气血翻涌，咳出一口血，转职失败。'],
+      fumble: ['力量差点崩碎！{actor}被反噬震得重伤晕厥，此生怕是再难更进一步了。'],
     },
     follow: ['良久，{actor}缓缓吐出一口浊气，成败已分。'],
   },
@@ -3394,24 +3398,24 @@ function pick2(arr) {
 }
 function replaceVars(s, dg, actor, support, support2, attrKey, roll, mod, total, itemUse, skillUse) {
   const d = dg.dungeon;
-  const items = actor.equipment || [];  // 叙事只读取随身法宝，储物袋不参与
+  const items = actor.equipment || [];  // 叙事只读取随身装备，背包不参与
   const supItems = support ? (support.equipment || []) : [];
   const skills = (actor.skills || []).map(s => s.name);
-  const shufa = (actor.skills || []).find(s => s.type === '术法');
+  const shufa = (actor.skills || []).find(s => s.type === '魔法技');
   const warn = pick(['入此谷者，勿深', '雾起勿行，夜半勿留', '噬骨之渊，慎入', '前路凶险，量力而行']);
   const cur = dg._curEnemy || {};
-  // 每件装备独立读取描述：{item}/{itemDesc} 引用判定选中的单件装备；动作按装备类型（防具/武器/丹药/符箓/工具）
+  // 每件装备独立读取描述：{item}/{itemDesc} 引用判定选中的单件装备；动作按装备类型（防具/武器/药剂/符箓/工具）
   const usedItem = itemUse && itemUse.item ? itemUse.item : null;
   const singleItemObj = usedItem || items[0] || null;
-  const singleItem = singleItemObj ? singleItemObj.name : '随身法宝';
+  const singleItem = singleItemObj ? singleItemObj.name : '随身装备';
   const singleItemDesc = singleItemObj ? (singleItemObj.desc || '') : '';
   const kind = (singleItemObj && singleItemObj.kind) || 'misc';
   const KA = KIND_ACTION[kind] || KIND_ACTION.misc;
-  // 本步释放的术法/功法：{skill}/{skillDesc}/{skillType} 引用判定选中的技能及其描述
+  // 本步释放的物理技/魔法技：{skill}/{skillDesc}/{skillType} 引用判定选中的技能及其描述
   const usedSkill = skillUse && skillUse.name ? skillUse : null;
-  const singleSkill = usedSkill ? usedSkill.name : (shufa ? shufa.name : (skills[0] || '基础术法'));
+  const singleSkill = usedSkill ? usedSkill.name : (shufa ? shufa.name : (skills[0] || '基础魔法技'));
   const singleSkillDesc = usedSkill ? (usedSkill.desc || '') : (shufa ? (shufa.desc || '') : '');
-  const singleSkillType = usedSkill ? (usedSkill.type || '功法') : '功法';
+  const singleSkillType = usedSkill ? (usedSkill.type || '物理技') : '物理技';
   // 性别代词：{he}/{his} 按本步主角性别替换（他/她、他的/她的）
   const he = actor.gender === '女' ? '她' : '他';
   const his = actor.gender === '女' ? '她的' : '他的';
@@ -3434,7 +3438,7 @@ function replaceVars(s, dg, actor, support, support2, attrKey, roll, mod, total,
     .replaceAll('{skill}', singleSkill)
     .replaceAll('{skillDesc}', singleSkillDesc)
     .replaceAll('{skillType}', singleSkillType)
-    .replaceAll('{skills}', skills.length ? skills.join('、') : '入门功法')
+    .replaceAll('{skills}', skills.length ? skills.join('、') : '入门技能')
     .replaceAll('{attr}', ATTR_NAME[attrKey] || '道行')
     .replaceAll('{roll}', roll ? `本步判定结果：${total}` : '')
     .replaceAll('{total}', total)
@@ -3467,7 +3471,7 @@ function localStory(dg, stageKey, actor, support, support2, attrKey, roll, mod, 
       ? rv(pick(usePool.ok)).replace('{where}', scene).replace('{enemy}', scene)
       : rv(pick(usePool.fail)).replace('{where}', scene).replace('{enemy}', scene);
   }
-  // 术法/功法释放句（优先级最高，紧跟行动句）：成功后按技能描述演绎，失败则如实写施法受挫
+  // 物理技/魔法技释放句（优先级最高，紧跟行动句）：成功后按技能描述演绎，失败则如实写施法受挫
   let skillSentence = '';
   if (skillUse) {
     const usePool = SKILL_USE[stageKey] || SKILL_USE.battle;
@@ -3517,13 +3521,13 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
          allowedCharacters, forbiddenCharacters,
         stepNo: dg.totalStep + 1,
         totalSteps: dg.plan.reduce((a, p) => a + p.steps, 0),
-        enemy: dg._curEnemy ? { name: dg._curEnemy.name, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
+        enemy: dg._curEnemy ? { name: dg._curEnemy.name, level: dg._curEnemy.level || null, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
         itemUse: null,
         availableItems: availableItemsForActor(dg, actor),
         ownedItems: collectClientOwnedItems(dg),
         skillUse: null,
         party: dg.party.map(m => ({
-          name: m.name, gender: m.gender || '男', realm: m.character_class || '', root: (m.traits && m.traits[0]) || '',
+          name: m.name, gender: m.gender || '男', level: Number(m.level) || 1, realm: m.character_class || '', root: (m.traits && m.traits[0]) || '',
           personality: m.personality || '', traits: m.traits || [],
           skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', tier: skillTier(s), desc: s.desc || '' })),
           equipment: (m.equipment || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
@@ -3604,16 +3608,16 @@ function clearExpiredInjury(role) {
   role.injury = null;
   return true;
 }
-/* ---------- 剧情驱动的战利品与灵石 ---------- */
+/* ---------- 剧情驱动的战利品与金币 ---------- */
 function cnNumToInt(s) {
   return LootSettlement.parseChineseNumber(s);
 }
-/* 从整篇剧情提取所有明确获得的灵石；没有明确数量时不发放保底灵石。 */
+/* 从整篇剧情提取所有明确获得的金币；没有明确数量时不发放保底金币。 */
 function extractGoldEvents(text) {
   const source = String(text || '');
   const events = [];
   const seen = new Set();
-  const re = /(?:(\d{1,6}|[零〇一二两三四五六七八九十百千万]+)\s*(?:块|枚|颗|个)?\s*(?:下品|中品|上品)?\s*灵石|灵石\s*[：:×xX*]?\s*(\d{1,6}|[零〇一二两三四五六七八九十百千万]+))/g;
+  const re = /(?:(\d{1,6}|[零〇一二两三四五六七八九十百千万]+)\s*(?:块|枚|颗|个)?\s*(?:下品|中品|上品)?\s*金币|金币\s*[：:×xX*]?\s*(\d{1,6}|[零〇一二两三四五六七八九十百千万]+))/g;
   let match;
   while ((match = re.exec(source))) {
     const raw = match[1] || match[2];
@@ -3676,7 +3680,7 @@ async function aiSummary(logText, dungeonName) {
   try {
     const r = await fetch('/api/ai/summary', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ log: String(logText || '').slice(0, 8000), dungeon: dungeonName || '灵墟' }),
+      body: JSON.stringify({ log: String(logText || '').slice(0, 8000), dungeon: dungeonName || '地下城' }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'AI 总结生成失败');
@@ -3690,7 +3694,7 @@ async function aiDeathSummary(logText, dungeonName, roles) {
   try {
     const r = await fetch('/api/ai/death-summary', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ log: String(logText || '').slice(0, 12000), dungeon: dungeonName || '灵墟', roles: names }),
+      body: JSON.stringify({ log: String(logText || '').slice(0, 12000), dungeon: dungeonName || '地下城', roles: names }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'AI 死亡总结生成失败');
@@ -3775,7 +3779,7 @@ function addTraitWithDesc(role, t) {
     role.traitDescs[t.name] = t.desc;
   }
 }
-/* 功法/术法卷轴：10% 概率的稀有战利品，AI 起名并写描述；AI 失败中止结算 */
+/* 物理技/魔法技技能书：10% 概率的稀有战利品，AI 起名并写描述；AI 失败中止结算 */
 async function aiScroll(type) {
   try {
     const r = await fetch('/api/ai/scroll', {
@@ -3785,7 +3789,7 @@ async function aiScroll(type) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'AI 卷轴生成失败');
     if (j && j.name && j.desc) {
-      const tier = ['黄阶', '玄阶', '地阶', '天阶'].includes(j.tier) ? j.tier : '黄阶';
+      const tier = ['普通', '高级', '稀有', '神器'].includes(j.tier) ? j.tier : '普通';
       return { name: String(j.name), desc: String(j.desc), tier };
     }
     throw new Error('AI 未返回完整卷轴');
@@ -3795,8 +3799,8 @@ async function aiScroll(type) {
 function fallbackDeathSummaryLocal(deadNames, dungeonName) {
   const names = Array.from(new Set((deadNames || []).map(name => String(name || '').trim()).filter(Boolean)));
   return {
-    overall: `本局有${names.length}名角色在「${String(dungeonName || '灵墟')}」中因气血耗尽陨落。`.slice(0, 100),
-    roles: names.map(name => ({ name, reason: `角色「${name}」在探险中气血归零，道消身殒。`.slice(0, 100) })),
+    overall: `本局有${names.length}名角色在「${String(dungeonName || '地下城')}」中因气血耗尽陨落。`.slice(0, 100),
+    roles: names.map(name => ({ name, reason: `角色「${name}」在探险中气血耗尽，壮烈阵亡。`.slice(0, 100) })),
   };
 }
 
@@ -3857,7 +3861,7 @@ async function finishRoleDeath(dg, role) {
   });
   const deathLog = {
     id: nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name, status: 'failed',
-    result_summary: fullText || storyText || `${role.name}在${dg.dungeon.name}中气血耗尽，道消身殒。`,
+    result_summary: fullText || storyText || `${role.name}在${dg.dungeon.name}中气血耗尽，壮烈阵亡。`,
     created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: dg.dungeon.specialEvent ? '特殊事件' : '', items_used: [],
     death: true, death_role: role.name,
@@ -3929,7 +3933,7 @@ async function settleDungeon(dg) {
         return fallbackDeathSummaryLocal(deadNames, dg.dungeon.name);
       }) : Promise.resolve({ overall: '', roles: [] }),
     ]);
-    const scrollType = aiVerdict.scroll && (aiVerdict.scroll.type === '术法' ? '术法' : '功法');
+    const scrollType = aiVerdict.scroll && (aiVerdict.scroll.type === '魔法技' ? '魔法技' : '物理技');
     if (scrollType) scrollItem = await aiScroll(scrollType);
   } catch (e) {
     console.warn('[dungeon] AI 结算失败，取消探险:', e && e.message ? e.message : e);
@@ -3976,7 +3980,7 @@ async function settleDungeon(dg) {
     if (bagAdd(role, { name: it.name, desc: it.desc || '', qty: it.qty || 1, rarity: it.rarity })) gainedItems.push(it);
     else role.gold = (role.gold || 0) + 5;
   });
-  // 结算扣除剧情中使用掉的消耗品（丹药/符箓）：从储物袋或随身法宝中扣 1 个
+  // 结算扣除剧情中使用掉的消耗品（药剂/符箓）：从背包或随身装备中扣 1 个
   const consumed = [];
   (dg.consumed || []).forEach(c => {
     if (c.ownerId !== role.id) return; // 只扣玩家自己的
@@ -3994,18 +3998,18 @@ async function settleDungeon(dg) {
   });
   const levelUp = [];
   applyLocalExperience(role, expFinal).forEach(level => {
-    role.character_class = realmForLevel(level);
-    levelUp.push(role.character_class);
+    levelUp.push(`Lv.${level}`);
   });
-  // 突破成功：练气十层 → 筑基前期
+  // 转职成功：Lv.10 圆满 → Lv.11，锁定子职业
   if (dg.breakthrough && dg.breachSuccess && role.level === 10) {
     role.level = 11;
     role.exp = 0;
     applyLocalLevelGrowth(role, true);
-    role.character_class = realmForLevel(role.level);  // 筑基前期
-    levelUp.push('筑基前期');
-    // 突破流水
-    addFeed('⚡', role.name, '突破筑基前期', '突破成功 · 筑基前期', '#f0883e');
+    const sub = (SUBCLASS_BY_CLASS[role.character_class] || ['转职中'])[0];
+    role.classTitle = sub;
+    levelUp.push(`转职 · ${sub}`);
+    // 转职流水
+    addFeed('⚡', role.name, `转职${sub}`, `转职成功 · ${sub}`, '#f0883e');
   }
   // 临时受伤特质只接受 AI 对重伤候选人的低频明确授予。
   if ((role.hp || 0) > 0
@@ -4019,17 +4023,17 @@ async function settleDungeon(dg) {
   role.stamina = Math.min(role.max_stamina || 100, (role.stamina || 0) + 30);
   role.hpTs = Date.now();  // 结算完成：气血从此刻起重新计时回复
   saveRole();
-  // —— 最近动态流水：探险获得道具 / 灵石 / 消耗品 ——
+  // —— 最近动态流水：探险获得道具 / 金币 / 消耗品 ——
   const myLoot = (lootAssign[role.id] || []).filter(x => x.qty > 0);
   const questGoldForFeed = spiritStoneShares[role.id] || 0;
   myLoot.forEach(item => addFeedItem(dg.dungeon.icon || '⚔️', item.name, `探险获得 · ${dg.dungeon.name}`, `+${item.qty || 1}`, item.rarity || ''));
-  if (questGoldForFeed > 0) addFeedItem('💰', '灵石', `探险结算收益 · ${dg.dungeon.name}`, `+${questGoldForFeed}.00`, '#ffc107');
+  if (questGoldForFeed > 0) addFeedItem('💰', '金币', `探险结算收益 · ${dg.dungeon.name}`, `+${questGoldForFeed}.00`, '#ffc107');
   consumed.forEach(item => addFeedItem('🧪', item.name, `探险消耗 · ${dg.dungeon.name}`, '-1', item.rarity || ''));
   // 成败判定完全由 AI 依据最终剧情决定。
   const ok = aiVerdict.ok ? 'completed' : 'failed';
   const verdictReason = aiVerdict.reason || '';
   const fullText = dg.steps.map(s => s.text).join('');
-  const ATTR_KEYS = { 体魄: 'strength', 身法: 'agility', 神识: 'intelligence', 气运: 'luck' };
+  const ATTR_KEYS = { 力量: 'strength', 敏捷: 'agility', 智力: 'intelligence', 幸运: 'luck' };
   const statBuffsByMember = new Map();
   (Array.isArray(aiVerdict.statBuffs) ? aiVerdict.statBuffs : []).forEach(entry => {
     const memberName = String(entry && entry.member || '').trim();
@@ -4041,7 +4045,7 @@ async function settleDungeon(dg) {
     const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
     const avgR = g.rolls.length ? g.rolls.reduce((a, b) => a + b, 0) / g.rolls.length : 10;
     const score = Math.max(5, Math.min(9.5, +(5 + avgR * 0.16 + g.crits * 0.3 - g.fumbles * 0.5).toFixed(1)));
-        // 灵石：统计整篇剧情的明确获得数量后由全队平分；没有明确获得时为 0。
+        // 金币：统计整篇剧情的明确获得数量后由全队平分；没有明确获得时为 0。
         const gold = spiritStoneShares[m.id] || 0;
     // 每人按功劳分得的战利品（结算界面显示每个人的收获）
     const loot = (lootAssign[m.id] || []).map(x => ({ name: x.name, qty: x.qty || 1, rarity: x.rarity, desc: x.desc || '' }));
@@ -4099,13 +4103,6 @@ async function settleDungeon(dg) {
   logViewId = log.id;
   switchTab('logs');
 }
-function realmForLevel(lv) {
-  if (lv <= 10) return '练气' + (lv === 1 ? '一层' : ['二', '三', '四', '五', '六', '七', '八', '九', '十'][lv - 2] + '层');
-  if (lv === 11) return '筑基前期';
-  if (lv === 12) return '筑基中期';
-  if (lv === 13) return '筑基后期';
-  return '筑基圆满';
-}
 function applyLocalLevelGrowth(role, breakthrough = false) {
   const before = Number(role.max_hp || 100);
   role.max_hp = breakthrough ? Math.round(before * 1.5) : before + (role.level <= 10 ? 20 + Math.floor(Math.random() * 11) : 30 + Math.floor(Math.random() * 21));
@@ -4154,10 +4151,10 @@ function showSettlement(log) {
       </div>
       <div class="st2-result ${ok ? 'win' : 'lose'}">${ok ? '凯旋' : '惨败'}</div>
     </div>
-    ${s.levelUp.length ? `<div class="st2-levelup">✨ 修为突破：${esc(s.levelUp.join(' → '))}！</div>` : ''}
+    ${s.levelUp.length ? `<div class="st2-levelup">✨ 等级提升：${esc(s.levelUp.join(' → '))}！</div>` : ''}
     <div class="st2-stats">
       <div class="st2-stat"><div class="st2-v gold">+${s.exp}</div><div class="st2-k">获得经验</div></div>
-      <div class="st2-stat"><div class="st2-v gold">+${my ? my.gold : 0}</div><div class="st2-k">灵石</div></div>
+      <div class="st2-stat"><div class="st2-v gold">+${my ? my.gold : 0}</div><div class="st2-k">金币</div></div>
       <div class="st2-stat"><div class="st2-v red">-${s.damage}</div><div class="st2-k">战损气血</div></div>
       <div class="st2-stat"><div class="st2-v">${my ? my.score : '-'}</div><div class="st2-k">我的评分</div></div>
       <div class="st2-stat"><div class="st2-v">${s.members.length}</div><div class="st2-k">队伍人数</div></div>
@@ -4166,7 +4163,7 @@ function showSettlement(log) {
       <div class="st2-title">🎒 我的收获</div>
       <div class="st2-my">
         <div class="st2-my-box">
-          <div class="st2-my-k">获得道具（已入储物袋）</div>
+          <div class="st2-my-k">获得道具（已入背包）</div>
           <div class="st2-my-v">${s.items.length ? s.items.map(i => `<span class="st2-item" style="color:${itemColor(i)}">${esc(i.name)}<em>${RARITY_NAME[i.rarity] || i.rarity}</em></span>`).join('') : '<span class="st2-none">无</span>'}</div>
         </div>
         <div class="st2-my-box">
@@ -4190,7 +4187,7 @@ function showSettlement(log) {
             </div>
             <div class="st2m-mid">
               <span class="st2m-score">${m.score}</span>
-              <span class="st2m-gold">+${m.gold} 灵石</span>
+              <span class="st2m-gold">+${m.gold} 金币</span>
               ${m.damage ? `<span class="st2m-dmg">-${m.damage}</span>` : ''}
               ${(m.statBuffs || []).map(b => `<span class="st2m-buff">${esc(b)}</span>`).join('')}
             </div>
@@ -4199,7 +4196,7 @@ function showSettlement(log) {
           </div>`).join('')}
       </div>
     </div>
-    ${log.death ? `<div class="st2-sec st2-death-sec"><div class="st2-title">☠ 死亡记录</div>${log.death_summary ? `<p class="st2-death-overall">${esc(log.death_summary)}</p>` : ''}${s.members.filter(m => m.fate === '阵亡').map(m => `<div class="st2-death-row"><strong>${esc(m.name)}</strong><span>${esc(m.death_reason || '气血归零，道消身殒。')}</span></div>`).join('')}</div>` : ''}
+    ${log.death ? `<div class="st2-sec st2-death-sec"><div class="st2-title">☠ 死亡记录</div>${log.death_summary ? `<p class="st2-death-overall">${esc(log.death_summary)}</p>` : ''}${s.members.filter(m => m.fate === '阵亡').map(m => `<div class="st2-death-row"><strong>${esc(m.name)}</strong><span>${esc(m.death_reason || '气血耗尽，壮烈阵亡。')}</span></div>`).join('')}</div>` : ''}
     <details class="st2-story">
       <summary>📖 副本全文（${snap.steps.length} 段）</summary>
       <div class="st2-steps">
@@ -4356,7 +4353,7 @@ function renderAdvLogsModal() {
         <div class="adv-log-hero-mark" aria-hidden="true">📜</div>
         <div class="adv-log-hero-copy">
           <h2>${esc(adv.name)} 的探险日志</h2>
-          <p>记录每一次踏入灵墟后的抉择、收获与归途。</p>
+          <p>记录每一次踏入地下城后的抉择、收获与归途。</p>
         </div>
         <div class="adv-log-count" aria-label="日志数量">
           <strong>${runs.length + logs.length}</strong>
@@ -4419,33 +4416,33 @@ function advTabProfile(adv) {
   return `
   <div class="adv-hp" style="margin-bottom:8px"><div class="adv-hp-fill" style="width:${hpPct}%"></div><span class="adv-hp-text">❤️ 气血 ${adv.hp}/${adv.max_hp}</span></div>
   <div class="adv-stamina" style="margin-bottom:8px"><div class="adv-stamina-fill" style="width:${stPct}%"></div><span class="adv-stamina-text">💪 ${adv.stamina}/${adv.max_stamina} 精力</span></div>
-  <div class="adv-cultivate" style="margin-bottom:12px" title="当前修为：${esc(adv.character_class || '练气一层')}"><div class="adv-cultivate-fill" style="width:${expPct2}%"></div><span class="adv-cultivate-text">⛩️ 修为 ${esc(adv.character_class || '练气一层')} · ${expLabel2}</span></div>
+  <div class="adv-cultivate" style="margin-bottom:12px" title="当前等级：Lv.${lv2} ${esc(adv.character_class || '职业不明')}"><div class="adv-cultivate-fill" style="width:${expPct2}%"></div><span class="adv-cultivate-text">⚔️ Lv.${lv2} · ${esc(adv.character_class || '职业不明')} · ${expLabel2}</span></div>
   <div class="modal-section">
     <h4>基础属性</h4>
     <div class="stat-grid">
-      <div class="stat-box"><div class="k">修为</div><div class="v" style="font-size:13px">${esc(adv.character_class || '练气一层')}</div></div>
-      <div class="stat-box"><div class="k">灵根</div><div class="v" style="font-size:13px">${esc((adv.traits && adv.traits[0]) || '-')}</div></div>
+      <div class="stat-box"><div class="k">职业</div><div class="v" style="font-size:13px">${esc(adv.character_class || '—')}${adv.classTitle ? ` · ${esc(adv.classTitle)}` : ''}</div></div>
+      <div class="stat-box"><div class="k">特长</div><div class="v" style="font-size:13px">${esc((adv.traits && adv.traits[0]) || '-')}</div></div>
       <div class="stat-box"><div class="k">性格</div><div class="v" style="font-size:13px">${esc(adv.personality || '-')}</div></div>
-      <div class="stat-box"><div class="k">灵石</div><div class="v" style="font-size:13px">${Number(adv.gold || 0).toFixed(0)}</div></div>
-      <div class="stat-box"><div class="k">体魄</div><div class="v">${adv.strength}</div></div>
-      <div class="stat-box"><div class="k">身法</div><div class="v">${adv.agility}</div></div>
-      <div class="stat-box"><div class="k">神识</div><div class="v">${adv.intelligence}</div></div>
-      <div class="stat-box"><div class="k">气运</div><div class="v">${adv.luck}</div></div>
+      <div class="stat-box"><div class="k">金币</div><div class="v" style="font-size:13px">${Number(adv.gold || 0).toFixed(0)}</div></div>
+      <div class="stat-box"><div class="k">力量</div><div class="v">${adv.strength}</div></div>
+      <div class="stat-box"><div class="k">敏捷</div><div class="v">${adv.agility}</div></div>
+      <div class="stat-box"><div class="k">智力</div><div class="v">${adv.intelligence}</div></div>
+      <div class="stat-box"><div class="k">幸运</div><div class="v">${adv.luck}</div></div>
     </div>
   </div>
   <div class="modal-section">
-    <h4>功法 / 术法（${(adv.skills || []).length} / ${MAX_SKILLS}）</h4>
+    <h4>技能（${(adv.skills || []).length} / ${MAX_SKILLS}）</h4>
     <div class="skill-pool-list">
       ${(adv.skills || []).length
         ? (adv.skills || []).map((sk, i) => skillListItemHTML(sk, adv.is_mine ? `<button class="btn btn-sm" onclick="unequipSkill(${i})">卸下</button>` : '')).join('')
-        : `<div class="skill-pool-item"><span class="skill-desc">未装备功法 / 术法</span></div>`}
+        : `<div class="skill-pool-item"><span class="skill-desc">未装备技能</span></div>`}
     </div>
-    ${adv.is_mine && pool.length ? `<h4 style="margin-top:12px">功法库（${pool.length}）</h4>
+    ${adv.is_mine && pool.length ? `<h4 style="margin-top:12px">技能库（${pool.length}）</h4>
     <div class="skill-pool-list">
       ${poolVisible.map((sk, pi) => skillListItemHTML(sk, adv.is_mine ? `<button class="btn btn-sm" onclick="equipSkill(${pi})" ${(adv.skills || []).length >= MAX_SKILLS ? 'disabled' : ''}>装备</button>` : '')).join('')}
     </div>
     ${pool.length > 5 ? `<div class="list-expand-row"><button class="btn btn-sm" onclick="toggleAdvPoolExpand()">${advPoolExpanded ? '收起' : `展开全部（${pool.length}）`}</button></div>` : ''}` : ''}
-    ${adv.is_mine ? `<div class="skill-hint">功法库中的功法不参与探险，装备后方可施展；卸下后仍保留在功法库。</div>` : ''}
+    ${adv.is_mine ? `<div class="skill-hint">技能库中的技能不参与探险，装备后方可施展；卸下后仍保留在技能库。</div>` : ''}
   </div>
   <div class="modal-section">
     <h4>特质 / 经历</h4>
@@ -4455,13 +4452,13 @@ function advTabProfile(adv) {
   </div>`;
 }
 function advTabCombat(adv) {
-  // —— 随身法宝：纵向卡片，名称 + 稀有度 + 描述 + 卸下 ——
+  // —— 随身装备：纵向卡片，名称 + 稀有度 + 描述 + 卸下 ——
   const eq = (adv.equipment || []);
-  let html = `<div class="ad-sec-title">随身法宝（${eq.length} / 5）</div>`;
+  let html = `<div class="ad-sec-title">随身装备（${eq.length} / 5）</div>`;
   html += eq.length ? `<div class="skill-pool-list">
     ${eq.map((e, i) => itemCardHTML(e, adv.is_mine ? `<button class="btn btn-sm" onclick="unequipToBag(${i})">卸下</button>` : '')).join('')}
-  </div>` : '<div class="ad-empty">暂无随身法宝</div>';
-  // —— 储物袋：进度 + 筛选 + 排序 + 纵向卡片；仅本人可见 ——
+  </div>` : '<div class="ad-empty">暂无随身装备</div>';
+  // —— 背包：进度 + 筛选 + 排序 + 纵向卡片；仅本人可见 ——
   if (adv.is_mine) {
     const bag = (adv.bag || []);
     const counts = { all: bag.length, common: 0, rare: 0, epic: 0, legendary: 0 };
@@ -4476,7 +4473,7 @@ function advTabCombat(adv) {
     }
     const bagList = advBagExpanded ? list : list.slice(0, 5);
     const chip = (f, label) => `<button class="bchip ${advBagFilter === f ? 'active' : ''}" onclick="setBagFilter('${f}')">${label} ${counts[f] || 0}</button>`;
-    html += `<div class="ad-sec-title">储物袋（${bag.length} / 100）</div>
+    html += `<div class="ad-sec-title">背包（${bag.length} / 100）</div>
     <div class="bag-toolbar">
       <div class="bag-chips">
         ${chip('all', '全部')}${chip('common', '普通')}${chip('rare', '稀有')}${chip('epic', '珍贵')}${chip('legendary', '传说')}
@@ -4490,32 +4487,32 @@ function advTabCombat(adv) {
     html += bagList.length ? `<div class="skill-pool-list">
       ${bagList.map(({ it, idx }) => itemCardHTML(it, adv.is_mine ? `<button class="btn btn-sm" onclick="equipFromBag(${idx})">装备</button>` : '')).join('')}
     </div>
-    ${list.length > 5 ? `<div class="list-expand-row"><button class="btn btn-sm" onclick="toggleAdvBagExpand()">${advBagExpanded ? '收起' : `展开全部（${list.length}）`}</button></div>` : ''}` : '<div class="ad-empty">储物袋空空如也</div>';
+    ${list.length > 5 ? `<div class="list-expand-row"><button class="btn btn-sm" onclick="toggleAdvBagExpand()">${advBagExpanded ? '收起' : `展开全部（${list.length}）`}</button></div>` : ''}` : '<div class="ad-empty">背包空空如也</div>';
   }
   return html;
 }
 function advTabAssets(adv) {
-  // 资产：灵石 / 评分 / 赞 + 持有的功法术法卷轴
+  // 资产：金币 / 评分 / 赞 + 持有的技能书
   const scrolls = (adv.bag || []).filter(i => /卷|诀|术|经|谱|典/.test(i.name));
   return `
   <div class="modal-section">
     <h4>资产总览</h4>
     <div class="stat-grid">
-      <div class="stat-box"><div class="k">💰 灵石</div><div class="v" style="font-size:14px">${Number(adv.gold || 0).toFixed(0)}</div></div>
+      <div class="stat-box"><div class="k">💰 金币</div><div class="v" style="font-size:14px">${Number(adv.gold || 0).toFixed(0)}</div></div>
       <div class="stat-box"><div class="k">最新评分</div><div class="v" style="font-size:14px">${adv.latest_score ? Number(adv.latest_score).toFixed(1) : '-'}</div></div>
       <div class="stat-box"><div class="k">点赞</div><div class="v" style="font-size:14px">${adv.praise_count || 0}</div></div>
       <div class="stat-box"><div class="k">探险总评</div><div class="v" style="font-size:14px">${(adv.traits || []).length} 特质</div></div>
     </div>
   </div>
   ${adv.is_mine ? `<div class="modal-section">
-    <h4>功法 / 术法卷轴（${scrolls.length}）</h4>
+    <h4>技能书（${scrolls.length}）</h4>
     ${scrolls.length ? `<div class="scroll-list">${scrolls.map(i => `
       <div class="scroll-card">
         <span class="sc-name" style="color:${itemColor(i)}">📜 ${esc(i.name)}</span>
         ${i.tier ? `<span class="skill-tier" style="color:${SKILL_TIER_COLOR[i.tier] || '#8b949e'};border-color:${SKILL_TIER_COLOR[i.tier] || '#8b949e'}">${i.tier}</span>` : ''}
         <span class="rarity-tag" style="color:${RARITY_COLOR[i.rarity || 'common']};border-color:${RARITY_COLOR[i.rarity || 'common']}">${RARITY_NAME[i.rarity || 'common'] || i.rarity}</span>
         <div class="sc-desc">${esc(i.desc || '')}</div>
-      </div>`).join('')}</div>` : '<div class="ad-empty">未持有功法卷轴（探险结算有 10% 概率获得）</div>'}
+      </div>`).join('')}</div>` : '<div class="ad-empty">未持有技能书（探险结算有 10% 概率获得）</div>'}
   </div>` : ''}`;
 }
 function advTabBio(adv) {

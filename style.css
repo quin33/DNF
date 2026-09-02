@@ -453,7 +453,7 @@ button { font-family: var(--font); }
   position: absolute;
   inset: 0 auto 0 0;
 }
-/* 修为进度条：紫金色渐变，提示修行进度 */
+/* 等级进度条：紫金色渐变，提示成长进度 */
 .adv-cultivate-fill {
   background: linear-gradient(90deg, #6a4fb3, #a371f7);
   border-radius: 999px;
@@ -1805,7 +1805,7 @@ button { font-family: var(--font); }
 .lchip:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .lchip.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-weight: 700; }
 
-/* ============ 藏经阁（仿军需店布局） ============ */
+/* ============ 技能导师馆（仿军需店布局） ============ */
 .lib-user {
   margin-bottom: 8px;
   padding: 8px 12px;
@@ -1948,7 +1948,7 @@ button { font-family: var(--font); }
 .equip-slot .qty { color: var(--color-primary); font-weight: 700; }
 .equip-slot .slot-action { font-size: 10px; color: var(--color-warning); }
 
-/* ============ 功法 / 术法 ============ */
+/* ============ 物理技 / 魔法技 ============ */
 .skill-tag {
   display: inline-block;
   border-radius: 6px;
@@ -1957,7 +1957,7 @@ button { font-family: var(--font); }
   font-weight: 700;
   border: 1px solid;
 }
-/* 功法/术法阶位标签：黄阶/玄阶/地阶/天阶（颜色内联设置） */
+/* 物理技/魔法技阶位标签：普通/高级/稀有/神器（颜色内联设置） */
 .skill-tier {
   display: inline-block;
   border-radius: 6px;
@@ -2652,7 +2652,7 @@ button { font-family: var(--font); }
   .tavern-layout { flex-direction: column; }
 }
 
-/* 在线匹配成员标签：完整角色名 + 修为境界（圆角标签排版） */
+/* 在线匹配成员标签：完整角色名 + 职业（圆角标签排版） */
 .ol-match-tag {
   display: inline-flex;
   align-items: center;

@@ -10,23 +10,23 @@
   const ARRAY_FIELDS = ['traits', 'equipment', 'bag', 'skills', 'skillPool'];
   const FIELD_LABELS = {
     name: '角色名',
-    character_class: '境界 / 职业',
+    character_class: '职业',
     level: '等级',
     exp: '经验',
-    gold: '灵石',
+    gold: '金币',
     hp: '当前气血',
     max_hp: '气血上限',
     stamina: '当前精力',
     max_stamina: '精力上限',
     strength: '力量',
     agility: '敏捷',
-    intelligence: '悟性',
-    luck: '机缘',
+    intelligence: '智力',
+    luck: '幸运',
     traits: '特质',
-    equipment: '随身法宝',
-    bag: '储物袋',
-    skills: '已学功法',
-    skillPool: '功法池',
+    equipment: '随身装备',
+    bag: '背包',
+    skills: '已学技能',
+    skillPool: '技能库',
   };
   const COMPANION_TEXT_FIELDS = ['name', 'title', 'gender', 'personality', 'character_class', 'title_frame'];
   const COMPANION_NUMBER_FIELDS = [
@@ -586,7 +586,7 @@
       const name = document.createElement('strong');
       name.textContent = card.data.name || card.name || '未命名';
       const meta = document.createElement('small');
-      meta.textContent = `${card.data.character_class || '练气一层'} · ${card.data.gender || ''}${card.is_default ? '' : ' · 已修改'}`;
+      meta.textContent = `${card.data.character_class || '职业不明'} · ${card.data.gender || ''}${card.is_default ? '' : ' · 已修改'}`;
       names.append(name, meta);
       const id = document.createElement('code');
       id.textContent = `#${card.key}`;

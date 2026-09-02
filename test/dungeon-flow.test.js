@@ -222,7 +222,7 @@ test('itemUseCheck only considers the acting member own equipment and bag', () =
 });
 
 test('recordItemLoan authorizes only the named borrower and exposes ownership metadata', () => {
-  const lender = { id: 'a', name: '甲', bag: [{ name: '聚气丹', kind: 'pill', qty: 1 }] };
+  const lender = { id: 'a', name: '甲', bag: [{ name: '生命药水', kind: 'pill', qty: 1 }] };
   const borrower = { id: 'b', name: '乙', bag: [] };
   const dg = { party: [lender, borrower], itemLoans: [] };
   recordItemLoan(dg, lender, borrower, lender.bag[0]);
@@ -230,7 +230,7 @@ test('recordItemLoan authorizes only the named borrower and exposes ownership me
   Math.random = () => 0;
   try {
     const use = itemUseCheck(dg, 'explore', borrower);
-    assert.equal(use.item.name, '聚气丹');
+    assert.equal(use.item.name, '生命药水');
     assert.equal(use.item.ownerId, 'a');
     assert.equal(use.item.userId, 'b');
     assert.equal(use.item.loaned, true);
@@ -241,7 +241,7 @@ test('recordItemLoan authorizes only the named borrower and exposes ownership me
 });
 
 test('loaned quantity is unavailable to the lender until it is returned', () => {
-  const lender = { id: 'a', name: '甲', equipment: [{ name: '铁剑', kind: 'weapon', qty: 1 }], bag: [] };
+  const lender = { id: 'a', name: '甲', equipment: [{ name: '新手长刀', kind: 'weapon', qty: 1 }], bag: [] };
   const borrower = { id: 'b', name: '乙', equipment: [], bag: [] };
   const dg = { party: [lender, borrower], itemLoans: [] };
   recordItemLoan(dg, lender, borrower, lender.equipment[0]);
@@ -249,14 +249,14 @@ test('loaned quantity is unavailable to the lender until it is returned', () => 
   Math.random = () => 0;
   try {
     assert.equal(itemUseCheck(dg, 'battle', lender), null);
-    assert.equal(itemUseCheck(dg, 'battle', borrower).item.name, '铁剑');
+    assert.equal(itemUseCheck(dg, 'battle', borrower).item.name, '新手长刀');
   } finally {
     Math.random = original;
   }
 });
 
 test('consumeItemUse decrements the original owner inventory and records borrower usage', () => {
-  const lender = { id: 'a', name: '甲', bag: [{ name: '聚气丹', kind: 'pill', qty: 2 }] };
+  const lender = { id: 'a', name: '甲', bag: [{ name: '生命药水', kind: 'pill', qty: 2 }] };
   const borrower = { id: 'b', name: '乙', bag: [] };
   const dg = { party: [lender, borrower], itemLoans: [], consumed: [] };
   const loan = recordItemLoan(dg, lender, borrower, lender.bag[0]);
@@ -264,16 +264,16 @@ test('consumeItemUse decrements the original owner inventory and records borrowe
   const result = consumeItemUse(dg, use, { explicitUse: true });
   assert.equal(result.consumed, true);
   assert.equal(lender.bag[0].qty, 1);
-  assert.deepEqual(dg.consumed[0], { name: '聚气丹', ownerId: 'a', userId: 'b', qty: 1, loaned: true });
+  assert.deepEqual(dg.consumed[0], { name: '生命药水', ownerId: 'a', userId: 'b', qty: 1, loaned: true });
 });
 
 test('nonconsumable loan is not removed and settlement reports it for return', () => {
-  const lender = { id: 'a', name: '甲', equipment: [{ name: '铁剑', kind: 'weapon', qty: 1 }] };
+  const lender = { id: 'a', name: '甲', equipment: [{ name: '新手长刀', kind: 'weapon', qty: 1 }] };
   const borrower = { id: 'b', name: '乙', equipment: [] };
   const dg = { party: [lender, borrower], itemLoans: [], consumed: [] };
   recordItemLoan(dg, lender, borrower, lender.equipment[0]);
   const result = settleItemLoans(dg);
-  assert.deepEqual(result, [{ name: '铁剑', ownerId: 'a', userId: 'b', qty: 1 }]);
+  assert.deepEqual(result, [{ name: '新手长刀', ownerId: 'a', userId: 'b', qty: 1 }]);
   assert.equal(lender.equipment[0].qty, 1);
   assert.equal(dg.itemLoans.length, 0);
 });

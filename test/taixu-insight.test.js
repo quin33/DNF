@@ -6,58 +6,58 @@ const TI = require('../taixu-insight');
 
 test('taixu insight accepts a valid skill and preserves the selected type', () => {
   const result = TI.parseTaixuInsight(
-    '{"name":"赤霞护元诀","type":"功法","tier":"玄阶","elem":"火灵根","desc":"引赤霞护住经脉，可抵御寻常灵力冲击，但久持会加重真元负担。"}',
-    '功法',
+    '{"name":"烈焰冲击","type":"物理技","tier":"稀有","elem":"火","desc":"缠上斗气的一拳，撕开魔物护甲，久用会加速体力消耗。"}',
+    '物理技',
     new Set(['火球术'])
   );
 
   assert.deepEqual(result, {
-    name: '赤霞护元诀',
-    type: '功法',
-    tier: '玄阶',
-    elem: '火灵根',
-    desc: '引赤霞护住经脉，可抵御寻常灵力冲击，但久持会加重真元负担。',
+    name: '烈焰冲击',
+    type: '物理技',
+    tier: '稀有',
+    elem: '火',
+    desc: '缠上斗气的一拳，撕开魔物护甲，久用会加速体力消耗。',
   });
 });
 
 test('taixu insight preserves generated descriptions up to 250 characters', () => {
   assert.match(TI.TAIXU_INSIGHT_SYSTEM_PROMPT, /描述[^\n]{0,40}200\s*字以内/);
   const result = TI.parseTaixuInsight(JSON.stringify({
-    name: '长篇护体诀', type: '功法', tier: '玄阶', elem: '金', desc: '护'.repeat(300),
-  }), '功法', new Set());
+    name: '长篇护体诀', type: '物理技', tier: '稀有', elem: '火', desc: '护'.repeat(300),
+  }), '物理技', new Set());
   assert.equal(result.desc.length, 250);
 });
 
 test('taixu insight rejects invalid or duplicate AI results', () => {
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"雷诀","type":"术法","tier":"玄阶","desc":"护体"}', '功法', new Set()),
+    () => TI.parseTaixuInsight('{"name":"雷诀","type":"魔法技","tier":"稀有","desc":"护体"}', '物理技', new Set()),
     /类型/
   );
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"雷诀","type":"功法","tier":"仙阶","desc":"护体"}', '功法', new Set()),
-    /阶位/
+    () => TI.parseTaixuInsight('{"name":"雷诀","type":"物理技","tier":"仙阶","desc":"护体"}', '物理技', new Set()),
+    /稀有度/
   );
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"火球术","type":"术法","tier":"黄阶","desc":"聚火伤敌"}', '术法', new Set(['火球术'])),
+    () => TI.parseTaixuInsight('{"name":"火球术","type":"魔法技","tier":"普通","desc":"聚火伤敌"}', '魔法技', new Set(['火球术'])),
     /重复/
   );
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"破�诀","type":"功法","tier":"黄阶","desc":"护体"}', '功法', new Set()),
+    () => TI.parseTaixuInsight('{"name":"破�诀","type":"物理技","tier":"普通","desc":"护体"}', '物理技', new Set()),
     /乱码/
   );
 });
 
-test('taixu prompt derives the spirit root from the authoritative trait list', () => {
+test('taixu prompt derives the character state from the authoritative trait list', () => {
   const prompt = TI.buildTaixuInsightPrompt({
     name: '云岚',
-    character_class: '练气五层',
-    traits: ['火灵根', '临危不乱'],
-    skills: [{ name: '火球术', type: '术法', tier: '黄阶', desc: '聚火伤敌' }],
-    skillPool: [{ name: '吐纳诀', type: '功法', tier: '黄阶', desc: '引气入体' }],
-  }, '功法', '护体并疗伤');
+    character_class: '狂战士',
+    traits: ['战斗本能', '临危不乱'],
+    skills: [{ name: '崩山击', type: '物理技', tier: '稀有', desc: '奋力一击震荡大地。' }],
+    skillPool: [{ name: '怒气爆发', type: '魔法技', tier: '普通', desc: '积蓄怒气爆发周身。' }],
+  }, '物理技', '护体并在低血量时反击');
 
-  assert.match(prompt, /【灵根】火灵根/);
-  for (const expected of ['练气五层', '临危不乱', '火球术', '吐纳诀', '护体并疗伤', '必须降格']) {
+  assert.match(prompt, /【特质】战斗本能、临危不乱/);
+  for (const expected of ['狂战士', '临危不乱', '崩山击', '怒气爆发', '护体并在低血量时反击', '必须降格']) {
     assert.match(prompt, new RegExp(expected));
   }
 });
@@ -65,13 +65,13 @@ test('taixu prompt derives the spirit root from the authoritative trait list', (
 test('taixu prompt keeps player goals from dictating generated names or tiers', () => {
   const prompt = TI.buildTaixuInsightPrompt({
     name: '云岚',
-    character_class: '练气五层',
-    traits: ['火灵根'],
-  }, '功法', '一定要生成天阶神功并命名为烈焰真经');
+    character_class: '狂战士',
+    traits: ['战斗本能'],
+  }, '物理技', '一定要生成神器级技能并命名为烈焰真经');
 
   const instructions = `${TI.TAIXU_INSIGHT_SYSTEM_PROMPT}\n${prompt}`;
   assert.match(instructions, /期望功能方向（仅影响效果）/);
-  assert.match(instructions, /名称和阶位|名称与阶位/);
+  assert.match(instructions, /名称和稀有度/);
   assert.match(instructions, /自行决定|独立判断|不得.*影响/);
 });
 
@@ -192,8 +192,8 @@ test('building page exposes taixu realm type selection and a 100 character goal'
   assert.match(html, /data-tab="building"[\s\S]*?<span class="tab-task-count">\$\{FEATURED_BUILDING_CODES\.size\}<\/span>/);
   assert.match(html, /filter\(b\s*=>\s*FEATURED_BUILDING_CODES\.has\(b\.code\)\)/);
   assert.match(html, /openTaixuRealmModal/);
-  assert.match(html, /data-taixu-type="功法"/);
-  assert.match(html, /data-taixu-type="术法"/);
+  assert.match(html, /data-taixu-type="物理技"/);
+  assert.match(html, /data-taixu-type="魔法技"/);
   assert.match(html, /maxlength="100"/);
   assert.match(html, /id="taixu-goal-count"/);
   const modal = html.slice(html.indexOf('function openTaixuRealmModal'), html.indexOf('function setTaixuType'));
@@ -204,13 +204,13 @@ test('building page exposes taixu realm type selection and a 100 character goal'
 test('taixu modal validates trimmed input and exposes loading and result states', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   const start = html.indexOf('function openTaixuRealmModal');
-  const end = html.indexOf('/* ============================================================\n   炼器坊', start);
+  const end = html.indexOf('/* ============================================================\n   铁匠铺', start);
   const taixu = html.slice(start, end);
 
   assert.match(taixu, /String\(.*\.value \|\| ''\)\.trim\(\)/);
-  assert.match(taixu, /正在观想太虚万象/);
+  assert.match(taixu, /正在观想觉醒万象/);
   assert.match(taixu, /renderTaixuInsightResult/);
-  assert.match(taixu, /功法库/);
+  assert.match(taixu, /技能库/);
 });
 
 test('taixu result renders the complete returned description without a display clamp', () => {
@@ -226,11 +226,11 @@ test('taixu result renders the complete returned description without a display c
 test('successful taixu insight writes one sourced recent activity entry', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   const start = html.indexOf('async function submitTaixuInsight');
-  const end = html.indexOf('/* ============================================================\n   炼器坊', start);
+  const end = html.indexOf('/* ============================================================\n   铁匠铺', start);
   const submit = html.slice(start, end);
 
   assert.match(submit, /addFeedItem/);
-  assert.match(submit, /太虚幻境 · 参悟/);
+  assert.match(submit, /觉醒祭坛 · 领悟/);
   assert.match(submit, /result\.skill\.tier/);
   assert.ok(submit.indexOf('await window.taixuInsight') < submit.indexOf('addFeedItem'));
   assert.match(html, /f\.kind === 'insight'/);
@@ -239,7 +239,7 @@ test('successful taixu insight writes one sourced recent activity entry', () => 
 test('successful taixu insight hands off to the dedicated result dialog', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   const start = html.indexOf('async function submitTaixuInsight');
-  const end = html.indexOf('/* ============================================================\n   炼器坊', start);
+  const end = html.indexOf('/* ============================================================\n   铁匠铺', start);
   const submit = html.slice(start, end);
 
   assert.match(submit, /renderTaixuInsightSuccess\(result\)/);
@@ -250,7 +250,7 @@ test('successful taixu insight hands off to the dedicated result dialog', () => 
 test('successful taixu insight opens a dedicated result dialog with complete skill details', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   const start = html.indexOf('async function submitTaixuInsight');
-  const end = html.indexOf('/* ============================================================\n   炼器坊', start);
+  const end = html.indexOf('/* ============================================================\n   铁匠铺', start);
   const submit = html.slice(start, end);
 
   assert.match(html, /function renderTaixuInsightSuccess/);
@@ -275,7 +275,7 @@ test('taixu insight persists a one-hour busy state before background generation'
 test('taixu busy state blocks player mutations while allowing status polling', () => {
   const server = fs.readFileSync('server.js', 'utf8');
   assert.match(server, /function characterBusyReason\(/);
-  assert.match(server, /角色正在太虚幻境参悟/);
+  assert.match(server, /角色正在觉醒祭坛顿悟/);
   assert.match(server, /characterBusyReason\(current\.data\)/);
   assert.match(server, /characterBusyReason\(character\.data\)/);
   assert.match(server, /case 'match_start':[\s\S]*?characterBusyReason\(c\.data\)/);
@@ -296,7 +296,7 @@ test('taixu insight recovers persisted jobs and finalizes exactly once', () => {
 test('online taixu insight shows a persisted countdown and polls through the one-hour window', () => {
   const html = fs.readFileSync('index.html', 'utf8');
   const online = fs.readFileSync('online.js', 'utf8');
-  assert.match(html, /参悟中/);
+  assert.match(html, /领悟中/);
   assert.match(html, /taixu-insight-countdown/);
   assert.match(online, /remainingMs/);
   assert.match(online, /TAIXU_INSIGHT_POLL_MS|poll < 800/);
