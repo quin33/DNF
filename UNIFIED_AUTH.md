@@ -42,7 +42,7 @@ GATEWAY_SESSION_EXPIRE=3600
 # 数据库路径（网关读取用户信息。统一控制台只把 GATEWAY_ 开头的变量
 # 转发给网关进程，所以用 GATEWAY_ 前缀的这两个；DNF 库可不设，默认 ./dnf.db）
 GATEWAY_DNF_DB=./dnf.db
-GATEWAY_XIUXIAN_DB=I:/DEEPSEEK/tavern_clone/tavern.db
+GATEWAY_XIUXIAN_DB=I:/DEEPSEEK/DNF/xiuxian/tavern.db
 ```
 
 #### DNF 游戏进程（`server.js` - DNF）
@@ -52,7 +52,7 @@ GATEWAY_XIUXIAN_DB=I:/DEEPSEEK/tavern_clone/tavern.db
 GATEWAY_AUTH_SECRET=你的64字符随机密钥
 
 # 账号镜像（必须配置，用于共享账号）
-ACCOUNT_MIRROR_DB=I:/DEEPSEEK/tavern_clone/tavern.db
+ACCOUNT_MIRROR_DB=I:/DEEPSEEK/DNF/xiuxian/tavern.db
 ```
 
 #### 问道仙坊游戏进程（`server.js` - 问道仙坊）

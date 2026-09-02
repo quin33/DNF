@@ -1,4 +1,4 @@
-// 修仙版数据示例 —— 替换 tavern_clone/data.js 中对应字段即可
+// 修仙版数据示例 —— 替换本目录 data.js 中对应字段即可
 // 完整替换后：修士卡片、仙坊座位、灵墟地图、探险日志全部变为修仙主题
 window.TAVERN_DATA = {
   user: { nickname: '青璃真人', username: 'player', id: 1, balance: 50000, balance_display: '5万灵石', is_admin: false },

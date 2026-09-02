@@ -6,7 +6,7 @@
 
 | 项目 | 目录 | 游戏服务 | 控制台 | 统一控制台 | 数据库 | 公网地址 |
 | --- | --- | --- | --- | --- | --- | --- |
-| 问道仙坊（原游戏） | `I:\DEEPSEEK\tavern_clone` | 8787 | 8790 | — | `tavern.db` | `xiuxiangame.dpdns.org/xiuxian/` |
+| 问道仙坊（原游戏） | `I:\DEEPSEEK\DNF\xiuxian` | 8787 | 8790 | — | `tavern.db` | `xiuxiangame.dpdns.org/xiuxian/` |
 | DNF（本项目） | `I:\DEEPSEEK\DNF` | **8788** | **8791** | — | `dnf.db` | `xiuxiangame.dpdns.org/dnf/` |
 | **站点网关** | `I:\DEEPSEEK\DNF` | — | — | **8786** | — | `xiuxiangame.dpdns.org`（主域名指这里） |
 | **统一控制台** | `I:\DEEPSEEK\DNF` | — | — | **8792** | — | — |
@@ -93,7 +93,7 @@ node control-panel.js
 **架构：**
 ```
 unified-panel.js (8792)
-├─ supervisor: 问道仙坊 → node server.js (8787)  cwd=tavern_clone
+├─ supervisor: 问道仙坊 → node server.js (8787)  cwd=xiuxian
 ├─ supervisor: DNF      → node server.js (8788)  cwd=DNF
 └─ supervisor: 站点网关  → node site-gateway.js (8786)   仅 UNIFIED_GATEWAY=true 时
 

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>问道仙坊 · 在线</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .ol-wrap { max-width: 780px; margin: 0 auto; padding: 24px 16px; }
+  .ol-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .ol-card h2 { margin: 0 0 12px; font-size: 17px; }
+  .ol-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .ol-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .ol-row label { width: 100%; font-size: 12px; color: var(--color-text-secondary); }
+  .ol-row input { flex: 1; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); color: var(--color-text); }
+  .ol-err { color: var(--color-danger); font-size: 12.5px; min-height: 18px; }
+  .ol-char { border: 1px solid var(--color-border); border-radius: 10px; padding: 10px; cursor: pointer; transition: border-color .15s; background: var(--color-bg); }
+  .ol-char:hover { border-color: var(--color-primary); }
+  .ol-char .cn { font-weight: 700; font-size: 14px; }
+  .ol-char .cm { font-size: 11.5px; color: var(--color-text-secondary); margin-top: 3px; }
+  .nav-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .nav-bar .sp { flex: 1; }
+  .opt-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opt-chip { border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text); border-radius: 999px; padding: 4px 12px; font-size: 12.5px; cursor: pointer; }
+  .opt-chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .create-row { display: flex; gap: 8px; align-items: end; margin-top: 8px; }
+  .room-step { border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; background: var(--color-bg); }
+  .room-step p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.7; color: var(--color-text); }
+  .rs-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .rs-no { width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--color-primary) 16%, var(--color-bg)); color: var(--color-primary); display: grid; place-items: center; font-size: 11px; font-weight: 800; }
+  .rs-stage { font-size: 11.5px; font-weight: 700; color: var(--color-text-secondary); }
+  .rs-actor { font-size: 12px; font-weight: 700; }
+  .rs-roll { font-size: 11.5px; color: var(--color-warning); margin-left: auto; }
+  .settle-card { border: 1px solid var(--color-border); border-radius: 12px; padding: 14px 16px; margin-top: 10px; }
+  .settle-card.win { border-color: var(--color-success); background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg)); }
+  .settle-card.lose { border-color: var(--color-danger); background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg)); }
+  .sp { flex: 1; }
+</style>
+</head>
+<body>
+<div class="ol-wrap">
+  <!-- 登录/注册 -->
+  <div id="view-auth" style="display:none">
+    <div class="ol-card">
+      <h2>⚔️ 问道仙坊 · 登录</h2>
+      <div class="ol-row"><label>用户名</label><input id="auth-user" placeholder="2~20 字符（中文/字母/数字）" maxlength="20"></div>
+      <div class="ol-row"><label>密码</label><input id="auth-pass" type="password" placeholder="4~64 字符" maxlength="64"></div>
+      <div class="ol-err" id="auth-err"></div>
+      <div class="ol-row">
+        <button class="btn btn-primary" onclick="doAuth('login')">登录</button>
+        <button class="btn" onclick="doAuth('register')">注册新账号</button>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:var(--color-text-secondary)">账号与角色保存在服务器（SQLite），换设备不丢失。</div>
+    </div>
+  </div>
+
+  <!-- 大厅 -->
+  <div id="view-hall" style="display:none">
+    <div class="nav-bar">
+      <span class="nav-title">🧭 仙坊大厅</span>
+      <span class="sp"></span>
+      <span id="hall-user"></span>
+      <button class="btn btn-primary btn-sm" id="btn-create" onclick="openCreate()">✨ 创建角色</button>
+      <button class="btn btn-sm" onclick="logout()">退出</button>
+    </div>
+    <div class="ol-card">
+      <h2>我的角色</h2>
+      <div class="ol-grid" id="char-list"></div>
+      <div class="ol-err" id="hall-err"></div>
+    </div>
+    <div class="ol-card" style="opacity:.7">
+      <h2>🗺️ 组队探险（阶段3 · 开发中）</h2>
+      <div class="ad-empty">房间与实时副本系统正在开发 — 下一步将支持多人同副本。</div>
+    </div>
+  </div>
+
+  <!-- 组队探险 -->
+  <div id="view-room" style="display:none">
+    <div class="nav-bar">
+      <button class="btn btn-sm" onclick="leaveRoom()">← 返回大厅</button>
+      <span class="nav-title">🗺️ 组队探险</span>
+      <span class="sp"></span>
+      <span id="room-conn" style="font-size:12px;color:var(--color-text-secondary)">连接中…</span>
+      <button class="btn btn-sm" onclick="refreshRooms()">↻ 刷新房间</button>
+    </div>
+    <div class="ol-row"><span id="room-char"></span></div>
+    <div id="room-err" class="ol-err"></div>
+    <div class="ol-card">
+      <h2>等待中的房间</h2>
+      <div id="room-list"></div>
+      <div class="create-row">
+        <button class="btn btn-primary" onclick="createRoom()">🏠 创建房间</button>
+        <button class="btn btn-success" onclick="startRun()">⚔️ 开本</button>
+      </div>
+    </div>
+    <div class="ol-card">
+      <div id="room-dungeon" style="font-weight:700;margin-bottom:8px"></div>
+      <div id="room-party"></div>
+      <div id="room-steps" style="margin-top:8px;max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+      <div id="room-settle"></div>
+    </div>
+    <div class="ol-card">
+      <h2>💬 房间聊天</h2>
+      <div id="room-chat" style="max-height:18vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;font-size:13px"></div>
+      <div class="ol-row" style="margin:0">
+        <input id="chat-input" placeholder="说点什么…" maxlength="200" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn btn-sm" onclick="sendChat()">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 创建角色 -->
+  <div id="view-create" style="display:none">
+    <div class="nav-bar">
+      <button class="btn btn-sm" onclick="enterHall()">← 返回</button>
+      <span class="nav-title">✨ 创建角色</span>
+      <span class="sp"></span>
+    </div>
+    <div class="ol-card">
+      <div class="ol-row"><label>角色名（1~12 字）</label><input id="rc-name" maxlength="12" placeholder="输入道号"></div>
+      <div class="ol-row"><label>灵根</label><div class="opt-chips" id="root-chips"></div></div>
+      <div class="ol-row"><label>性格</label><div class="opt-chips" id="pers-chips"></div></div>
+      <div class="ol-row"><label>性别</label><div class="opt-chips" id="gender-chips"></div></div>
+      <div class="ol-row"><label>初始装备 / 道具（选两件）<span id="item-count">已选 0 / 2</span></label><div class="opt-chips" id="item-chips"></div></div>
+      <div class="ol-err" id="create-err"></div>
+      <div class="create-row">
+        <button class="btn btn-primary" onclick="submitCreate()">🌟 踏入仙途</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 经站点网关时页面在 /xiuxian/ 下，而代码里的 /api/... 是绝对路径，会打到站点根目录。
+   这里统一包装 fetch 补上前缀。直接跑在 8787 上时 basePath 为空，行为不变。 */
+(() => {
+  const basePath = location.pathname.replace(/[^/]*$/, "").replace(/\/$/, "");
+  window.__basePath = basePath;
+  if (!basePath) return;
+  const origin = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    if (typeof input === "string" && input.startsWith("/") && !input.startsWith("//")) {
+      return origin(basePath + input, init);
+    }
+    return origin(input, init);
+  };
+})();
+</script>
+<script src="data.js"></script>
+<script>
+const D = window.TAVERN_DATA;
+const API = { token: null, user: null };
+const $ = s => document.querySelector(s);
+const sel = { root: 'jin', pers: '重诺', gender: '男', items: new Set() };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (API.token) headers['Authorization'] = 'Bearer ' + API.token;
+  const r = await fetch(path, { headers, ...opts, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+
+function showView(id) {
+  ['view-auth', 'view-hall', 'view-create', 'view-room'].forEach(v => document.getElementById(v).style.display = v === id ? 'block' : 'none');
+}
+
+/* ---------- 登录 / 注册 ---------- */
+async function doAuth(action) {
+  const username = $('#auth-user').value.trim();
+  const password = $('#auth-pass').value;
+  try {
+    const j = await api('/api/auth/' + action, { method: 'POST', body: { username, password } });
+    API.token = j.token; API.user = j.user;
+    localStorage.setItem('xiuxian_online_token', j.token);
+    enterHall();
+  } catch (e) { $('#auth-err').textContent = e.message; }
+}
+
+/* ---------- 大厅 ---------- */
+async function enterHall() {
+  $('#hall-user').textContent = API.user.username;
+  showView('view-hall');
+  await refreshChars();
+}
+async function logout() {
+  try { await api('/api/auth/logout', { method: 'POST' }); } catch (e) {}
+  API.token = null; API.user = null;
+  localStorage.removeItem('xiuxian_online_token');
+  showView('view-auth');
+}
+async function refreshChars() {
+  try {
+    const j = await api('/api/me');
+    API.user = j.user;
+    const box = $('#char-list');
+    box.innerHTML = j.characters.length
+      ? j.characters.map(c => `<div class="ol-char" onclick="gotoChar(${c.id})" data-id="${c.id}">
+          <div class="cn">${esc(c.name)}</div>
+          <div class="cm">加载中…</div></div>`).join('')
+      : '<div class="ad-empty">尚无角色，点「创建角色」新建一位修士吧</div>';
+    j.characters.forEach(async c => {
+      try {
+        const d = await api('/api/character/' + c.id);
+        const r = d.character;
+        const el = box.querySelector(`.ol-char[data-id="${c.id}"]`);
+        if (el) el.querySelector('.cm').textContent = `${esc(r.character_class || '')} · Lv.${r.level || 1} · 💰 ${r.gold ?? 0} 灵石`;
+      } catch (e) {}
+    });
+  } catch (e) { $('#hall-err').textContent = e.message; }
+}
+function gotoChar(id) {
+  // 选择角色 → 进入组队探险
+  Room.charId = id;
+  enterRoomView();
+}
+
+/* ---------- 组队探险（房间 + 实时副本） ---------- */
+const Room = { ws: null, charId: null, roomId: null, on: false };
+function wsConnect() {
+  if (Room.ws && Room.ws.readyState <= 1) return;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  Room.ws = new WebSocket(proto + '://' + location.host + '/ws');
+  Room.ws.onmessage = e => { let d; try { d = JSON.parse(e.data); } catch (_) { return; } handleRoomMsg(d); };
+  Room.ws.onclose = () => { Room.on = false; $('#room-conn').textContent = '连接断开'; };
+}
+function wsSend(obj) { if (Room.ws && Room.ws.readyState === 1) Room.ws.send(JSON.stringify(obj)); }
+function handleRoomMsg(d) {
+  switch (d.type) {
+    case 'authed': Room.on = true; $('#room-conn').textContent = '已连接'; break;
+    case 'room_joined': Room.roomId = d.room.id; renderRoom(d.room); $('#room-err').textContent = ''; break;
+    case 'dungeon_started': $('#room-dungeon').textContent = '⚔️ ' + d.snapshot.dungeon.name + ' · 探险开始'; clearRoomSteps(); break;
+    case 'step': appendStep(d.step); break;
+    case 'settled': renderSettled(d); break;
+    case 'run_error': $('#room-err').textContent = '⚠️ ' + d.error; break;
+    case 'member_joined': case 'member_left': if (d.party) renderRoom({ party: d.party }); break;
+    case 'chat': appendChat(d.from, d.text); break;
+  }
+}
+function appendChat(from, text) {
+  const el = $('#room-chat');
+  const d = document.createElement('div');
+  d.className = 'chat-line';
+  d.innerHTML = `<span style="font-weight:700;color:var(--color-primary)">${esc(from)}</span>：${esc(text)}`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+}
+function sendChat() {
+  const input = $('#chat-input');
+  const t = input.value.trim();
+  if (!t) return;
+  wsSend({ type: 'chat', text: t });
+  input.value = '';
+}
+function enterRoomView() {
+  showView('view-room');
+  $('#room-char').textContent = '角色 #' + Room.charId;
+  wsConnect();
+  wsSend({ type: 'auth', token: API.token || undefined });
+  refreshRooms();
+}
+async function createRoom() {
+  wsConnect();
+  wsSend({ type: 'auth', token: API.token });
+  wsSend({ type: 'create_room', token: API.token, charId: Room.charId, name: '联机副本' });
+}
+async function joinRoom(roomId, charId) {
+  wsConnect();
+  wsSend({ type: 'auth', token: API.token });
+  wsSend({ type: 'join_room', token: API.token, charId: charId || Room.charId, roomId });
+}
+function startRun() { wsSend({ type: 'start_run', roomId: Room.roomId }); }
+function leaveRoom() { wsSend({ type: 'leave_room' }); Room.roomId = null; enterHall(); }
+async function refreshRooms() {
+  try {
+    const j = await api('/api/rooms');
+    const list = j.rooms || [];
+    const el = $('#room-list');
+    el.innerHTML = list.length ? list.map(r => `<div class="ol-row" style="align-items:center">
+      <span>🏠 ${esc(r.name)} · ${r.party.length}/4 人</span>
+      <span class="sp"></span>
+      <button class="btn btn-sm" onclick="joinRoom('${r.id}', ${Room.charId})">加入</button>
+    </div>`).join('') : '<div class="ad-empty">暂无等待中的房间，点「创建房间」开一局</div>';
+  } catch (e) { $('#room-err').textContent = e.message; }
+}
+function renderRoom(room) {
+  $('#room-party').innerHTML = (room.party || []).map(m => `<span class="tag-badge">${esc(m.name)}${m.isNpc ? '（AI）' : ''}</span>`).join('');
+}
+function clearRoomSteps() { $('#room-steps').innerHTML = ''; }
+function appendStep(s) {
+  const el = $('#room-steps');
+  const div = document.createElement('div');
+  div.className = 'room-step';
+  div.innerHTML = `<div class="rs-head"><span class="rs-no">${s.no}</span><span class="rs-stage">${esc(s.stageLabel || '')}</span><span class="rs-actor">${esc(s.actor)}</span>${s.roll ? `<span class="rs-roll">D20 ${s.roll}+${s.mod} = ${s.total} ${s.success ? '✓' : '✗'}</span>` : ''}</div><p>${esc(s.text)}</p>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+function renderSettled(d) {
+  $('#room-dungeon').textContent = '✨ 探险结束 · ' + (d.ok ? '凯旋' : '受挫') + ' · ' + d.dungeon;
+  const el = $('#room-settle');
+  el.innerHTML = `<div class="settle-card ${d.ok ? 'win' : 'lose'}">
+    <strong>${d.ok ? '✅ 凯旋' : '❌ 受挫'}</strong>
+    <div>获得经验 +${d.exp}${d.verdict === 'breakthrough_ok' ? ' · <b style="color:var(--color-primary)">⚡ 突破筑基前期！</b>' : ''}</div>
+    ${d.summary ? `<p style="margin-top:6px">${esc(d.summary)}</p>` : ''}
+  </div>`;
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+/* ---------- 创建角色 ---------- */
+async function openCreate() {
+  $('#create-err').textContent = '';
+  try {
+    if (!window.CREATION) {
+      const j = await api('/api/creation');
+      window.CREATION = j.data;
+    }
+    renderCreateForm();
+    showView('view-create');
+  } catch (e) { $('#create-err').textContent = e.message; }
+}
+function renderCreateForm() {
+  const cd = window.CREATION;
+  $('#rc-name').value = '';
+  $('#root-chips').innerHTML = cd.roots.map(r => `<button type="button" class="opt-chip ${r.key === sel.root ? 'active' : ''}" onclick="pickRoot('${r.key}')">${esc(r.label)}<br><small>${esc(r.skills.map(s => s.name).join(' / '))}</small></button>`).join('');
+  $('#pers-chips').innerHTML = cd.pers.map(p => `<button type="button" class="opt-chip ${p === sel.pers ? 'active' : ''}" onclick="pickPers('${esc(p)}')">${esc(p)}</button>`).join('');
+  $('#gender-chips').innerHTML = ['男', '女'].map(g => `<button type="button" class="opt-chip ${g === sel.gender ? 'active' : ''}" onclick="sel.gender='${g}';refreshChips()">${g}</button>`).join('');
+  $('#item-chips').innerHTML = cd.items.map(i => `<button type="button" class="opt-chip" data-key="${i.key}" onclick="toggleItem('${i.key}')">${esc(i.name)}${i.qty > 1 ? '×' + i.qty : ''}</button>`).join('');
+  refreshChips();
+}
+function pickRoot(k) { sel.root = k; refreshChips(); }
+function pickPers(p) { sel.pers = p; refreshChips(); }
+function toggleItem(k) {
+  if (sel.items.has(k)) sel.items.delete(k);
+  else { if (sel.items.size >= 2) return; sel.items.add(k); }
+  refreshChips();
+}
+function refreshChips() {
+  if (!window.CREATION) return;
+  document.querySelectorAll('#root-chips .opt-chip').forEach(b => b.classList.toggle('active', b.getAttribute('onclick').includes(sel.root)));
+  document.querySelectorAll('#pers-chips .opt-chip').forEach(b => b.classList.toggle('active', b.textContent.trim() === sel.pers));
+  document.querySelectorAll('#gender-chips .opt-chip').forEach(b => b.classList.toggle('active', b.textContent.trim() === sel.gender));
+  document.querySelectorAll('#item-chips .opt-chip').forEach(b => b.classList.toggle('active', sel.items.has(b.dataset.key)));
+  $('#item-count').textContent = '已选 ' + sel.items.size + ' / 2';
+}
+async function submitCreate() {
+  const name = $('#rc-name').value.trim();
+  if (!name) { $('#create-err').textContent = '请输入角色名'; return; }
+  if (sel.items.size !== 2) { $('#create-err').textContent = '请选择两件初始装备 / 道具'; return; }
+  try {
+    await api('/api/character/create', { method: 'POST', body: { name, root: sel.root, gender: sel.gender, pers: sel.pers, items: [...sel.items] } });
+    sel.items = new Set();
+    enterHall();
+  } catch (e) { $('#create-err').textContent = e.message; }
+}
+
+/* ---------- 初始化（脚本在 body 末尾，DOM 已就绪） ---------- */
+/* ---------- 初始化（脚本在 body 末尾，DOM 已就绪） ---------- */
+(function init() {
+  const t = localStorage.getItem('xiuxian_online_token');
+  if (t) {
+    API.token = t;
+    api('/api/me').then(j => { API.user = j.user; enterHall(); }).catch(() => showView('view-auth'));
+  } else showView('view-auth');
+})();
+</script>
+<script src="site-nav.js"></script>
+</body>
+</html>

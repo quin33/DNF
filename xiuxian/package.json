@@ -1,0 +1,16 @@
+{
+  "name": "xiuxian",
+  "version": "1.0.0",
+  "description": "> 从 https://stock.xxapi.icu 的「深渊酒馆」版块完整复刻 UI 布局与全部模块，生成的可独立运行的网页。 > 用于在此基础之上重新制作你自己的游戏。",
+  "main": "data.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.21.3"
+  }
+}
