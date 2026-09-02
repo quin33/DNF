@@ -19,6 +19,29 @@
 
 const http = require('node:http');
 const net = require('node:net');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// 与 server.js 相同的本地 .env 加载：网关独立启动（不经过统一控制台）时也能
+// 读到 GATEWAY_AUTH_SECRET / GATEWAY_XIUXIAN_DB。必须在 require gateway-auth 之前
+// 执行，否则该模块加载时密钥与库路径就已经定型；已设置的变量优先。
+function loadLocalEnv() {
+  try {
+    const text = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+      if (!match || process.env[match[1]]) continue;
+      let value = match[2];
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+      process.env[match[1]] = value;
+    }
+  } catch (error) {
+    if (error.code !== 'ENOENT') console.warn('[gateway] 无法读取 .env：', error.message);
+  }
+}
+if (process.env.TAVERN_LOAD_ENV !== '0') loadLocalEnv();
+
+const gatewayAuth = require('./gateway-auth.js');
 
 const DEFAULT_PORT = 8786;
 
@@ -81,11 +104,11 @@ function matchSite(sites, pathname) {
 
 function renderHome(sites) {
   const cards = sites.map(site => `
-      <a class="card" href="/${escapeHtml(site.prefix)}/">
+      <div class="card" data-game="${escapeHtml(site.prefix)}">
         <h2>${escapeHtml(site.name)}</h2>
         ${site.tagline ? `<p>${escapeHtml(site.tagline)}</p>` : ''}
         <span class="go">进入 &rarr;</span>
-      </a>`).join('');
+      </div>`).join('');
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -102,16 +125,35 @@ function renderHome(sites) {
   nav a { display: block; padding: 11px 20px; color: #c9ccd4; text-decoration: none; font-size: 14px;
           border-left: 3px solid transparent; }
   nav a:hover { background: #171a20; color: #fff; border-left-color: #d8a24a; }
-  main { flex: 1; padding: 56px 40px; }
+  main { flex: 1; padding: 56px 40px; max-width: 1200px; }
   main > h2 { margin: 0 0 6px; font-size: 26px; }
   main > p { margin: 0 0 32px; color: #8b8f9a; font-size: 14px; }
+  .auth-box { max-width: 420px; margin: 0 0 40px; padding: 24px; background: #191c23; border: 1px solid #23262e; border-radius: 12px; }
+  .auth-box h3 { margin: 0 0 18px; font-size: 18px; }
+  .auth-row { margin-bottom: 14px; }
+  .auth-row label { display: block; margin-bottom: 6px; font-size: 13px; color: #8b8f9a; }
+  .auth-row input { width: 100%; padding: 10px 12px; background: #0d0f13; border: 1px solid #23262e; border-radius: 8px;
+                    color: #e8e6e3; font-size: 14px; }
+  .auth-row input:focus { outline: none; border-color: #d8a24a; }
+  .auth-btns { display: flex; gap: 10px; margin-top: 18px; }
+  .btn { padding: 10px 18px; background: #d8a24a; color: #0d0f13; border: none; border-radius: 999px; font-size: 14px;
+         font-weight: 600; cursor: pointer; }
+  .btn:hover { background: #e9b15b; }
+  .btn.secondary { background: #23262e; color: #c9ccd4; }
+  .btn.secondary:hover { background: #2d3139; }
+  .error { color: #e76f51; font-size: 13px; margin-top: 8px; min-height: 20px; }
+  .user-info { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 16px; background: #0d0f13;
+               border: 1px solid #23262e; border-radius: 10px; }
+  .user-info strong { color: #d8a24a; }
+  .link-btn { background: none; border: none; color: #8b8f9a; text-decoration: underline; cursor: pointer; padding: 0; font-size: 13px; }
   .cards { display: flex; flex-wrap: wrap; gap: 18px; }
   .card { width: 260px; padding: 22px; background: #191c23; border: 1px solid #23262e; border-radius: 10px;
-          text-decoration: none; color: inherit; }
+          cursor: pointer; color: inherit; }
   .card:hover { border-color: #d8a24a; background: #1d212a; }
   .card h2 { margin: 0 0 8px; font-size: 19px; }
   .card p { margin: 0 0 16px; color: #8b8f9a; font-size: 13px; line-height: 1.6; }
   .go { color: #d8a24a; font-size: 13px; }
+  .hidden { display: none; }
   @media (max-width: 640px) {
     body { flex-direction: column; }
     nav { width: auto; border-right: none; border-bottom: 1px solid #23262e; padding: 18px 0; }
@@ -126,25 +168,218 @@ ${sites.map(s => `  <a href="/${escapeHtml(s.prefix)}/">${escapeHtml(s.name)}</a
 </nav>
 <main>
   <h2>选择一个世界</h2>
-  <p>两个游戏账号与存档相互独立。</p>
-  <div class="cards">${cards}
+  <p>统一账号，登录一次即可进入所有游戏。</p>
+
+  <!-- 登录状态 -->
+  <div id="user-section" class="hidden">
+    <div class="user-info">
+      <span>👤 <strong id="username-display"></strong></span>
+      <button class="link-btn" onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <!-- 登录/注册表单 -->
+  <div id="auth-section" class="auth-box">
+    <h3 id="auth-title">登录</h3>
+    <div class="auth-row">
+      <label>用户名</label>
+      <input id="username" type="text" placeholder="3~32 字符（字母/数字/下划线）" maxlength="32">
+    </div>
+    <div class="auth-row">
+      <label>密码</label>
+      <input id="password" type="password" placeholder="至少 6 位" maxlength="64">
+    </div>
+    <div class="error" id="auth-error"></div>
+    <div class="auth-btns">
+      <button class="btn" id="auth-btn" onclick="doAuth()">登录</button>
+      <button class="btn secondary" onclick="toggleMode()">注册新账号</button>
+    </div>
+  </div>
+
+  <div class="cards" id="game-cards">${cards}
   </div>
 </main>
+
+<script>
+const API = { token: null, user: null, mode: 'login' };
+
+function showError(msg) {
+  document.getElementById('auth-error').textContent = msg;
+}
+
+function toggleMode() {
+  API.mode = API.mode === 'login' ? 'register' : 'login';
+  document.getElementById('auth-title').textContent = API.mode === 'login' ? '登录' : '注册新账号';
+  document.getElementById('auth-btn').textContent = API.mode === 'login' ? '登录' : '注册';
+  showError('');
+}
+
+async function doAuth() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) {
+    showError('请输入用户名和密码');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/gateway/auth/' + API.mode, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showError(data.error || '操作失败');
+      return;
+    }
+
+    API.token = data.token;
+    API.user = data.user;
+    sessionStorage.setItem('gateway_token', data.token);
+    sessionStorage.setItem('gateway_user', JSON.stringify(data.user));
+
+    showLoggedIn();
+  } catch (err) {
+    showError('网络错误，请重试');
+  }
+}
+
+function showLoggedIn() {
+  document.getElementById('auth-section').classList.add('hidden');
+  document.getElementById('user-section').classList.remove('hidden');
+  document.getElementById('username-display').textContent = API.user.username;
+}
+
+function logout() {
+  API.token = null;
+  API.user = null;
+  sessionStorage.removeItem('gateway_token');
+  sessionStorage.removeItem('gateway_user');
+
+  document.getElementById('auth-section').classList.remove('hidden');
+  document.getElementById('user-section').classList.add('hidden');
+  document.getElementById('username').value = '';
+  document.getElementById('password').value = '';
+  showError('');
+}
+
+function enterGame(prefix) {
+  if (!API.token) {
+    showError('请先登录');
+    return;
+  }
+
+  // 带上一次性 token 进入游戏
+  window.location.href = '/' + prefix + '/?auth_token=' + encodeURIComponent(API.token);
+}
+
+// 绑定游戏卡片点击事件
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('click', () => {
+    const prefix = card.dataset.game;
+    enterGame(prefix);
+  });
+});
+
+// 初始化：检查是否已登录
+(function init() {
+  const token = sessionStorage.getItem('gateway_token');
+  const user = sessionStorage.getItem('gateway_user');
+
+  if (token && user) {
+    try {
+      API.token = token;
+      API.user = JSON.parse(user);
+      showLoggedIn();
+    } catch {
+      // 数据损坏，清除
+      sessionStorage.removeItem('gateway_token');
+      sessionStorage.removeItem('gateway_user');
+    }
+  }
+})();
+</script>
 </body>
 </html>`;
+}
+
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', () => resolve(body));
+    req.on('error', reject);
+  });
+}
+
+function sendJSON(res, status, data) {
+  res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
+  res.end(JSON.stringify(data));
 }
 
 function createGateway(options = {}, env = process.env) {
   const sites = options.sites ? parseSites({ GATEWAY_SITES: JSON.stringify(options.sites) }) : parseSites(env);
   const home = renderHome(sites);
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     let pathname;
     try {
       pathname = new URL(req.url, 'http://localhost').pathname;
     } catch {
       res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' });
       res.end('bad request');
+      return;
+    }
+
+    // 网关认证 API
+    if (pathname.startsWith('/api/gateway/auth/')) {
+      if (pathname === '/api/gateway/auth/login' && req.method === 'POST') {
+        try {
+          const body = JSON.parse(await readBody(req));
+          const result = gatewayAuth.login(body.username || '', body.password || '');
+          sendJSON(res, 200, result);
+        } catch (error) {
+          sendJSON(res, 401, { error: error.message || '登录失败' });
+        }
+        return;
+      }
+
+      if (pathname === '/api/gateway/auth/register' && req.method === 'POST') {
+        try {
+          const body = JSON.parse(await readBody(req));
+          const result = gatewayAuth.register(body.username || '', body.password || '', body.nickname || '');
+          sendJSON(res, 200, result);
+        } catch (error) {
+          sendJSON(res, 400, { error: error.message || '注册失败' });
+        }
+        return;
+      }
+
+      if (pathname === '/api/gateway/auth/me' && req.method === 'GET') {
+        try {
+          const authHeader = req.headers['authorization'] || '';
+          const match = authHeader.match(/^Bearer\s+(.+)$/i);
+          const token = match ? match[1].trim() : '';
+          const user = gatewayAuth.me(token);
+          sendJSON(res, 200, { user });
+        } catch (error) {
+          sendJSON(res, 401, { error: error.message || '未登录' });
+        }
+        return;
+      }
+
+      if (pathname === '/api/gateway/auth/logout' && req.method === 'POST') {
+        // 登出只需客户端清除 token，服务端无需处理
+        sendJSON(res, 200, { ok: true });
+        return;
+      }
+
+      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('not found');
       return;
     }
 

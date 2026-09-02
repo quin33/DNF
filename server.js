@@ -1226,6 +1226,101 @@ async function handleAuthAPI(req, res, urlPath) {
     sendJSON(res, 200, { ok: true });
     return true;
   }
+  // ---------- 验证网关 token ----------
+  if (req.method === 'POST' && urlPath === '/api/auth/verify-gateway-token') {
+    try {
+      const body = JSON.parse(await readBody(req));
+      const gatewayToken = String(body.token || '').trim();
+
+      if (!gatewayToken) {
+        sendJSON(res, 400, { error: '缺少 token' });
+        return true;
+      }
+
+      // 验证网关签发的 JWT token
+      const secret = process.env.GATEWAY_AUTH_SECRET || '';
+      if (!secret || secret.length < 32) {
+        console.error('[auth] GATEWAY_AUTH_SECRET 未配置或长度不足');
+        sendJSON(res, 500, { error: '服务器配置错误' });
+        return true;
+      }
+
+      // 简易 JWT 验证
+      const parts = gatewayToken.split('.');
+      if (parts.length !== 3) {
+        sendJSON(res, 401, { error: 'token 格式错误' });
+        return true;
+      }
+
+      const [header, body64, signature] = parts;
+      const expectedSig = crypto.createHmac('sha256', secret)
+        .update(`${header}.${body64}`)
+        .digest('base64url');
+
+      // 常量时间比较签名
+      const sigBufA = Buffer.from(signature, 'utf8');
+      const sigBufB = Buffer.from(expectedSig, 'utf8');
+      if (sigBufA.length !== sigBufB.length || !crypto.timingSafeEqual(sigBufA, sigBufB)) {
+        sendJSON(res, 401, { error: 'token 签名无效' });
+        return true;
+      }
+
+      const payload = JSON.parse(Buffer.from(body64, 'base64url').toString('utf8'));
+
+      // 检查过期时间
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        sendJSON(res, 401, { error: 'token 已过期' });
+        return true;
+      }
+
+      // 检查类型
+      if (payload.type !== 'gateway_auth') {
+        sendJSON(res, 401, { error: 'token 类型错误' });
+        return true;
+      }
+
+      const username = String(payload.username || '').trim();
+      if (!username) {
+        sendJSON(res, 401, { error: 'token 数据无效' });
+        return true;
+      }
+
+      // 查找或创建本地账号
+      let u = DB.findUserByUsername(username);
+
+      if (!u) {
+        // 检查镜像库
+        const mirror = DB.mirrorFindUser(username);
+        if (mirror) {
+          // 从镜像库同步账号
+          const uid = DB.createUser(username, mirror.pass_hash, mirror.salt, String(mirror.nickname || '').slice(0, 10));
+          u = DB.findUserById(uid);
+        }
+      }
+
+      if (!u) {
+        sendJSON(res, 404, { error: '账号不存在' });
+        return true;
+      }
+
+      // 签发游戏专属 session token
+      const sessionToken = DB.createSession(u.id, newToken());
+
+      sendJSON(res, 200, {
+        token: sessionToken,
+        user: {
+          id: u.id,
+          username: u.username,
+          nickname: u.nickname || ''
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('[auth] 验证网关 token 失败:', error);
+      sendJSON(res, 500, { error: '服务器错误' });
+      return true;
+    }
+  }
   // ---------- 当前用户 ----------
   if (req.method === 'GET' && urlPath === '/api/me') {
     const u = authUser(req);

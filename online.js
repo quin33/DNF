@@ -104,6 +104,47 @@
   /* ============================================================
      登录 / 注册层
      ============================================================ */
+
+  // 检测并处理网关传来的 auth_token
+  async function handleGatewayToken() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authToken = urlParams.get('auth_token');
+
+      if (!authToken) return false;
+
+      // 验证并换取游戏 token
+      const result = await fetch('/api/auth/verify-gateway-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: authToken })
+      });
+
+      const data = await result.json();
+
+      if (result.ok && data.token) {
+        // 保存游戏 token
+        API.token = data.token;
+        localStorage.setItem(TOKEN_KEY, data.token);
+        API.user = data.user;
+
+        // 清除 URL 参数
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+
+        // 加载角色数据
+        await refreshOnlineRoles();
+        hideAuthLayer();
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('[gateway-auth] 验证网关 token 失败:', error);
+      return false;
+    }
+  }
+
   function showAuthLayer() {
     let overlay = $('#auth-overlay');
     if (!overlay) {
@@ -1359,6 +1400,21 @@
   (async function init() {
     const D = window.D;
     const TA = window.TAVERN_DATA;
+
+    // 先尝试处理网关传来的 auth_token
+    const gatewaySuccess = await handleGatewayToken();
+
+    if (gatewaySuccess) {
+      // 网关登录成功，直接进入游戏
+      try {
+        addNavActions();
+        connectWs();
+        return;
+      } catch (e) {
+        console.error('[init] 加载失败:', e);
+      }
+    }
+
     // 顶栏用户名
     // 无 token 或 token 失效 → 弹登录
     if (!API.token) { showAuthLayer(); return; }
