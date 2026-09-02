@@ -197,6 +197,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.svg': 'image/svg+xml',
+  '.avif': 'image/avif',
   '.md': 'text/plain; charset=utf-8',
   '.ico': 'image/x-icon',
 };
@@ -1148,7 +1149,8 @@ function serveStatic(res, urlPath) {
   }
   if (p === '/admin') p = '/admin.html';
   const publicAssets = new Set(['/index.html', '/style.css', '/data.js', '/online.js', '/game-engine.js', '/game-create.js', '/taixu-insight.js', '/ai-companions.js', '/loot-settlement.js', '/site-nav.js']);
-  if (!publicAssets.has(p) && !adminPaths.has(p)) {
+  const picAsset = p.startsWith('/pic/');
+  if (!publicAssets.has(p) && !adminPaths.has(p) && !picAsset) {
     res.writeHead(404);
     res.end('Not Found');
     return;
