@@ -18,14 +18,78 @@ test('global text uses a slight positive letter spacing', () => {
   assert.match(body, /letter-spacing:\s*var\(--tracking\)/);
 });
 
-test('game content is a centered white canvas with the page image visible on desktop sides', () => {
+test('game content is a centered parchment canvas with the page image visible on desktop sides', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
 
   assert.match(appContent, /width:\s*min\(100%,\s*1200px\)/);
   assert.match(appContent, /margin:\s*0\s+auto/);
-  assert.match(appContent, /background:\s*#fff/);
+  assert.match(appContent, /background:\s*var\(--paper-bg\)/);
   assert.match(appContent, /box-shadow:/);
+});
+
+test('moonlit parchment theme exposes shared paper, ink, moon, copper, and wood tokens', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const rootTheme = styles.slice(styles.indexOf(':root {'), styles.indexOf('/* ============ 白色仙侠风主题'));
+  assert.match(rootTheme, /--paper-bg:\s*#f7f1e5/);
+  assert.match(rootTheme, /--paper-raised:\s*#fffaf0/);
+  assert.match(rootTheme, /--ink:\s*#2c3440/);
+  assert.match(rootTheme, /--moon-blue:\s*#6f879c/);
+  assert.match(rootTheme, /--copper:\s*#b98545/);
+  assert.match(rootTheme, /--wood:\s*#805a3b/);
+});
+
+test('game canvas uses the parchment surface while body keeps the sky background', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const body = styles.slice(styles.indexOf('body {'), styles.indexOf('::-webkit-scrollbar'));
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+  assert.match(body, /url\("pic\/天空之城\.jpg"\)/);
+  assert.match(appContent, /background:\s*var\(--paper-bg\)/);
+  assert.match(appContent, /margin:\s*0\s+auto/);
+});
+
+test('primary navigation exposes moonlit icon hooks without emoji-only labels', () => {
+  const html = readAsset('index.html');
+  assert.match(html, /class="[^"]*moonlit-sigil[^"]*"/);
+  assert.match(html, /class="moonlit-icon"/);
+  assert.match(html, /data-tab="tavern"[\s\S]*class="moonlit-icon"/);
+  assert.match(html, /data-tab="logs"[\s\S]*class="moonlit-icon"/);
+  assert.doesNotMatch(html, /<button class="tab-btn active"[^>]*>🍺/);
+});
+
+test('moonlit header and tabs use paper, copper, and wood visual hooks', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.advs1-header[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.tabs[\s\S]*var\(--paper-muted\)/);
+  assert.match(styles, /\.tab-btn\.active[\s\S]*var\(--copper\)/);
+  assert.match(styles, /\.moonlit-icon/);
+});
+
+test('tavern hall exposes paper desk and guestbook visual surfaces', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.tavern-layout/);
+  assert.match(styles, /\.hall-tables/);
+  assert.match(styles, /\.chat-col/);
+  assert.match(styles, /\.chat-col[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.seat-vacant[\s\S]*dashed/);
+  assert.match(styles, /\.table-seats[\s\S]*var\(--wood\)/);
+});
+
+test('secondary pages reuse the moonlit parchment panel language', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.event-header[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.build-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.adv-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.log-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.btn-primary[\s\S]*var\(--moon-blue-dark\)/);
+});
+
+test('moonlit UI defines reduced-motion and mobile stacking rules', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+  assert.match(styles, /@media\s*\(max-width:\s*860px\)[\s\S]*\.tavern-layout/);
+  assert.match(styles, /@media\s*\(max-width:\s*700px\)[\s\S]*\.tabs/);
+  assert.match(styles, /@media\s*\(max-width:\s*520px\)[\s\S]*\.advs1/);
 });
 
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
