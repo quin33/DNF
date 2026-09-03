@@ -75,8 +75,8 @@ const fmtTimeFull = iso => {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'修炼中', breaking_through:'突破中', insighting:'领悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
-const RARITY_CONFIG = (window.LootSettlement && window.LootSettlement.RARITY_CONFIG) || {};
-const rarityColor = r => (RARITY_CONFIG[r] && RARITY_CONFIG[r].color) || '#f4f4f4';
+const RARITY_DEFS = (window.LootSettlement && window.LootSettlement.RARITY_CONFIG) || {};
+const rarityColor = r => (RARITY_DEFS[r] && RARITY_DEFS[r].color) || '#f4f4f4';
 function toastMsg(text) {
   const t = document.createElement('div');
   t.className = 'toast-ok';
@@ -1971,8 +1971,8 @@ let logViewId = null;
 let logFont = 16;
 let logNameHl = true;  // 名称高亮默认开启
 const MEMBER_COLORS = ['#f0c25c', '#58a6ff', '#3fb950', '#f0883e', '#a371f7', '#56d4dd'];
-const RARITY_NAME = Object.fromEntries(Object.entries(RARITY_CONFIG).map(([key, value]) => [key, value.name]));
-const RARITY_COLOR = Object.fromEntries(Object.entries(RARITY_CONFIG).map(([key, value]) => [key, value.color]));
+const RARITY_NAME = Object.fromEntries(Object.entries(RARITY_DEFS).map(([key, value]) => [key, value.name]));
+const RARITY_COLOR = Object.fromEntries(Object.entries(RARITY_DEFS).map(([key, value]) => [key, value.color]));
 /* 物品名称按稀有度着色：旧存档物品无 rarity 时按普通（灰）处理 */
 const itemColor = it => RARITY_COLOR[(it && it.rarity) || 'common'] || RARITY_COLOR.common;
 const itemCardHTML = (it, actionHTML = '') => `
