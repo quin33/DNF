@@ -29,6 +29,11 @@ function canBreakthrough(role) {
 const DUNGEON_POOL = [
   { name: '枯骨林', hiddenName: '白骨深渊·万骨冢', icon: '🦴', desc: '枯骨遍地、阴风阵阵的乱葬林，亡魂在碑影间低语。', hiddenDesc: '林间怨气远超寻常——那万人坑的深处，有什么东西在呼唤。',
     lore: '相传此地原是上古战场的一处万人坑，战死的士卒怨气不散，化作白骨与亡魂在林中徘徊。',
+    specialEvents: [
+      { name: '阴兵借道', desc: '林间忽然响起整齐脚步声，成列阴兵抬着残旗穿林而过，活人若被冲散便会卷入怨气洪流。' },
+      { name: '万骨夜哭', desc: '断碑残棺同时震颤，无数白骨从土中爬出，磷火照亮整片骨林，亡魂开始反向追杀生人。' },
+      { name: '尸潮封林', desc: '地下万人坑裂开一道地缝，腐尸与枯骨源源涌出，将林间所有退路层层围死。' },
+    ],
     explore: ['瘴气弥漫的枯骨坡地', '横七竖八的断碑残棺', '亡魂游荡的骨林深处'],
     enemies: [
       { name: '腐骨妖狼', desc: '由散落骨骸拼凑而成的妖狼，骨缝间渗出磷火，极擅伏击。' }, { name: '拾骨亡魂', desc: '披着残破战甲的亡魂，仍执着地搜刮生者的血肉。' }, { name: '骨甲骷髅兵', desc: '生前是悍卒，死后仍保持着军阵的杀意。' }, { name: '白骨秃鹫', desc: '盘旋于骨林上空的巨鹫，羽翼由骨片拼成。' }, { name: '噬骨蛆潮', desc: '骨缝间涌出的蛆群，所过之处连骨髓都被啃食殆尽。' }, { name: '执戈老兵魂', desc: '生前是执戈冲锋的悍卒，死后仍不肯放下长戈。' },
@@ -39,6 +44,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '兽皮', desc: '妖兽皮缝制的粗料，能卖些灵石。' }, { name: '骨笛', desc: '以灵骨磨制的短笛，呜呜作响。' }, { name: '灵骨碎片', desc: '一块莹白的骨片，蕴含残存灵气。' }] },
   { name: '迷雾泽', hiddenName: '迷雾泽·沉镇幽影', icon: '🌫️', desc: '终年不散的毒雾笼罩泽地，水下潜伏着不知名的猎手。', hiddenDesc: '毒雾浓得化不开，水下的药镇废墟在雾气中若隐若现。',
     lore: '旧时这里是一座药镇，一场瘟疫让全镇覆灭，残存的怨念与毒雾纠缠成这片沼泽。',
+    specialEvents: [
+      { name: '雾潮倒灌', desc: '毒雾忽从水面倒卷成墙，压向行人，水下开始浮出大团莹白气泡，泽底暗流尽数改道。' },
+      { name: '沉镇门开', desc: '雾中露出药镇残街，紧闭的门户一扇扇自行打开，仿佛全镇怨魂都在邀人入内。' },
+      { name: '瘟疫回潮', desc: '药镇废墟底下的毒泉重新涌出，毒雾夹着腐叶向四周蔓延，水中妖兽纷纷躁动。' },
+    ],
     explore: ['雾锁断桥的深泽', '浮萍下的暗流通道', '废弃的采药人茅屋'],
     enemies: [
       { name: '毒瘴水蟒', desc: '盘踞深泽的巨蟒，毒腺喷出的瘴气能腐蚀护体灵光。' }, { name: '迷雾蛙群', desc: '成群结队的毒蛙，皮肤分泌的黏液是毒雾的源头之一。' }, { name: '泽地巨蚊', desc: '吸血巨蚊，口器如针，叮咬处红肿溃烂。' }, { name: '溺影水鬼', desc: '溺亡采药人的怨魂，湿发如蛇，专拖活人入水。' }, { name: '雾隐毒蛛', desc: '藏身水草间的巨蛛，通体灰白，毒液能蚀穿护体罡气。' }, { name: '腐沼鳄鲵', desc: '潜伏泥沼的巨鲵，体表覆满腐苔，张口便是一股腥臭毒气。' },
@@ -49,6 +59,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '龙涎草', desc: '生于深泽的灵草，气味清冽，可入丹。' }, { name: '避瘴珠', desc: '千年灵木结成的珠子，可避瘴气毒雾。' }, { name: '雾隐石', desc: '灰蒙蒙的石子，握在掌心时周围雾气会微微散开。' }] },
   { name: '赤炎谷', hiddenName: '赤炎谷·地火核心', icon: '🔥', desc: '地火翻涌的灼热山谷，火灵草木丛中栖息着炽焰妖兽。', hiddenDesc: '山谷深处的熔岩湖彻底沸腾——传说中沉于湖底的上古火系至宝似乎正在苏醒。',
     lore: '千年前天火坠落于此，地火至今未熄。火属性修士视此为圣地。',
+    specialEvents: [
+      { name: '地火翻涌', desc: '熔岩湖骤然沸腾，赤红岩浆沿旧河道上涌，逼着队伍只能从火灵草热泉间穿行。' },
+      { name: '火灵暴动', desc: '沉睡的火灵精成群醒来，本能地朝地火核心汇聚，所过之处引燃栈道与洞窟。' },
+      { name: '岩浆断路', desc: '谷口熔岩崩落封死退路，灼热气流从岩缝喷出，逼着修士只能闯向地火更深处。' },
+    ],
     explore: ['熔岩裂谷的栈道', '火灵草丛生的热泉', '被岩浆封死的洞窟'],
     enemies: [
       { name: '赤炎蜥蜴', desc: '火灵草养大的蜥蜴，鳞甲能短暂喷出烈焰。' }, { name: '熔岩傀儡', desc: '地火凝聚的傀儡，拳脚带着滚烫的岩浆。' }, { name: '火鸦群', desc: '成群的火鸦，翅羽燃着赤焰，俯冲如流星坠地。' }, { name: '地火甲虫', desc: '背甲灼红如炭的甲虫，受惊时喷出灼热气浪。' }, { name: '火灵精', desc: '火灵草间游荡的赤色灵体，触之灼伤。' }, { name: '岩浆鳄', desc: '半身浸在熔岩中的巨鳄，皮甲上岩浆流淌。' },
@@ -59,6 +74,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '火灵草', desc: '赤炎谷特有的灵草，叶脉赤红如血。' }, { name: '火晶石', desc: '熔岩中凝结的晶石，握在手里微微发烫。' }, { name: '灰烬木', desc: '被地火淬炼过的焦木，质地坚硬。' }] },
   { name: '万剑冢', hiddenName: '万剑冢·剑冢之心', icon: '🗡️', desc: '上古剑修陨落之地，万千残剑倒插于山丘，剑意彻骨。', hiddenDesc: '万千残剑同时震颤低鸣——封存千年的剑意正在核心处苏醒。',
     lore: '上古剑宗覆灭之夜，十万弟子以身为祭，将宗门万剑埋入山丘，剑意封存千年。',
+    specialEvents: [
+      { name: '万剑齐鸣', desc: '剑丘上无数残剑同时震颤长鸣，剑意风暴自冢心扩散，将剑林入口层层封锁。' },
+      { name: '剑冢开府', desc: '封存千年的剑修遗府禁制松动，府门半开，里面传出古剑自行破鞘的低吟。' },
+      { name: '残剑认主潮', desc: '上千柄残剑脱离丘坡，围成一圈低鸣旋转，仿佛在挑选值得继承剑意之人。' },
+    ],
     explore: ['剑丘之巅的试炼台', '锈剑密布的剑林', '剑修遗府的石阶'],
     enemies: [
       { name: '剑灵残影', desc: '陨落剑修的残魂，执念于剑，出手便是凌厉剑意。' }, { name: '锈剑傀儡', desc: '残剑拼成的傀儡，浑身锈迹却快如闪电。' }, { name: '剑意风暴', desc: '封存的剑意失控化作风暴，卷入者如遭千剑穿身。' }, { name: '断剑亡魂', desc: '以身殉剑的剑修残念，双臂化为残剑。' }, { name: '剑匣机关兽', desc: '半毁的剑匣化形而成，开匣一瞬万剑齐发。' }, { name: '噬剑铁蠹', desc: '啃食残剑为生的铁蠹，甲壳坚逾精钢，口器能咬断剑刃。' },
@@ -69,6 +89,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '剑灵碎片', desc: '古剑残魂凝成的碎片，隐隐震颤。' }, { name: '残剑刃', desc: '断剑残刃，仍有余锋。' }, { name: '剑修遗简', desc: '残破玉简，隐约刻着半篇剑诀。' }] },
   { name: '幽冥渊', hiddenName: '幽冥渊·渊底裂隙', icon: '🌑', desc: '阴煞之气凝成黑雾的深渊，鬼修巢穴，越深越冷。', hiddenDesc: '今晚正是月圆——渊底传来低沉的呼吸声，阴阳两界的裂隙正在缓缓张开。',
     lore: '幽冥渊是阴阳两界的裂隙，阴煞之气常年倒灌。曾有鬼修在此开宗立派，后被正道联军剿灭。',
+    specialEvents: [
+      { name: '阴阳裂隙', desc: '渊底裂隙骤然扩大，阴煞倒灌，鬼潮从深处翻涌上来，崖壁栈道寸寸结霜。' },
+      { name: '百鬼夜行', desc: '月圆之下幽冥洞府门户自开，成百孤魂列队游出，将渊中生灵尽数逼入死地。' },
+      { name: '缚魂锁狱', desc: '鬼修留下的缚魂锁具无风自鸣，从各处聚拢而来，开始围猎一切闯入者。' },
+    ],
     explore: ['鬼火摇曳的崖壁栈道', '白骨铺就的渊底甬道', '被封印的鬼修洞府'],
     enemies: [
       { name: '幽冥鬼爪', desc: '从阴影中探出的鬼爪，五根枯骨般的指节力可碎铁。' }, { name: '鬼潮', desc: '成百上千的低阶亡魂汇成的潮水，所过之处生机尽灭。' }, { name: '缚魂阴煞', desc: '以魂锁缚人的阴煞，被缠上者神识如坠冰窟。' }, { name: '吊颈孤魂', desc: '悬在崖壁半空的孤魂，目光空洞，靠近者喉间发紧。' }, { name: '阴火狐', desc: '口吐幽蓝鬼火的狐妖，狡诈善惑，专诱活人误入绝路。' }, { name: '白骨夜叉', desc: '手持骨叉的夜叉，赤目獠牙，力可开碑裂石。' },
@@ -79,6 +104,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '幽冥寒铁', desc: '渊底寒铁，入手冰冷彻骨。' }, { name: '阴煞珠', desc: '凝聚阴煞之气的珠子，魔修趋之若鹜。' }, { name: '魂灯残油', desc: '半盏魂灯残油，可照见幽冥之物。' }] },
   { name: '雷音山', hiddenName: '雷音山·雷池尽头', icon: '⚡', desc: '常年雷云密布的孤峰，天雷淬体，雷系灵物遍地。', hiddenDesc: '雷云低得压到了山巅，雷池中的雷灵砂剧烈沸腾——那名失败的上古雷修似乎要在今日再渡一次劫。',
     lore: '这座孤峰常年被雷云笼罩，据说是上古雷修渡劫失败之地，雷意千年不散。',
+    specialEvents: [
+      { name: '劫雷再临', desc: '山巅雷云低垂，一道接一道劫雷劈下，整座山都在为那场未竟天劫重新排演。' },
+      { name: '雷池沸腾', desc: '雷池中央骤然涌起雷柱，雷灵砂沿山体铺开，紫电蛇与雷兽群被惊得四散奔逃。' },
+      { name: '万雷封山', desc: '雷暴锁住整座山峰，通天石阶被劈成数截，队伍只能从雷池乱石滩绕行。' },
+    ],
     explore: ['雷云下的通天石阶', '被雷劈开的古树洞', '雷池边缘的乱石滩'],
     enemies: [
       { name: '雷兽', desc: '沐浴天雷而生的异兽，皮毛间电弧流窜。' }, { name: '雷暴傀儡', desc: '雷池畔的傀儡，受雷意驱动，出手便引动雷霆。' }, { name: '天雷余威', desc: '残留的雷意凝成人形，触之如遭雷击。' }, { name: '雷音蝠群', desc: '雷电环绕的蝙蝠群，尖啸声与雷鸣共振。' }, { name: '紫电蛇', desc: '通体缠绕紫色电弧的雷蛇，速度极快。' }, { name: '雷纹石人', desc: '雷纹密布的山石化形，一拳砸下带闷雷之声。' },
@@ -89,6 +119,11 @@ const DUNGEON_POOL = [
     loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '雷灵砂', desc: '雷池畔的砂砾，触碰时指尖微微发麻。' }, { name: '引雷针', desc: '一指长的银针，雨夜时会自己指向天空。' }] },
   { name: '落仙台', hiddenName: '落仙台·仙宫秘境', icon: '🏯', desc: '仙人陨落之地，残破仙宫悬浮于云海之上，逆天机缘与绝命凶险并存。', hiddenDesc: '云海翻涌，仙宫深处的道则碎片亮起——那位仙人陨落时的执念，正在等待一个"有缘人"。',
     lore: '上古仙人于此地飞升失败，肉身崩解，仙宫残骸悬浮于云海之上。仙人的道则碎片散落各处。',
+    specialEvents: [
+      { name: '道音惊仙', desc: '仙宫残钟无风自鸣，钟声直震神魂，悬空浮桥与残殿同时泛起古老符光。' },
+      { name: '仙宫问心', desc: '仙人道则碎片齐齐亮起，整座仙宫化为心魔幻境，试图以每个修士的执念拦路。' },
+      { name: '云海断桥', desc: '仙宫外围的云海浮桥寸寸崩断，残骸向天外飘散，只留下一条通往仙宫深处的险路。' },
+    ],
     explore: ['云海浮桥', '仙宫残殿', '仙人悟道石'],
     enemies: [
       { name: '仙宫守卫傀儡', desc: '仙宫残留的守卫傀儡，符文明灭，依旧尽职地驱逐入侵者。' }, { name: '心魔幻象', desc: '仙人道则滋生的幻象，映照出每个修士心底最深的执念。' }, { name: '上古残阵', desc: '残缺的仙家阵法，无人主持却仍在缓缓运转。' }, { name: '云海螭龙', desc: '云海灵气凝成的螭龙残影，翻腾之间掀起风雷。' }, { name: '道音钟灵', desc: '仙宫残钟化出的灵体，每一声钟鸣都直震神魂。' }, { name: '玉简书灵', desc: '仙家玉简化形，以道文为刃，字字皆是杀机。' },
@@ -102,6 +137,14 @@ const DUNGEON_POOL = [
 const rollD20 = () => 1 + Math.floor(Math.random() * 20);
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const skillTier = s => (s && s.tier && SKILL_TIERS.includes(s.tier)) ? s.tier : '黄阶';
+
+function pickSpecialEvent(dungeon, preferred) {
+  const preferredList = Array.isArray(preferred) ? preferred : [];
+  const pool = (preferredList.length ? preferredList : (Array.isArray(dungeon && dungeon.specialEvents) ? dungeon.specialEvents : []))
+    .filter(entry => entry && String(entry.name || '').trim() && String(entry.desc || '').trim());
+  if (!pool.length) return { name: '异象骤生', desc: '秘境深处忽然天象异动，凶机与机缘同时攀升，局面不再按常理推进。' };
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
 /* 境界值换算（练气一层=1…筑基初期=11…） */
 function enemyRealmVal(realm) {
@@ -613,12 +656,14 @@ function applyDungeonSetup(base, setup) {
     if (!src) return null;
     return { ...src, realm: String(entry && entry.realm || '').trim() || '练气一层' };
   }).filter(Boolean).slice(0, specialEvent ? 4 : 3);
+  if (!chosen.length && specialEvent) chosen.push(...rollEnemies(base, true).slice(0, 4));
   const bosses = (base && Array.isArray(base.bosses) ? base.bosses : []).map((b, i) => ({ ...b, realm: i === 1 ? '筑基中期' : '筑基初期' }));
   return {
     ...base,
     name: isHidden && base ? (base.hiddenName || base.name) : (base && base.name) || '',
     desc: isHidden && base ? (base.hiddenDesc || base.desc) : (base && base.desc) || '',
     isHidden, baseName: base && base.name, enemies: chosen, bosses, specialEvent, breakthrough,
+    activeSpecialEvent: specialEvent ? pickSpecialEvent(base, s.specialEvents) : null,
   };
 }
 
@@ -881,7 +926,12 @@ function createDg(hostChar, opts = {}) {
     const breakthrough = canBreakthrough(hostChar) && Math.random() < 0.1;
     const enemies = rollEnemies(base, specialEvent);
     const bosses = (base.bosses || []).map((b, i) => ({ ...b, realm: i === 1 ? '筑基中期' : '筑基初期' }));
-    return { ...base, name: isHidden ? (base.hiddenName || base.name) : base.name, desc: isHidden ? (base.hiddenDesc || base.desc) : base.desc, isHidden, baseName: base.name, enemies, bosses, specialEvent, breakthrough };
+    return {
+      ...base, name: isHidden ? (base.hiddenName || base.name) : base.name,
+      desc: isHidden ? (base.hiddenDesc || base.desc) : base.desc, isHidden, baseName: base.name,
+      enemies, bosses, specialEvent, breakthrough,
+      activeSpecialEvent: specialEvent ? pickSpecialEvent(base) : null,
+    };
   })();
   const objective = String(dungeon.lore || '').trim() || `探索${dungeon.name}`;
   return {
@@ -906,6 +956,7 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
   return {
     dungeon: dg.dungeon.name, baseDungeon: dg.dungeon.baseName || dg.dungeon.name, isHidden: !!dg.dungeon.isHidden,
     specialEvent: !!dg.dungeon.specialEvent, breakthrough: !!dg.dungeon.breakthrough,
+    activeSpecialEvent: dg.dungeon.activeSpecialEvent || null,
     lore: dg.dungeon.lore || '', enemies: dg.dungeon.enemies || [], bosses: dg.dungeon.bosses || [],
     flowMode: dg.flowMode || 'legacy', phase: dg.phase || stageKey,
     quest: dg.quest || { status: 'active', objective: '' },
@@ -936,7 +987,7 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
 
 module.exports = {
   DUNGEON_POOL, STAGE_ATTR, ATTR_NAME, QI_LAYER, SKILL_TIERS, MAX_SKILLS, NPC_NAME_POOL, BREAKTHROUGH_EXP, STEP_OUTCOMES,
-  rollD20, pick, skillTier, itemBonus, traitBonus, realmBonus, realmDiffMod, elemMatchMod,
+  rollD20, pick, pickSpecialEvent, skillTier, itemBonus, traitBonus, realmBonus, realmDiffMod, elemMatchMod,
   rollEnemies, pickDungeon, buildPlan, buildNarrativeFocusPlan, dynamicNarrativeFocus, appendDynamicNarrativeFocus, itemUseCheck, recordItemLoan, recordItemLoansFromText, collectItemLoansFromText, itemUseExplicitInText, consumeItemUse, settleItemLoans, availableItemsForActor, skillUseCheck, parseLootMarkers, extractGold,
   registerLootOwnership, validateStepItemUsage, itemGuardFeedback,
   applyStageEffects, genNpc, createDg, aiStoryPayload, addTrait, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,

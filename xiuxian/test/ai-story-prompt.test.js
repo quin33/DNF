@@ -28,7 +28,7 @@ test('AI story prompt treats engine stages as narrative guidance instead of fixe
 });
 
 test('prompt documentation describes the same flexible narrative flow', () => {
-  const docs = fs.readFileSync(path.join(ROOT, 'xiuxian', 'ai_log_prompt.md'), 'utf8');
+  const docs = fs.readFileSync(path.join(ROOT, 'ai_log_prompt.md'), 'utf8');
 
   assert.match(docs, /阶段是游戏机制提供的叙事倾向，而不是固定章节/);
   assert.match(docs, /开局任务与最终复命是仅有的固定结构锚点/);
@@ -37,7 +37,7 @@ test('prompt documentation describes the same flexible narrative flow', () => {
 
 test('AI story prompt preserves a focus window and requires consequential character highlights', () => {
   const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
-  const docs = fs.readFileSync(path.join(ROOT, 'xiuxian', 'ai_log_prompt.md'), 'utf8');
+  const docs = fs.readFileSync(path.join(ROOT, 'ai_log_prompt.md'), 'utf8');
 
   assert.match(server, /【本段叙事焦点】/);
   assert.match(server, /连续焦点第/);
@@ -50,7 +50,7 @@ test('AI story prompt preserves a focus window and requires consequential charac
 
 test('AI story prompt constrains each step to an explicit cast and bans decorative cameos', () => {
   const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
-  const docs = fs.readFileSync(path.join(ROOT, 'xiuxian', 'ai_log_prompt.md'), 'utf8');
+  const docs = fs.readFileSync(path.join(ROOT, 'ai_log_prompt.md'), 'utf8');
 
   assert.match(server, /【本步允许出场】/);
   assert.match(server, /【本步禁止主动出场】/);

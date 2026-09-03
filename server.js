@@ -567,7 +567,12 @@ function buildUserMessage(b) {
   const lines = [];
   const dynamic = b.flowMode === 'dynamic';
   lines.push(`【副本】${b.dungeon}${b.isHidden ? '（隐藏副本，原名 ' + b.baseDungeon + '）' : ''}`);
-  if (b.specialEvent) lines.push('【特殊事件】本局副本出现异变：整体难度上调（敌人等级更高、机关更险），掉落与报酬也更丰厚——剧情中应体现地图异动、领主戒备加重的氛围，战利品与金币可以给得更足。');
+  if (b.specialEvent) {
+    const se = b.activeSpecialEvent;
+    lines.push(se && se.name
+      ? `【特殊事件】本局触发“${se.name}”：${se.desc || ''}。整体难度上调（敌人等级更高、机关更险），掉落与报酬也更丰厚——剧情中应把这一异动贯穿始终，战利品与金币可以给得更足。`
+      : '【特殊事件】本局副本出现异变：整体难度上调（敌人等级更高、机关更险），掉落与报酬也更丰厚——剧情中应体现地图异动、领主戒备加重的氛围，战利品与金币可以给得更足。');
+  }
   if (b.lore) lines.push(`【背景】${b.lore}`);
   if (b.enemies && b.enemies.length) lines.push(`【此间生灵】${b.enemies.map(e => e.name + '（' + (e.level != null ? 'Lv.' + e.level : (e.realm || '等级不明')) + '）：' + e.desc).join('；')}`);
   if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.level != null ? 'Lv.' + x.level : (x.realm || '等级不明')) + '）：' + x.desc).join('；')}`);
@@ -1848,10 +1853,10 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 
 const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的战斗技能。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","desc":"技能描述"}]`;
 
-/* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级 */
+/* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级；隐藏与特殊事件各有概率兜底，且可同时触发 */
 const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色状态，决定本次探险的局势：
-1. hidden：是否触发隐藏地下城（首领盘踞、名称改变、凶险加倍）；normal：false。
-2. specialEvent：是否触发特殊异变（整体难度与奖励上调）；normal：false。
+1. hidden：约一成概率触发隐藏地下城（首领盘踞、名称改变、凶险加倍）；不要默认 false。
+2. specialEvent：约一成概率触发特殊异变（整体难度与奖励上调）；若氛围合适就触发，不必刻意回避；隐藏地下城同样可能出现特殊异变。
 3. breakthrough：仅当队伍中有 Lv.10 圆满的角色时可为 true，否则必须 false。
 4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定本副本【等级区间】内的等级（"Lv.N"），普通与特殊事件都不得低于下限或高于上限；特殊事件应尽量取区间偏高位。
 严格只输出一个 JSON 对象，不要任何解释或标记：
@@ -1867,6 +1872,8 @@ function parseSetupJson(raw) {
 }
 
 function normalizeAiSetup(parsed, payload = {}) {
+  const HIDDEN_CHANCE = 0.1;
+  const SPECIAL_EVENT_CHANCE = 0.1;
   const pool = Array.isArray(payload.enemies) ? payload.enemies : [];
   const levelMin = Number(payload.levelMin);
   const levelMax = Number(payload.levelMax);
@@ -1884,9 +1891,9 @@ function normalizeAiSetup(parsed, payload = {}) {
     seen.add(name);
     return { ...src, level };
   }).filter(Boolean);
-  const specialEvent = parsed.specialEvent === true;
+  const specialEvent = parsed.specialEvent === true || Math.random() < SPECIAL_EVENT_CHANCE;
   return {
-    isHidden: parsed.hidden === true,
+    isHidden: parsed.hidden === true || Math.random() < HIDDEN_CHANCE,
     specialEvent,
     breakthrough: parsed.breakthrough === true && payload.breakthroughEligible !== false,
     enemies: enemies.slice(0, specialEvent ? 4 : 3),
@@ -2732,7 +2739,8 @@ async function failRoomRun(room, error) {
         status: 'failed', result_summary: storyText, created_at: new Date().toISOString(),
         is_favorited: false, death: diedAny,
         summary_text: '', death_summary: diedAny ? deathFallback.overall : '', cancel_reason: message,
-        dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, steps: dg.steps, party: dg.party.map(x => ({ name: x.name, is_mine: !x.isNpc })) },
+        special_event_theme: dg.dungeon.specialEvent ? (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '特殊事件' : '',
+        dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, specialEventName: (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '', activeSpecialEvent: dg.dungeon.activeSpecialEvent || null, steps: dg.steps, party: dg.party.map(x => ({ name: x.name, is_mine: !x.isNpc })) },
         settlement: { exp: 0, items: [], damage: dg.damage || 0, levelUp: [], consumed: [], returned: [], members: (dg.party || []).map(m => ({ name: m.name, is_mine: !m.isNpc, fate: (Number(m.hp || 0) <= 0 || m.isDead) ? '阵亡' : '健康', death_reason: (Number(m.hp || 0) <= 0 || m.isDead) ? (deathFallback.roles.find(x => x.name === m.name) || {}).reason || '' : '', score: 0, gold: 0, damage: (dg.memberGains[m.uid || m.id] || {}).damage || 0, loot: [], newTraits: [], newSkills: [], praise: 0 })) },
       } : null,
     });
@@ -3240,8 +3248,8 @@ async function settleRoom(room) {
     status: anyDeath ? 'failed' : (ok ? 'completed' : 'failed'), result_summary: storyText, created_at: new Date().toISOString(),
     is_favorited: false, death: anyDeath,
     summary_text: summaryText || '', death_summary: anyDeath ? deathSummary.overall : '',
-    special_event_theme: dg.dungeon.specialEvent ? '特殊事件' : '',
-    dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, steps: dg.steps, party: dg.party.map(x => ({ name: x.name, is_mine: !x.isNpc })) },
+    special_event_theme: dg.dungeon.specialEvent ? (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '特殊事件' : '',
+    dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, specialEvent: !!dg.dungeon.specialEvent, specialEventName: (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '', activeSpecialEvent: dg.dungeon.activeSpecialEvent || null, steps: dg.steps, party: dg.party.map(x => ({ name: x.name, is_mine: !x.isNpc })) },
     settlement: {
       exp,
       totalSpiritStones,

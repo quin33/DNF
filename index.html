@@ -2063,6 +2063,7 @@ function logRowHTML(l) {
   const members = l.settlement && l.settlement.members ? l.settlement.members.length : ((snap.party || []).length || 0);
   const stName = { completed: '已完成', failed: '失败', in_progress: '进行中', generating: '生成中' }[l.status] || l.status || '';
   const isSE = !!(snap.specialEvent || l.special_event_theme);
+  const seLabel = l.special_event_theme || snap.specialEventName || (snap.specialEvent ? '特殊事件' : '');
   // 摘要区优先显示探险总结（AI 生成）；无总结时回退剧情文本截断
   const sm = (l.summary_text || '').trim();
   const rs = (l.result_summary || '').trim();
@@ -2079,7 +2080,7 @@ function logRowHTML(l) {
       </span>
       <span class="lr-badges">
         ${snap.isHidden ? '<span class="log-special-event gold">🌟 隐藏副本</span>' : ''}
-        ${isSE ? '<span class="log-special-event red">✨ 特殊事件</span>' : ''}
+        ${isSE ? `<span class="log-special-event red">✨ ${esc(seLabel)}</span>` : ''}
         ${l.death ? '<span class="log-special-event red">☠ 阵亡</span>' : ''}
       </span>
     </div>
@@ -2096,6 +2097,7 @@ function logRowHTML(l) {
 }
 function runningRowHTML(dg) {
   const seCls = dg.dungeon.specialEvent ? ' se-event' : '';
+  const seLabel = (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '特殊事件';
   return `
   <div class="log-row adv-log-row running-entry${seCls}" onclick="openLogModal('run${dg.id}')">
     <div class="lr-head">
@@ -2105,7 +2107,7 @@ function runningRowHTML(dg) {
       </span>
       <span class="lr-badges">
         ${dg.dungeon.isHidden ? '<span class="log-special-event gold">🌟 隐藏副本</span>' : ''}
-        ${dg.dungeon.specialEvent ? '<span class="log-special-event red">✨ 特殊事件</span>' : ''}
+        ${dg.dungeon.specialEvent ? `<span class="log-special-event red">✨ ${esc(seLabel)}</span>` : ''}
       </span>
     </div>
     <span class="log-status st-in_progress lr-status-top">${dg.status === 'waiting_ai' ? '等待 AI' : '进行中'}</span>
@@ -2383,14 +2385,20 @@ function dungeonLoreHTML(dgOrLog) {
   const isHidden = dgOrLog.dungeon ? dgOrLog.dungeon.isHidden : (dgOrLog.dg_snapshot && dgOrLog.dg_snapshot.isHidden);
   const baseName = dgOrLog.dungeon ? dgOrLog.dungeon.baseName : (dgOrLog.dg_snapshot && dgOrLog.dg_snapshot.baseName);
   const name = dgOrLog.dungeon ? dgOrLog.dungeon.name : dgOrLog.dungeon_name;
+  const activeEvent = (dgOrLog.dungeon && dgOrLog.dungeon.activeSpecialEvent) || (dgOrLog.dg_snapshot && dgOrLog.dg_snapshot.activeSpecialEvent) || null;
+  const eventName = activeEvent && activeEvent.name
+    ? activeEvent.name
+    : (dgOrLog.dg_snapshot && (dgOrLog.dg_snapshot.specialEventName || (dgOrLog.dg_snapshot.specialEvent ? '特殊事件' : ''))) || dgOrLog.special_event_theme || '';
+  const eventDesc = activeEvent && activeEvent.desc ? activeEvent.desc : '';
   const d = DUNGEON_POOL.find(x => x.name === baseName || x.name === name);
-  if (!d) return '';
+  if (!d && !eventName) return '';
   return `<div class="log-lore ${isHidden ? 'hidden' : ''}">
     ${isHidden ? `<span class="log-lore-badge">🌟 隐藏副本</span>` : ''}
-    <span class="log-lore-title">🏛️ ${esc(isHidden ? name : d.name)} · 背景</span>
+    ${d ? `<span class="log-lore-title">🏛️ ${esc(isHidden ? name : d.name)} · 背景</span>
     <p>${esc(d.lore)}</p>
     ${isHidden ? `<p style="color:var(--color-danger)">⚠️ ${esc(d.hiddenDesc)}</p>` : ''}
-    <span class="log-lore-hint">此间生灵：${esc(d.enemies.map(e => e.name).join('、'))}${isHidden ? `；深处首领：${esc(d.bosses.map(b => b.name).join('、'))}` : ''}</span>
+    <span class="log-lore-hint">此间生灵：${esc(d.enemies.map(e => e.name).join('、'))}${isHidden ? `；深处首领：${esc(d.bosses.map(b => b.name).join('、'))}` : ''}</span>` : `<span class="log-lore-title">🏛️ ${esc(name || '未知地下城')} · 背景</span>`}
+    ${eventName ? `<p class="log-lore-event" style="color:var(--color-danger)">✨ ${esc(eventName)}${eventDesc ? `：${esc(eventDesc)}` : ''}</p>` : ''}
   </div>`;
 }
 /* 检定徽章：D20 已移除，保留空函数兼容历史日志 */
@@ -2402,12 +2410,13 @@ function skillBadgeHTML(st) {
 }
 function runningDetailHTML(dg) {
   const partyNames = dg.party.map(m => ({ name: m.name }));
+  const eventName = (dg.dungeon.activeSpecialEvent && dg.dungeon.activeSpecialEvent.name) || '';
   const firstSteps = dg.steps.slice(0, LOG_STEP_CHUNK);
   return `
   ${logToolbarHTML()}
   <div class="log-detail log-theme-${logTheme}" style="font-size:${logFont}px">
     <div class="log-detail-header log-reading-header">
-    <h2 class="log-detail-title">探险日志（进行中） ${dg.dungeon.icon} ${esc(dg.dungeon.name)}</h2>
+    <h2 class="log-detail-title">探险日志（进行中） ${dg.dungeon.icon} ${esc(dg.dungeon.name)}${eventName ? ` <span class="log-special-event">✨ ${esc(eventName)}</span>` : ''}</h2>
     <div class="log-detail-meta">
       <span class="ldm-item">${esc(dg.party.map(m => m.name).join('、'))}</span>
       <span class="ldm-item">${dg.party.length} 人队伍</span>
@@ -2454,6 +2463,7 @@ function logDetailHTML(l) {
   const snap = l.dg_snapshot || { icon: '⚔️', name: l.dungeon_name || '地下城', desc: '', steps: [], party: [] };
   const s = l.settlement;
   const statusName = { completed: '已完成', failed: '失败', in_progress: '进行中', generating: '生成中' }[l.status] || l.status || '';
+  const eventName = l.special_event_theme || snap.specialEventName || (snap.specialEvent ? '特殊事件' : '');
   const partyNames = logPartyNames(l);
   const steps = snap.steps || [];
   const firstSteps = steps.slice(0, LOG_STEP_CHUNK);
@@ -2461,7 +2471,7 @@ function logDetailHTML(l) {
   ${logToolbarHTML()}
   <div class="log-detail log-theme-${logTheme}" style="font-size:${logFont}px">
     <div class="log-detail-header log-reading-header">
-    <h2 class="log-detail-title">探险日志 #${fmtLogId(l.log_number != null ? l.log_number : l.id)}${l.special_event_theme ? ` <span class="log-special-event">✨ ${esc(l.special_event_theme)}</span>` : ''}</h2>
+    <h2 class="log-detail-title">探险日志 #${fmtLogId(l.log_number != null ? l.log_number : l.id)}${eventName ? ` <span class="log-special-event">✨ ${esc(eventName)}</span>` : ''}</h2>
     <div class="log-detail-meta">
       <span class="ldm-item">${esc(l.party_name || '匹配小队')}</span>
       <span class="ldm-item ldm-dungeon">${snap.icon} ${esc(snap.name)}</span>

@@ -151,6 +151,19 @@ test('story prompts keep DNF dungeon vocabulary and avoid xianxia wording', () =
   assert.doesNotMatch(specialPrompt, banned);
 });
 
+test('special event prompt carries the active map template into the narrative', () => {
+  const prompt = buildPrompt({
+    flowMode: 'dynamic', dungeon: '洛兰', specialEvent: true,
+    activeSpecialEvent: { name: '哥布林夜袭营啸', desc: '哥布林举着火把冲营而来，营栅外绿影攒动。' },
+    party: [], stepNo: 3, minSteps: 10, preferredMaxSteps: 25, maxSteps: 40,
+    phase: 'explore', stage: 'explore', stageLabel: '探索', quest: { status: 'active', objective: '调查异动' },
+    encounter: { status: 'none', name: '' },
+  });
+  assert.match(prompt, /哥布林夜袭营啸/);
+  assert.match(prompt, /哥布林举着火把冲营而来/);
+  assert.match(prompt, /把这一异动贯穿始终/);
+});
+
 test('non-dynamic closing prompt frames the return as guild settlement', () => {
   const prompt = buildPrompt({
     dungeon: '洛兰', party: [], stepNo: 12, totalSteps: 12, stage: 'closing', stageLabel: '撤离回城',

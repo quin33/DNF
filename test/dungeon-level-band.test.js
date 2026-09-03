@@ -25,6 +25,33 @@ test('DUNGEON_POOL has the seven authoritative maps with matching level bands', 
   });
 });
 
+test('each DNF dungeon ships three named special event templates', () => {
+  for (const dungeon of GE.DUNGEON_POOL) {
+    const events = dungeon.specialEvents || [];
+    assert.equal(events.length, 3, `${dungeon.name} should have 3 special events`);
+    assert.equal(new Set(events.map(event => event.name)).size, 3, `${dungeon.name} event names must be unique`);
+    for (const event of events) {
+      assert.ok(String(event.name || '').trim().length >= 2, `${dungeon.name} event needs a name`);
+      assert.ok(String(event.desc || '').trim().length >= 8, `${dungeon.name} event needs a real description`);
+    }
+  }
+});
+
+test('applyDungeonSetup resolves a special event from the current map pool', () => {
+  for (const base of GE.DUNGEON_POOL) {
+    const dungeon = GE.applyDungeonSetup(base, { specialEvent: true, enemies: [] });
+    assert.equal(dungeon.specialEvent, true);
+    assert.ok(dungeon.activeSpecialEvent && dungeon.activeSpecialEvent.name, `${base.name} active event is missing`);
+    assert.ok(
+      base.specialEvents.some(event => event.name === dungeon.activeSpecialEvent.name && event.desc === dungeon.activeSpecialEvent.desc),
+      `${base.name} active event must come from its own template pool`,
+    );
+    assert.ok(dungeon.enemies.length >= 1, 'special setup with no AI enemies must roll a fallback encounter');
+  }
+  const normal = GE.applyDungeonSetup(GE.DUNGEON_POOL[0], { specialEvent: false });
+  assert.equal(normal.activeSpecialEvent, null);
+});
+
 test('rollEnemies keeps normal and special enemies inside the current map band', () => {
   const dungeon = GE.DUNGEON_POOL.find(entry => entry.name === '雷鸣废墟');
   for (let i = 0; i < 120; i++) {
