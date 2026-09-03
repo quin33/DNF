@@ -6,6 +6,7 @@ const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const AI_COMPANIONS = require('./ai-companions.js');
 const { clearExpiredInjury } = require('./trait-system.js');
+const { normalizeItemRarity, migrateRarity } = require('./loot-settlement.js');
 
 // 兜底库名用 dnf.db，不沿用原游戏 xiuxian 的 tavern.db：.env 不入库，
 // 缺失时若回落成 tavern.db，会在本项目目录下另建一个同名库，容易与原游戏混淆。
@@ -412,7 +413,20 @@ function deleteAdminSession(token) {
 function hydrateCharacterRow(row) {
   if (!row) return null;
   const data = repairCorruptedText(JSON.parse(row.data || '{}'));
-  if (!clearExpiredInjury(data)) return { row, data };
+  const version = Number(data.rarity_version || 1);
+  let migrated = version < 2;
+  const normalizeCollection = list => Array.isArray(list) ? list.map(item => {
+    const next = normalizeItemRarity(item, version);
+    if (JSON.stringify(next) !== JSON.stringify(item)) migrated = true;
+    return next;
+  }) : list;
+  data.bag = normalizeCollection(data.bag);
+  data.equipment = normalizeCollection(data.equipment);
+  data.skills = Array.isArray(data.skills) ? data.skills.map(skill => { const next = { name: skill && skill.name, desc: skill && skill.desc || '' }; if (skill && skill.type) migrated = true; return next; }) : data.skills;
+  data.skillPool = Array.isArray(data.skillPool) ? data.skillPool.map(skill => { const next = { name: skill && skill.name, desc: skill && skill.desc || '' }; if (skill && skill.type) migrated = true; return next; }) : data.skillPool;
+  if (version < 2) { data.rarity_version = 2; migrated = true; }
+  const injuryChanged = clearExpiredInjury(data);
+  if (!migrated && !injuryChanged) return { row, data };
   const updatedAt = Math.max(Date.now(), Number(row.updated_at || 0) + 1);
   const updated = db.prepare('UPDATE characters SET data = ?, updated_at = ? WHERE id = ? AND updated_at = ?')
     .run(JSON.stringify(data), updatedAt, row.id, row.updated_at);
@@ -423,6 +437,10 @@ function hydrateCharacterRow(row) {
 
 function createCharacter(userId, name, data) {
   const now = Date.now();
+  data = data && typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {};
+  data.rarity_version = 2;
+  for (const key of ['bag', 'equipment']) if (Array.isArray(data[key])) data[key] = data[key].map(item => normalizeItemRarity(item, 2));
+  for (const key of ['skills', 'skillPool']) if (Array.isArray(data[key])) data[key] = data[key].map(skill => ({ name: skill && skill.name, desc: skill && skill.desc || '' }));
   const info = db.prepare('INSERT INTO characters (user_id, name, data, updated_at) VALUES (?,?,?,?)')
     .run(userId, name, JSON.stringify(data), now);
   return info.lastInsertRowid;
@@ -946,12 +964,14 @@ function getCharacterAdmin(charId) {
     WHERE c.id = ?
   `).get(charId);
   if (!row) return null;
+  const data = JSON.parse(row.data);
+  delete data.rarity_version;
   return {
     id: row.id,
     userId: row.user_id,
     username: row.username,
     name: row.name,
-    data: JSON.parse(row.data),
+    data,
     updated_at: row.updated_at,
   };
 }
@@ -1132,6 +1152,7 @@ function publicCharacterData(row) {
   if (!hydrated) return null;
   row = hydrated.row;
   const data = hydrated.data;
+  delete data.rarity_version;
   // 公共角色卡片与“我的”使用同一套完整角色字段；不再单独维护容易漏字段的白名单。
   // 角色数据本身不包含密码、令牌等账号认证信息，可安全用于公开角色展示。
   const result = {

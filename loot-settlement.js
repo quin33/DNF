@@ -1,5 +1,45 @@
 'use strict';
 
+// DNF 稀有度统一配置：史诗保留合法性但当前副本不掉落，传说/神话暂不开放。
+const RARITY_CONFIG = Object.freeze({
+  common: { name: '普通', color: '#ffffff', open: true },
+  advanced: { name: '高级', color: '#5aa9e6', open: true },
+  rare: { name: '稀有', color: '#b36bdb', open: true },
+  artifact: { name: '神器', color: '#ff8ac8', open: true },
+  epic: { name: '史诗', color: '#ffd84d', open: false },
+  legendary: { name: '传说', color: '#ff8a3d', open: false },
+  mythic: { name: '神话', color: '#ff4fd8', open: false },
+});
+const OPEN_DROP_RARITIES = ['common', 'advanced', 'rare', 'artifact'];
+const FORGE_RARITIES = Object.freeze(Object.keys(RARITY_CONFIG));
+const RARITY_ALIASES = Object.freeze({
+  普通: 'common', 高级: 'advanced', 稀有: 'rare', 神器: 'artifact', 史诗: 'epic', 传说: 'legendary', 神话: 'mythic',
+  珍贵: 'rare',
+});
+
+function normalizeRarity(value, fallback = 'common') {
+  const raw = String(value || '').trim().toLowerCase();
+  const normalized = RARITY_ALIASES[raw] || raw;
+  return Object.prototype.hasOwnProperty.call(RARITY_CONFIG, normalized) ? normalized : fallback;
+}
+
+function migrateRarity(value, version = 2) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (Number(version) < 2) {
+    if (raw === 'rare') return 'advanced';
+    if (raw === 'epic') return 'rare';
+    if (raw === 'legendary') return 'legendary';
+  }
+  return normalizeRarity(raw);
+}
+
+function normalizeItemRarity(item, version = 2) {
+  if (!item || typeof item !== 'object') return item;
+  const next = { ...item, rarity: migrateRarity(item.rarity, version) };
+  delete next.type;
+  return next;
+}
+
 const CN_DIGITS = {
   零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4,
   五: 5, 六: 6, 七: 7, 八: 8, 九: 9,
@@ -206,7 +246,7 @@ function normalizeLootItems(items) {
       canonicalName,
       desc: String(raw.desc || '来历不明的宝物').trim().slice(0, 100),
       qty: normalizeLootQty(raw.qty),
-      rarity: ['common', 'rare', 'epic', 'legendary'].includes(raw.rarity) ? raw.rarity : 'common',
+      rarity: normalizeRarity(raw.rarity),
       owner: owner || null,
       sourceStep,
       sameAsStep,
@@ -294,6 +334,12 @@ function buildLootAudit(assigned) {
 }
 
 const LootSettlement = {
+  RARITY_CONFIG,
+  OPEN_DROP_RARITIES,
+  FORGE_RARITIES,
+  normalizeRarity,
+  migrateRarity,
+  normalizeItemRarity,
   parseChineseNumber,
   extractSpiritStoneEvents,
   splitSpiritStones,

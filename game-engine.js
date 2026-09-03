@@ -523,17 +523,14 @@ function itemUseCheck(dg, stageKey, actor) {
   const it = pick(pool); const roll = rollD20(); const total = roll + (it.mod || 0);
   return { item: it, roll, total, success: total >= 12 };
 }
-/* 技能判定：D20 + 魔法技3/物理技2 + 元素契合±0/+2，成功 ≥12 */
+/* 技能判定：D20 + 基础技能修正2 + 元素契合±0/+2，成功 ≥12 */
 function skillUseCheck(dg, stageKey, actor) {
   const skills = actor.skills || []; if (!skills.length) return null;
   const p = (stageKey === 'battle' || stageKey === 'boss') ? 1 : stageKey === 'explore' ? 0.6 : 0.35;
   if (Math.random() > p) return null;
-  let pool = skills;
-  if (stageKey === 'battle' || stageKey === 'boss') { const magic = skills.filter(s => s.type === '魔法技'); if (magic.length && Math.random() < 0.7) pool = magic; }
-  else if (stageKey === 'explore') { const physical = skills.filter(s => s.type === '物理技'); if (physical.length && Math.random() < 0.6) pool = physical; }
-  const sk = pick(pool); const elemMod = elemMatchMod(actor, sk); const roll = rollD20();
-  const total = roll + (sk.type === '魔法技' ? 3 : 2) + elemMod;
-  return { name: sk.name, type: sk.type || '物理技', elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
+  const sk = pick(skills); const elemMod = elemMatchMod(actor, sk); const roll = rollD20();
+  const total = roll + 2 + elemMod;
+  return { name: sk.name, elem: sk.elem || '', desc: sk.desc || '', elemMod, roll, total, success: total >= 12 };
 }
 /* 解析剧情【获得：…】标记 */
 function parseLootMarkers(text) {
@@ -575,7 +572,8 @@ function normalizeAiStepResult(raw, fallback = {}) {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim().slice(0, 12);
     if (!LootSettlement.isValidLootName(name)) return null;
     const qty = Math.max(1, Math.min(99, Math.round(Number(entry && entry.qty) || 1)));
-    const rarity = ['common', 'rare', 'epic', 'legendary'].includes(entry && entry.rarity) ? entry.rarity : null;
+    const candidate = LootSettlement.normalizeRarity(entry && entry.rarity);
+    const rarity = LootSettlement.OPEN_DROP_RARITIES.includes(candidate) ? candidate : null;
     return { name, qty, rarity };
   }).filter(Boolean);
   return { outcome, damage, itemUse, skillUse, loot };
@@ -589,7 +587,8 @@ function recordAiLoot(dg, actor, entries) {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim().slice(0, 12);
     if (!LootSettlement.isValidLootName(name)) continue;
     const qty = Math.max(1, Math.min(99, Math.round(Number(entry && entry.qty) || 1)));
-    const rarity = ['common', 'rare', 'epic', 'legendary'].includes(entry && entry.rarity) ? entry.rarity : null;
+    const candidate = LootSettlement.normalizeRarity(entry && entry.rarity);
+    const rarity = LootSettlement.OPEN_DROP_RARITIES.includes(candidate) ? candidate : null;
     const existing = dg.aiLoot.find(x => x.name === name);
     if (existing) existing.qty += qty;
     else dg.aiLoot.push({ name, qty, rarity });
@@ -737,17 +736,15 @@ function parseLearnedSkills(raw) {
     parsed = JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
   } catch (_) { return []; }
   if (!Array.isArray(parsed)) return [];
-  const validTypes = new Set(['物理技', '魔法技']);
   const seen = new Set();
   return parsed.flatMap(item => {
     const member = String(item && item.member || '').trim();
     const name = String(item && item.name || '').trim();
-    const type = String(item && item.type || '').trim();
     const desc = String(item && item.desc || '').trim();
     const key = member + '\u0000' + name;
-    if (!member || member.includes('�') || member.length > 20 || !name || name.includes('�') || name.length > 20 || !validTypes.has(type) || !desc || desc.includes('�') || desc.length > 120 || seen.has(key)) return [];
+    if (!member || member.includes('�') || member.length > 20 || !name || name.includes('�') || name.length > 20 || !desc || desc.includes('�') || desc.length > 120 || seen.has(key)) return [];
     seen.add(key);
-    return [{ member, name, type, desc }];
+    return [{ member, name, desc }];
   });
 }
 
@@ -759,7 +756,7 @@ function applyLearnedSkills(role, learned) {
   const granted = [];
   for (const skill of learned) {
     if (!skill || !skill.name || known.has(skill.name)) continue;
-    const saved = { name: skill.name, type: skill.type, desc: skill.desc };
+    const saved = { name: skill.name, desc: skill.desc };
     const storage = role.skills.length < MAX_SKILLS ? 'equipped' : 'pool';
     (storage === 'equipped' ? role.skills : role.skillPool).push(saved);
     known.add(saved.name);
@@ -925,7 +922,7 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
     party: dg.party.map(m => ({
       name: m.name, gender: m.gender || '男', realm: m.character_class || '', level: Number(m.level) || 1,
       personality: m.personality || '',
-      skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', desc: s.desc || '' })),
+      skills: (m.skills || []).map(s => ({ name: s.name, desc: s.desc || '' })),
       items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: memberIdentity(m), ownerName: m.name || '' })),
     })),
     context: dg.steps.slice(-5).map(s => s.text).join('\n'),

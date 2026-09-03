@@ -91,7 +91,7 @@ test('server parseAiStoryResponse exposes AI step fields for single-player story
   assert.equal(parsed.outcome, 'bad');
   assert.equal(parsed.damage, 22);
   assert.deepEqual(JSON.parse(JSON.stringify(parsed.itemUse)), { name: '聚气丹', success: true });
-  assert.deepEqual(JSON.parse(JSON.stringify(parsed.loot)), [{ name: '千年雷击木', qty: 1, rarity: 'epic' }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(parsed.loot)), [{ name: '千年雷击木', qty: 1, rarity: null }]);
 });
 
 test('single-player dungeon flow and settlement are fully AI-driven without D20 rolls', () => {
@@ -114,7 +114,7 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
   assert.match(extract, /qty: Math\.max\(1, Math\.round/);
   assert.doesNotMatch(extract, /Math\.min\(99/);
   assert.match(settlement, /LootSettlement\.normalizeLootItems/);
-  assert.match(extract, /rarity: \['common', 'rare', 'epic', 'legendary'\]/);
+  assert.match(extract, /LootSettlement\.OPEN_DROP_RARITIES/);
 });
 
 test('server prompts tell the AI to decide outcomes instead of using dice', () => {

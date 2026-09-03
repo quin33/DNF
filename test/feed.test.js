@@ -361,9 +361,9 @@ test('online loot quantity and rarity are decided by AI expedition extraction', 
   const server = fs.readFileSync('server.js', 'utf8');
   const settlement = server.slice(server.indexOf('async function settleRoom'), server.indexOf('function leaveRoomCleanup'));
   assert.match(server, /数量按剧情中的实际数量/);
-  assert.match(server, /稀有度只能是 common\/rare\/epic\/legendary/);
+  assert.match(server, /稀有度只能是 common\/advanced\/rare\/artifact/);
   assert.doesNotMatch(settlement, /rollLootRarity\(/);
-  assert.match(settlement, /const rarity = \['common', 'rare', 'epic', 'legendary'\]\.includes\(x\.rarity\)/);
+  assert.match(settlement, /OPEN_DROP_RARITIES\.includes/);
   assert.doesNotMatch(server, /dg\.bossDrops\.forEach\(b => lootAssign/);
 });
 

@@ -1478,7 +1478,7 @@
       toastMsg(messages[result.event && result.event.type] || '操作成功');
     } catch (e) { toastMsg(e.message || '操作失败'); }
   };
-  window.taixuInsight = async function taixuInsight(type, goal) {
+  window.taixuInsight = async function taixuInsight(goal) {
     let role = window.D && window.D.my_adventurer;
     if (!role || !role._char_db_id) throw new Error('请先创建角色');
     taixuInsightInFlight = true;
@@ -1490,7 +1490,7 @@
       try {
         const accepted = await api('/api/character/' + role._char_db_id + '/taixu-insight', {
           method: 'POST',
-          body: { type, goal, updated_at: role._char_updated_at },
+          body: { goal, updated_at: role._char_updated_at },
         });
         if (!accepted.jobId) throw new Error('觉醒祭坛未创建顿悟任务');
         if (accepted.character) {

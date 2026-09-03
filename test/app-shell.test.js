@@ -39,6 +39,18 @@ test('moonlit parchment theme exposes shared paper, ink, moon, copper, and wood 
   assert.match(rootTheme, /--wood:\s*#805a3b/);
 });
 
+test('DNF rarity configuration exposes seven tiers with only four active drop tiers', () => {
+  const source = fs.readFileSync(path.join(ROOT, 'loot-settlement.js'), 'utf8');
+  assert.match(source, /common:\s*\{[\s\S]*name:\s*'普通'[\s\S]*color:\s*'#ffffff'/);
+  assert.match(source, /advanced:\s*\{[\s\S]*name:\s*'高级'[\s\S]*color:\s*'#5aa9e6'/);
+  assert.match(source, /rare:\s*\{[\s\S]*name:\s*'稀有'[\s\S]*color:\s*'#b36bdb'/);
+  assert.match(source, /artifact:\s*\{[\s\S]*name:\s*'神器'[\s\S]*color:\s*'#ff8ac8'/);
+  assert.match(source, /epic:\s*\{[\s\S]*name:\s*'史诗'[\s\S]*color:\s*'#ffd84d'/);
+  assert.match(source, /legendary:\s*\{[\s\S]*name:\s*'传说'[\s\S]*color:\s*'#ff8a3d'/);
+  assert.match(source, /mythic:\s*\{[\s\S]*name:\s*'神话'/);
+  assert.match(source, /OPEN_DROP_RARITIES\s*=\s*\['common',\s*'advanced',\s*'rare',\s*'artifact'\]/);
+});
+
 test('game canvas uses the parchment surface while body keeps the sky background', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   const body = styles.slice(styles.indexOf('body {'), styles.indexOf('::-webkit-scrollbar'));

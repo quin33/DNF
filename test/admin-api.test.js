@@ -30,8 +30,8 @@ const originalCharacter = {
   exp: 456,
   traits: ['金灵根', 'Steady'],
   personality: '重诺',
-  equipment: [{ name: 'Sword', slot: 'weapon' }],
-  bag: [{ name: 'Potion', qty: 2 }],
+  equipment: [{ name: 'Sword', slot: 'weapon', rarity: 'common' }],
+  bag: [{ name: 'Potion', qty: 2, rarity: 'common' }],
   skills: [{ name: 'Slash', desc: 'A measured strike.' }],
   skillPool: [{ name: 'Guard', desc: 'A guarded stance.' }],
   hidden: 'must survive admin updates',
@@ -299,8 +299,8 @@ test('public character data matches the complete role profile used by my page', 
   assert.equal(character.traitDescs, undefined);
   assert.equal(character.root, undefined);
   assert.deepEqual(character.skills, originalCharacter.skills);
-  assert.deepEqual(character.bag, originalCharacter.bag);
-  assert.deepEqual(character.equipment, originalCharacter.equipment);
+  assert.deepEqual(character.bag, originalCharacter.bag.map(item => ({ ...item, rarity: 'common' })));
+  assert.deepEqual(character.equipment, originalCharacter.equipment.map(item => ({ ...item, rarity: 'common' })));
 });
 
 test('followed characters persist per account and sort after the current character', async () => {
@@ -441,7 +441,11 @@ test('admin can search players and read a character with its owner and version',
   assert.equal(detail.body.character.userId, userId);
   assert.equal(detail.body.character.username, username);
   assert.equal(typeof detail.body.character.updated_at, 'number');
-  assert.deepEqual(detail.body.character.data, originalCharacter);
+  assert.deepEqual(detail.body.character.data, {
+    ...originalCharacter,
+    bag: originalCharacter.bag.map(item => ({ ...item, rarity: 'common' })),
+    equipment: originalCharacter.equipment.map(item => ({ ...item, rarity: 'common' })),
+  });
 
   const missing = await adminRequest('GET', '/api/admin/characters/999999999');
   assert.equal(missing.status, 404);

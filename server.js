@@ -53,6 +53,12 @@ const {
   isValidLootName,
   normalizeLootItems,
   buildLootAudit,
+  RARITY_CONFIG,
+  OPEN_DROP_RARITIES,
+  FORGE_RARITIES,
+  normalizeRarity,
+  migrateRarity,
+  normalizeItemRarity,
 } = require('./loot-settlement.js');
 
 // DNF 固定用 8788（原游戏 xiuxian 用 8787）。回落顺序：PORT → GAME_PORT → 8788。
@@ -175,12 +181,8 @@ const taixuInsightJobs = new Map();
 const FORGE_JOB_TTL_MS = 15 * 60 * 1000;
 const forgeJobs = new Map();
 const FORGE_STAMINA_COST = 20;
-const FORGE_RARITIES = ['common', 'rare', 'epic', 'legendary', 'mythic'];
-const FORGE_RARITY_ALIASES = { '普通': 'common', '稀有': 'rare', '珍贵': 'epic', '史诗': 'epic', '传说': 'legendary', '神话': 'mythic' };
 function normalizeForgeRarity(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  const normalized = FORGE_RARITY_ALIASES[raw] || raw;
-  return FORGE_RARITIES.includes(normalized) ? normalized : 'common';
+  return normalizeRarity(value);
 }
 function forgeRarityUpgrade(baseRarity) {
   const baseIndex = Math.max(0, FORGE_RARITIES.indexOf(normalizeForgeRarity(baseRarity)));
@@ -296,17 +298,17 @@ const AUTHORITATIVE_CHARACTER_FIELDS = new Set([
   'intelligence', 'luck', 'gold', 'exp', 'breakthroughBonus', 'injury',
 ]);
 const SERVER_LIBRARY_BOOKS = new Map([
-  ['tuna', { name: '里鬼剑术', type: '物理技', elem: '无', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' }],
-  ['yufeng', { name: '银弹', type: '魔法技', elem: '无', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' }],
-  ['wood_shield', { name: '圣光十字', type: '物理技', elem: '无', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' }],
-  ['fireball', { name: '火球术', type: '魔法技', elem: '无', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' }],
-  ['water_arrow', { name: '冰霜雪人', type: '魔法技', elem: '无', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' }],
-  ['gold_blade', { name: '崩拳', type: '物理技', elem: '无', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' }],
-  ['lianxi', { name: '三段斩', type: '物理技', elem: '无', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' }],
-  ['qingmu', { name: '治愈术', type: '魔法技', elem: '无', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' }],
-  ['xuanbing', { name: '鬼斩', type: '物理技', elem: '无', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' }],
-  ['zixiao', { name: '浮空弹', type: '物理技', elem: '无', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
-  ['yujian', { name: '加特林扫射', type: '物理技', elem: '无', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
+  ['tuna', { name: '里鬼剑术', elem: '无', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' }],
+  ['yufeng', { name: '银弹', elem: '无', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' }],
+  ['wood_shield', { name: '圣光十字', elem: '无', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' }],
+  ['fireball', { name: '火球术', elem: '无', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' }],
+  ['water_arrow', { name: '冰霜雪人', elem: '无', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' }],
+  ['gold_blade', { name: '崩拳', elem: '无', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' }],
+  ['lianxi', { name: '三段斩', elem: '无', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' }],
+  ['qingmu', { name: '治愈术', elem: '无', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' }],
+  ['xuanbing', { name: '鬼斩', elem: '无', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' }],
+  ['zixiao', { name: '浮空弹', elem: '无', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
+  ['yujian', { name: '加特林扫射', elem: '无', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
 ]);
 const serverLibraryStock = new Map([...SERVER_LIBRARY_BOOKS].map(([code, book]) => [code, book.stock]));
 
@@ -544,14 +546,14 @@ function sanitizeAdminCompanion(input, existing) {
 /* ============================================================
    AI 提示词（整合世界观 / 结构 / 叙事 / 装备 / 技能 / 判定）
    ============================================================ */
-const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险日志作家，一名DNF题材冒险小说作者。游戏世界观：玩家是**阿拉德大陆的冒险家**，在城镇**赫顿玛尔**从**冒险家公会任务板**接取悬赏差遣，组队进入**阿拉德地下城**刷图，清怪 → 领主 → 翻牌/撤离 → 回城领金币。战斗体系为职业+等级（Lv.1 起步，60 级封顶，首期内容覆盖 Lv.1~19 的格兰之森→天空之城→天帷巨兽），技能分**物理技**（靠体魄，探测/缠斗类）与**魔法技**（靠智力，攻伐/治愈类）两系，稀有度分**普通/高级/稀有/神器**四档；角色四维为**力量/敏捷/智力/幸运**；货币为**金币**。角色从五大初始职业中择一（鬼剑士/格斗家/神枪手/魔法师/圣职者），Lv10 死亡门是**转职**，此后职业前挂子职业（如「鬼剑士·剑魂」）。
+const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险日志作家，一名DNF题材冒险小说作者。游戏世界观：玩家是**阿拉德大陆的冒险家**，在城镇**赫顿玛尔**从**冒险家公会任务板**接取悬赏差遣，组队进入**阿拉德地下城**刷图，清怪 → 领主 → 翻牌/撤离 → 回城领金币。战斗体系为职业+等级与技能描述，稀有度采用 DNF 七档：普通/高级/稀有/神器/史诗/传说/神话；当前副本掉落仅开放普通、高级、稀有、神器，史诗保留合法性但不由副本或 AI 产出，传说与神话暂不开放；角色四维为**力量/敏捷/智力/幸运**；货币为**金币**。角色从五大初始职业中择一（鬼剑士/格斗家/神枪手/魔法师/圣职者），Lv10 死亡门是**转职**，此后职业前挂子职业（如「鬼剑士·剑魂」）。
 
 叙事规则：
 1. 使用 DNF 风味冒险笔法（兼具白话叙事与画面感），节奏张弛有度，可写出地下城的阴森、怪物的狰狞与冒险家间的默契。
 2. 战斗描写要符合职业与等级特性，避免一刀清场或无脑碾压；若敌人等级高于队伍，需体现苦战、智取或撤退。
 3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、职业、等级体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含老兄/姑娘/前辈等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化，每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
 4. **队伍差异化**：四名队员必须有差异化的表现：依据其性格、职业和技能分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成"技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果"的完整因果链，不能只写"参与攻击"或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
-5. **技能优先**：角色的物理技/魔法技是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制），物理技偏硬桥硬马的压制与格挡，魔法技偏元素爆发与治愈；判定成功则写得势如破竹、光焰迸发，判定失败则如实写施法受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
+5. **技能优先**：角色技能是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制）。判定成功则写得势如破竹，判定失败则如实写施展受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
 6. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
 6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
 7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
@@ -571,7 +573,7 @@ function buildUserMessage(b) {
   if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.level != null ? 'Lv.' + x.level : (x.realm || '等级不明')) + '）：' + x.desc).join('；')}`);
   lines.push('【队伍】');
   (b.party || []).forEach(m => {
-    const sk = (m.skills || []).map(s => `${s.name}（${s.type || '物理技'}：${s.desc || '无描述'}）`).join('、') || '无';
+    const sk = (m.skills || []).map(s => `${s.name}（${s.desc || '无描述'}）`).join('、') || '无';
     const items = (m.items || []).map(i => `${i.name}（${i.kind || '杂物'}：${i.desc || '无描述'}，持有人：${i.ownerName || m.name || '未知'}）`).join('，') || '无';
     lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·性格${m.personality}）｜技能：${sk}｜携带：${items}`);
   });
@@ -606,11 +608,11 @@ function buildUserMessage(b) {
   if (b.enemy) lines.push(`【当前敌人】${b.enemy.name}：${b.enemy.desc || ''}`);
   if (b.actor) {
     const actorInfo = (b.party || []).find(member => member.name === b.actor) || (b.party || [])[0];
-    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}（${s.type || '物理技'}）`).join('、');
+    const skillList = (actorInfo && Array.isArray(actorInfo.skills) ? actorInfo.skills : []).map(s => `${s.name}`).join('、');
     if (skillList) lines.push(`【本步可用技能】${skillList}`);
   }
   if (b.skillUse) {
-    lines.push(`【本步技能】${b.skillUse.name}（${b.skillUse.type}）：是否使用及成败由你直接判定。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
+    lines.push(`【本步技能】${b.skillUse.name}：是否使用及成败由你直接判定。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
   }
   if (b.itemUse) {
     lines.push(`【装备判定】${b.itemUse.name}（${b.itemUse.kind}）${b.itemUse.loaned ? `由${b.itemUse.ownerName || '原持有人'}明确借给${b.itemUse.userName || b.actor || '使用者'}` : `由${b.itemUse.ownerName || b.actor || '使用者'}本人持有`}：是否使用及成败由你直接判定，不使用或失败则正文如实写未能奏效。`);
@@ -789,10 +791,10 @@ async function runTaixuInsightJob(job) {
     let lastError = null;
     for (let attempt = 0; attempt < 3 && !skill; attempt++) {
       try {
-        const prompt = TI.buildTaixuInsightPrompt(role, job.type, job.goal);
+        const prompt = TI.buildTaixuInsightPrompt(role, job.goal);
         const retryNote = attempt && lastError ? `\n前次结果无效：${String(lastError.message || lastError).slice(0, 80)}。请重新生成不同名称。` : '';
         const raw = await callLLM(prompt + retryNote, TI.TAIXU_INSIGHT_SYSTEM_PROMPT, 1200);
-        skill = TI.parseTaixuInsight(raw, job.type, knownNames);
+        skill = TI.parseTaixuInsight(raw, knownNames);
       } catch (error) {
         lastError = error;
       }
@@ -852,7 +854,7 @@ function recoverAllTaixuInsights() {
 }
 
 async function generateForgeResult(materials) {
-  const mats = (materials || []).slice(0, 3).map(m => `${m.name}（${m.kind || '杂物'}·品质${({ common: '普通', rare: '稀有', epic: '珍贵', legendary: '传说' })[normalizeForgeRarity(m.rarity)] || '普通'}：${m.desc || '无描述'}）`).join('、');
+  const mats = (materials || []).slice(0, 3).map(m => `${m.name}（${m.kind || '杂物'}·品质${RARITY_CONFIG[normalizeForgeRarity(m.rarity)]?.name || '普通'}：${m.desc || '无描述'}）`).join('、');
   if (!mats) throw new Error('材料为空');
   let parsed = null;
   let parseError = null;
@@ -1489,9 +1491,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const charId = Number(taixuInsightMatch[1]);
     const body = JSON.parse(await readBody(req));
     if (!Number.isSafeInteger(body.updated_at) || body.updated_at < 0) { sendJSON(res, 400, { error: '角色版本无效' }); return true; }
-    const type = String(body.type || '').trim();
     const goal = String(body.goal || '').trim();
-    if (!TI.VALID_TYPES.has(type)) { sendJSON(res, 400, { error: '领悟类型只能是物理技或魔法技' }); return true; }
     if (!goal || goal.length > 100) { sendJSON(res, 400, { error: '期望目标需为 1 至 100 字' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
@@ -1507,7 +1507,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const now = Date.now();
     const jobId = crypto.randomUUID();
     role.status = 'insighting';
-    role.taixuInsight = { jobId, type, goal, startedAt: now, endsAt: now + TAIXU_INSIGHT_DURATION_MS, phase: 'running' };
+    role.taixuInsight = { jobId, goal, startedAt: now, endsAt: now + TAIXU_INSIGHT_DURATION_MS, phase: 'running' };
     delete role.taixuInsightNotice;
     const started = DB.saveCharacterIfCurrent(u.id, charId, character.updated_at, role, role.name);
     if (!started) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
@@ -1515,7 +1515,6 @@ async function handleAuthAPI(req, res, urlPath) {
       id: jobId,
       userId: u.id,
       charId,
-      type,
       goal,
       roleSnapshot: JSON.parse(JSON.stringify(role)),
       status: 'pending',
@@ -1804,14 +1803,14 @@ const OUTCOME_PROMPT = `你是《地下城与勇士》的公会执事。阅读�
 同时决定本局结算中的成长与机缘：
 1. statBuffs：依据每位成员在本局中的实际表现，自行决定是否获得 1 点属性成长以及加在哪一项（力量/敏捷/智力/幸运）；没有则留空数组。不要随机补发，成员必须有明确的成长理由。
 2. injury：只能从输入列出的“重伤候选”中选择至多一人判断是否获得临时受伤状态。通常不要授予，仅在剧情明确支持且伤势会形成持续影响的少数情况下低概率授予；不授予时为 null。授予时 grant 必须为 true，名称必须为 6~12 字，描述必须为 20~100 字并详细说明受伤经历与伤势效果。
-3. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出 {type} 与名称。
+3. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出名称与描述。
 严格只输出一个 JSON 对象，不要任何解释或标记：
 {"ok":true,"reason":"简短理由","statBuffs":[{"member":"角色完整姓名","attribute":"力量"}],"injury":{"member":"重伤候选中的角色完整姓名","grant":true,"name":"筋骨震裂未愈","desc":"包含受伤经历与具体效果的详细描述"},"scroll":null}
 或
 {"ok":false,"reason":"简短理由","statBuffs":[],"injury":null,"scroll":null}`;
 
 /* 技能书/传承卷轴生成：10% 概率的稀有战利品（严格 JSON 输出） */
-const SCROLL_PROMPT = `你是《地下城与勇士》的导师大厅执事。创作一部{type}技能书——不是技能本身，而是记载战斗之法的技能书/传承卷轴（拓本/残卷/秘录皆可）。要求：
+const SCROLL_PROMPT = `你是《地下城与勇士》的导师大厅执事。创作一部战斗技能书——不是技能本身，而是记载战斗之法的技能书/传承卷轴（拓本/残卷/秘录皆可）。要求：
 1. 起一个简洁贴切的名字（2~12 字，如"《银弹》残缺手记""崩拳·秘传要旨""三层斩断章"）；
 2. 写一段 15~40 字的描述：来历、内容、价值；
 3. 技能书名与描述都要有 DNF 冒险风味，风格与《地下城与勇士》一致。
@@ -1819,7 +1818,7 @@ const SCROLL_PROMPT = `你是《地下城与勇士》的导师大厅执事。创
 
 /* 锻造：AI 综合材料属性自行判断成败，并生成对应的完整叙事。 */
 const FORGE_PROMPT = `你是《地下城与勇士》的铁匠宗师（凯丽的同行）。请综合两件材料的名称、描述、种类、品质、属性关联、锻造常理与组合契合度，自行判断本次锻造成功或失败。
-1. **合理性判断**（符合 DNF 世界观与锻造常理）：材料带有品质（普通/稀有/珍贵/传说），高品质材料（稀有及以上）锻成的装备应相应更珍奇，可在描述中体现品质带来的不凡之处；
+1. **合理性判断**（符合 DNF 世界观与锻造常理）：材料带有 DNF 七档品质（普通/高级/稀有/神器/史诗/传说/神话），高品质材料锻成的装备应相应更珍奇，可在描述中体现品质带来的不凡之处；
    - 合理的组合：金属/矿石/兽骨/皮毛/木材/晶体/符文等锻造材料之间相互熔炼组合（如"铁剑+兽皮"→皮铁兵刃、"兽骨+布甲"→骨甲护具）；
    - 不合理的组合：药水/食物/货币/活物等不宜入炉之物，或风马牛不相及的材料拼凑（如"魔力药剂+旧怀表"），判为不合理并说明理由。
 2. 只有判断成功时才生成装备：产物必须契合两件材料特性，起名 2~10 字，写 50~200 字详细描述（包括材质、来历、外观、核心能力、适用场景或限制），kind 为"武器/防具/首饰/工具"之一，并给出合理品质。
@@ -1836,7 +1835,7 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 **必须穷尽列举**：只要出现获得动作指向的物品，即使一句话带过、即使只有一枚/半张，也要列出（例："拾起一枚龙人鳞片""弯腰捡起半卷绷带"都要列入）。不设掉落件数、数量或稀有度预算，剧情没有明确获得任何道具时允许输出空数组。
 为每件道具填写：
 - name：该段原文中的道具名（4~12 字）；canonicalName：同一实体在全文中的统一名称（4~12 字），别名必须统一；
-- desc：15~40 字冒险风格描述；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/rare/epic/legendary；
+- desc：15~40 字冒险风格描述；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/advanced/rare/artifact/epic/legendary/mythic；当前副本掉落仅允许 common/advanced/rare/artifact；
 - owner：剧情明确写出最终拿取、收下或持有者时填队伍成员完整姓名；集体保管、无人明确取得或无法判断时填空字符串；
 - sourceStep：首次明确获得所在的段落编号；entityId：同一实体稳定且简短的标识；
 - sameAsStep：若本条只是后文再次提到此前已获得的同一实体，填写首次获得段落编号，此时不得当作新掉落；若是新的获得事件则填 null。
@@ -1845,7 +1844,7 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 {"name":"精铁短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
 兼容要求：旧格式的 name/desc/qty/rarity 仍可使用。没有获得任何道具时输出 []。`;
 
-const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的物理技/魔法技。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名、物理技或魔法技类型与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","type":"物理技","desc":"技能描述"}]`;
+const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的战斗技能。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","desc":"技能描述"}]`;
 
 /* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级 */
 const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色状态，决定本次探险的局势：
@@ -2281,9 +2280,8 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && urlPath === '/api/ai/scroll') {
     if (!requireAiAccess(req, res)) return;
     try {
-      const body = JSON.parse(await readBody(req));
-      const type = body.type === '魔法技' ? '魔法技' : '物理技';
-      const raw = await callLLM('请创作一部' + type + '卷轴。', SCROLL_PROMPT.replace('{type}', type));
+      JSON.parse(await readBody(req));
+      const raw = await callLLM('请创作一部战斗技能卷轴。', SCROLL_PROMPT);
       // 容错解析：去 ```json 包裹，截取首个 { ... } 段
       let jsonStr = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
       const st = jsonStr.indexOf('{'), en = jsonStr.lastIndexOf('}');
@@ -2301,7 +2299,7 @@ const server = http.createServer(async (req, res) => {
     if (!requireAiAccess(req, res)) return;
     try {
       const body = JSON.parse(await readBody(req));
-      const mats = (body.materials || []).slice(0, 3).map(m => `${m.name}（${m.kind || '杂物'}·品质${({ common: '普通', rare: '稀有', epic: '珍贵', legendary: '传说' })[normalizeForgeRarity(m.rarity)] || '普通'}：${m.desc || '无描述'}）`).join('、');
+      const mats = (body.materials || []).slice(0, 3).map(m => `${m.name}（${m.kind || '杂物'}·品质${RARITY_CONFIG[normalizeForgeRarity(m.rarity)]?.name || '普通'}：${m.desc || '无描述'}）`).join('、');
       if (!mats) { sendJSON(res, 400, { error: '材料为空' }); return; }
       let parsed = null;
       let parseError = null;
@@ -2748,7 +2746,7 @@ async function dungeonStep(room) {
     if (!entry || !entry.name) return null;
     const skill = (actor.skills || []).find(s => s.name === entry.name);
     if (!skill) return null;
-    return { name: skill.name, type: skill.type || '物理技', elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
+    return { name: skill.name, elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
   };
   let dynamicFocusAdded = false;
   if (dynamic) {
@@ -2790,7 +2788,7 @@ async function dungeonStep(room) {
       stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
       stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
-      skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
+      skillUse: skillUse ? { name: skillUse.name, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
     };
   } catch (error) {
     if (dynamicFocusAdded) dg.focusPlan.pop();
@@ -3057,7 +3055,8 @@ async function settleRoom(room) {
       if (!name || !desc) throw new Error('AI 战利品缺少名称或描述');
       const aiEntry = (dg.aiLoot || []).find(item => item.name === name);
       const qty = Math.max(1, Math.round(Number(x.qty) || (aiEntry && aiEntry.qty) || 1));
-      const rarity = ['common', 'rare', 'epic', 'legendary'].includes(x.rarity) ? x.rarity : (aiEntry && ['common', 'rare', 'epic', 'legendary'].includes(aiEntry.rarity) ? aiEntry.rarity : 'common');
+      const candidateRarity = x.rarity || (aiEntry && aiEntry.rarity) || 'common';
+      const rarity = OPEN_DROP_RARITIES.includes(normalizeRarity(candidateRarity)) ? normalizeRarity(candidateRarity) : 'common';
       return {
         ...x,
         name,
@@ -3068,9 +3067,8 @@ async function settleRoom(room) {
       };
     }));
   let scrollItem = null;
-  const scrollType = outcomeParsed && outcomeParsed.scroll && (outcomeParsed.scroll.type === '魔法技' ? '魔法技' : '物理技');
-  if (scrollType) {
-    const raw = await callLLM('请创作一部' + scrollType + '卷轴。', SCROLL_PROMPT.replace('{type}', scrollType));
+  if (outcomeParsed && outcomeParsed.scroll) {
+    const raw = await callLLM('请创作一部战斗技能卷轴。', SCROLL_PROMPT);
     let jsonStr = String(raw || '').replace(/```json/gi, '').replace(/```/g, '').trim();
     const st = jsonStr.indexOf('{'), en = jsonStr.lastIndexOf('}');
     if (st >= 0 && en > st) jsonStr = jsonStr.slice(st, en + 1);

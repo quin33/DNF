@@ -75,7 +75,8 @@ const fmtTimeFull = iso => {
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
 const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'修炼中', breaking_through:'突破中', insighting:'领悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
-const rarityColor = r => ({common:'#8b949e', rare:'#58a6ff', epic:'#a371f7', legendary:'#f0883e', mythic:'#f85149'}[r] || '#8b949e');
+const RARITY_CONFIG = (window.LootSettlement && window.LootSettlement.RARITY_CONFIG) || {};
+const rarityColor = r => (RARITY_CONFIG[r] && RARITY_CONFIG[r].color) || '#f4f4f4';
 function toastMsg(text) {
   const t = document.createElement('div');
   t.className = 'toast-ok';
@@ -250,7 +251,7 @@ function advCardHTML(adv) {
       <span>💰 ${Number(adv.gold || 0).toFixed(0)} 金币</span>
     </div>
     ${adv.injury && adv.injury.name ? `<div class="adv-tags"><span class="tag-badge injury-tag">${esc(adv.injury.name)}<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span></span></div>` : ''}
-    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge st-${s.type === '物理技' ? 'gongfa' : 'shufa'}">${esc(s.name)}</span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
+    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge">${esc(s.name)}</span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
     <div class="adv-tags">
       ${adv.is_mine && (adv.bag && adv.bag.length) ? `<span class="equip-badge">🎒 背包 ${adv.bag.length}/100</span>` : ''}
       ${equips.map(e => `<span class="equip-badge" style="color:${itemColor(e)};border-color:${itemColor(e)}55">${esc(e.name)}${e.qty > 1 ? ` ×${e.qty}` : ''}</span>`).join('')}
@@ -500,20 +501,20 @@ function renderBuilding() {
 }
 
 /* ============================================================
-   技能导师馆（仿军需店布局）：出售物理技与魔法技技能书
+   技能导师馆（仿军需店布局）：出售战斗技能书
    ============================================================ */
 const LIBRARY_BOOKS = [
-  { code: 'tuna', name: '里鬼剑术', type: '物理技', elem: '无', level: 'Lv.1+', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
-  { code: 'yufeng', name: '银弹', type: '魔法技', elem: '无', level: 'Lv.1+', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
-  { code: 'wood_shield', name: '圣光十字', type: '物理技', elem: '无', level: 'Lv.1+', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
-  { code: 'fireball', name: '火球术', type: '魔法技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
-  { code: 'water_arrow', name: '冰霜雪人', type: '魔法技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
-  { code: 'gold_blade', name: '崩拳', type: '物理技', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
-  { code: 'lianxi', name: '三段斩', type: '物理技', elem: '无', level: 'Lv.1+', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
-  { code: 'qingmu', name: '治愈术', type: '魔法技', elem: '无', level: 'Lv.1+', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
-  { code: 'xuanbing', name: '鬼斩', type: '物理技', elem: '无', level: 'Lv.11+', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
-  { code: 'zixiao', name: '浮空弹', type: '物理技', elem: '无', level: 'Lv.11+', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
-  { code: 'yujian', name: '加特林扫射', type: '物理技', elem: '无', level: 'Lv.11+', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
+  { code: 'tuna', name: '里鬼剑术', elem: '无', level: 'Lv.1+', price: 50, stock: 20, desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
+  { code: 'yufeng', name: '银弹', elem: '无', level: 'Lv.1+', price: 60, stock: 18, desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+  { code: 'wood_shield', name: '圣光十字', elem: '无', level: 'Lv.1+', price: 70, stock: 16, desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
+  { code: 'fireball', name: '火球术', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+  { code: 'water_arrow', name: '冰霜雪人', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
+  { code: 'gold_blade', name: '崩拳', elem: '无', level: 'Lv.1+', price: 80, stock: 15, desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
+  { code: 'lianxi', name: '三段斩', elem: '无', level: 'Lv.1+', price: 90, stock: 12, desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+  { code: 'qingmu', name: '治愈术', elem: '无', level: 'Lv.1+', price: 320, stock: 8, desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+  { code: 'xuanbing', name: '鬼斩', elem: '无', level: 'Lv.11+', price: 320, stock: 8, desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
+  { code: 'zixiao', name: '浮空弹', elem: '无', level: 'Lv.11+', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
+  { code: 'yujian', name: '加特林扫射', elem: '无', level: 'Lv.11+', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
 ];
 function libStock() {
   try { return JSON.parse(localStorage.getItem('dnf_library_stock') || '{}'); } catch (e) { return {}; }
@@ -534,7 +535,7 @@ function renderLibraryModal() {
   <button class="modal-close" onclick="closeModal()">✕</button>
   <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
   <h2 class="modal-title">📖 技能导师馆 <span class="built-badge">✓ 已建成</span></h2>
-  <p class="facility-desc">典藏物理技与魔法技技能书，由技能导师馆导师誊录发售；购得后录入技能栏（栏满则入技能库），装备后方可随探险施展。</p>
+  <p class="facility-desc">典藏战斗技能书，由技能导师馆导师誊录发售；购得后录入技能栏（栏满则入技能库），装备后方可随探险施展。</p>
   <div class="lib-user">${esc(role.name)} · 💰 ${Number(role.gold || 0).toFixed(0)} 金币 <span class="lib-skill-count">技能栏 ${(role.skills || []).length} / ${MAX_SKILLS} · 技能库 ${(role.skillPool || []).length}</span></div>
   <div class="lib-hint">购买后技能自动装备入随身技能栏（上限 ${MAX_SKILLS} 门）；栏满则存入技能库，可在档案页随时装卸。等级标注仅作参考，购得即可领悟。</div>
   <div class="lib-list">
@@ -545,7 +546,6 @@ function renderLibraryModal() {
       <div class="lib-item">
         <div class="li-head">
           <span class="li-name">${esc(b.name)}</span>
-          <span class="li-tag st-${b.type === '物理技' ? 'physical' : 'magic'}">${esc(b.type)}</span>
           <span class="li-realm">${esc(b.level)}</span>
         </div>
         <div class="li-desc">${esc(b.desc)}</div>
@@ -585,7 +585,7 @@ function buyLibraryBook(code) {
   stock[code] = left - 1;
   try { localStorage.setItem('dnf_library_stock', JSON.stringify(stock)); } catch (e) { /* 忽略 */ }
   role.gold = (role.gold || 0) - b.price;
-  const sk = { name: b.name, type: b.type, elem: b.elem, desc: b.desc };
+  const sk = { name: b.name, elem: b.elem, desc: b.desc };
   if ((role.skills || []).length < MAX_SKILLS) {
     if (!role.skills) role.skills = [];
     role.skills.push(sk);   // 栏位有空 → 自动装备
@@ -645,9 +645,8 @@ async function startBreakthrough() { const r = D.my_adventurer; if (Number(r.lev
 function closeSpiritPlatformModal() { if (spiritPlatformTimer) clearInterval(spiritPlatformTimer); spiritPlatformTimer = null; closeModal(); }
 
 /* ============================================================
-   觉醒祭坛：AI 结合职业道途领悟物理技或魔法技
+   觉醒祭坛：AI 结合职业道途领悟新的战斗技能
    ============================================================ */
-let taixuType = '物理技';
 let taixuInsightTimer = null;
 function renderTaixuInsightProgress() {
   const role = D.my_adventurer;
@@ -659,7 +658,7 @@ function renderTaixuInsightProgress() {
   box.innerHTML = `<div class="taixu-progress-dialog" role="dialog" aria-labelledby="taixu-progress-title">
     <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
     <h2 class="modal-title" id="taixu-progress-title">◎ 觉醒祭坛 · 领悟中</h2>
-    <p class="facility-desc">心神已入觉醒，正在推演新的物理技或魔法技。</p>
+    <p class="facility-desc">心神已入觉醒，正在推演新的战斗技能。</p>
     <div class="taixu-progress-state"><span class="taixu-progress-dot" aria-hidden="true"></span><strong>领悟中</strong><span>期间无法进行其他操作</span></div>
     <div class="taixu-progress-countdown" id="taixu-insight-countdown">${fmtSpiritTime(Number(state.endsAt) - Date.now())}</div>
     <div class="taixu-progress-meta">预计完成：${fmtTimeFull(new Date(Number(state.endsAt)).toISOString())}</div>
@@ -683,7 +682,6 @@ function openTaixuRealmModal() {
   const role = D.my_adventurer;
   if (!role) { toastMsg('请先创建角色'); return; }
   if (role.status === 'insighting' && role.taixuInsight) { renderTaixuInsightProgress(); return; }
-  taixuType = '物理技';
   const box = $('#modal-box');
   box.classList.remove('log-modal', 'forge-modal-box');
   box.innerHTML = `<div class="taixu-dialog">
@@ -692,11 +690,6 @@ function openTaixuRealmModal() {
     <h2 class="modal-title">◎ 觉醒祭坛 <span class="built-badge">✓ 已建成</span></h2>
   // 觉醒祭坛：观照自身道途，推演一门契合当前等级的新能力。
     <div class="taixu-capacity">技能栏 ${(role.skills || []).length} / ${MAX_SKILLS}<span>技能库 ${(role.skillPool || []).length}</span><span>当前免费 · 无冷却</span></div>
-    <div class="taixu-field-label">领悟类型</div>
-    <div class="taixu-type-switch" role="group" aria-label="领悟类型">
-      <button type="button" class="taixu-type-btn active" data-taixu-type="物理技" aria-pressed="true" onclick="setTaixuType('物理技')">物理技</button>
-      <button type="button" class="taixu-type-btn" data-taixu-type="魔法技" aria-pressed="false" onclick="setTaixuType('魔法技')">魔法技</button>
-    </div>
     <label class="taixu-goal-wrap" for="taixu-goal">
       <span class="taixu-field-label">期望目标</span>
       <textarea id="taixu-goal" maxlength="100" rows="4" oninput="updateTaixuGoalCount()" placeholder="例如：适合圣职者、能够持续庇护并在危急时稳住伤情"></textarea>
@@ -706,15 +699,6 @@ function openTaixuRealmModal() {
     <button class="btn btn-primary taixu-submit" id="taixu-submit" type="button" onclick="submitTaixuInsight()">开始领悟</button>
   </div>`;
   showModal();
-}
-function setTaixuType(type) {
-  if (type !== '物理技' && type !== '魔法技') return;
-  taixuType = type;
-  document.querySelectorAll('[data-taixu-type]').forEach(button => {
-    const selected = button.dataset.taixuType === type;
-    button.classList.toggle('active', selected);
-    button.setAttribute('aria-pressed', selected ? 'true' : 'false');
-  });
 }
 function updateTaixuGoalCount() {
   const input = $('#taixu-goal');
@@ -728,7 +712,7 @@ function renderTaixuInsightResult(result) {
   const storageText = result.storage === 'equipped' ? '已装备至技能栏' : '已存入技能库';
   target.innerHTML = `<div class="taixu-result-inner">
     <div class="taixu-result-head"><strong>${esc(skill.name)}</strong></div>
-    <div class="taixu-result-meta">${esc(skill.type)} · ${esc(skill.elem || '无属性')} · ${esc(storageText)}</div>
+    <div class="taixu-result-meta">${esc(skill.elem || '无属性')} · ${esc(storageText)}</div>
     <p>${esc(skill.desc)}</p>
   </div>`;
 }
@@ -746,7 +730,7 @@ function renderTaixuInsightSuccess(result) {
         <h2 class="modal-title" id="taixu-success-title">${esc(skill.name)}</h2>
       </div>
     </div>
-    <div class="taixu-success-meta">${esc(skill.type)} · ${esc(skill.elem || '无属性')}</div>
+    <div class="taixu-success-meta">${esc(skill.elem || '无属性')}</div>
     <section class="taixu-success-description">
       <div class="taixu-success-label">技能描述</div>
       <p>${esc(skill.desc)}</p>
@@ -770,8 +754,8 @@ async function submitTaixuInsight() {
   button.textContent = '正在领悟…';
   target.innerHTML = '<div class="taixu-loading">正在观想觉醒万象…</div>';
   try {
-    const result = await window.taixuInsight(taixuType, goal);
-    addFeedItem('◎', result.skill.name, `觉醒祭坛 · 领悟${result.skill.type}`, result.storage === 'equipped' ? '技能栏' : '技能库', '', {
+    const result = await window.taixuInsight(goal);
+    addFeedItem('◎', result.skill.name, '觉醒祭坛 · 领悟技能', result.storage === 'equipped' ? '技能栏' : '技能库', '', {
       kind: 'insight',
       description: result.skill.desc,
     });
@@ -857,7 +841,7 @@ function forgeModalHTML(role, resultHTML) {
       <input class="search-input forge-mat-search" id="forge-mat-search" placeholder="搜索名称 / 描述 / 种类 / 来源" value="${esc(forgeMatSearch)}" oninput="forgeMatSearch=this.value;renderForgeMats()">
       <div class="bag-toolbar forge-mat-toolbar">
         <div class="bag-chips">
-          ${[['all', '全部'], ['common', '普通'], ['rare', '稀有'], ['epic', '珍贵'], ['legendary', '传说']].map(([f, label]) => `<button type="button" class="bchip forge-mat-chip ${forgeMatFilter === f ? 'active' : ''}" data-filter="${f}" onclick="setForgeMatFilter('${f}')">${label} ${forgeMatCounts[f] || 0}</button>`).join('')}
+          ${[['all', '全部'], ['common', '普通'], ['advanced', '高级'], ['rare', '稀有'], ['artifact', '神器'], ['epic', '史诗'], ['legendary', '传说'], ['mythic', '神话']].map(([f, label]) => `<button type="button" class="bchip forge-mat-chip ${forgeMatFilter === f ? 'active' : ''}" data-filter="${f}" onclick="setForgeMatFilter('${f}')">${label} ${forgeMatCounts[f] || 0}</button>`).join('')}
         </div>
         <select class="bag-sort" onchange="setForgeMatSort(this.value)">
           <option value="default" ${forgeMatSort === 'default' ? 'selected' : ''}>默认顺序</option>
@@ -882,7 +866,7 @@ const forgeMatKey = m => `${m.name}|${m.src}|${m.idx}`;
 const forgeMatSourceLabel = m => m.src === 'equip' ? '随身装备' : '背包';
 function forgeMatView() {
   const all = forgeMatsPool();
-  const counts = { all: all.length, common: 0, rare: 0, epic: 0, legendary: 0 };
+  const counts = { all: all.length, common: 0, advanced: 0, rare: 0, artifact: 0, epic: 0, legendary: 0, mythic: 0 };
   all.forEach(m => { const r = m.rarity || 'common'; if (counts[r] !== undefined) counts[r]++; });
   let list = all.map((m, idx) => ({ m, idx }));
   if (forgeMatFilter !== 'all') list = list.filter(x => (x.m.rarity || 'common') === forgeMatFilter);
@@ -895,7 +879,7 @@ function forgeMatView() {
     ].some(v => v.toLowerCase().includes(q)));
   }
   if (forgeMatSort === 'rarity') {
-    const order = { legendary: 0, epic: 1, rare: 2, common: 3 };
+    const order = { mythic: 0, legendary: 1, epic: 2, artifact: 3, rare: 4, advanced: 5, common: 6 };
     list.sort((a, b) => (order[a.m.rarity || 'common'] || 9) - (order[b.m.rarity || 'common'] || 9));
   } else if (forgeMatSort === 'name') {
     list.sort((a, b) => (a.m.name || '').localeCompare(b.m.name || '', 'zh'));
@@ -1307,41 +1291,40 @@ const skillListItemHTML = (sk, actionHTML = '') => `
   <div class="skill-pool-item" title="${esc(sk.desc || '')}">
     <div class="spi-head">
       <span class="skill-name">${esc(sk.name)}</span>
-      <span class="skill-tag st-${sk.type === '物理技' ? 'physical' : 'magic'}">${esc(sk.type || '物理技')}</span>
       ${actionHTML}
     </div>
     <span class="skill-desc">${esc(sk.desc || '')}</span>
   </div>`;
 const ROOT_SKILLS = {
   slayer: [
-    { name: '上挑', type: '物理技', elem: '', desc: '向上挥剑挑击，命中后把敌人挑至浮空，趁其离地衔接连击，是鬼剑士最常用的起手式。' },
-    { name: '三段斩', type: '物理技', elem: '', desc: '向前连续挥砍三刀，每段命中独立判定，最后一击力道最重，能把射程内的敌人一起震退。' },
-    { name: '鬼斩', type: '物理技', elem: '', desc: '蓄鬼气于剑锋，向前斩出暗色剑气，命中可使敌人短暂僵直，是输出与控场兼顾的一击。' },
-    { name: '裂波斩', type: '物理技', elem: '', desc: '挥剑斩出波动剑气，向前扩散撕开近身魔物护甲，范围虽窄出手极快，适合贴身拼刀。' },
+    { name: '上挑', elem: '', desc: '向上挥剑挑击，命中后把敌人挑至浮空，趁其离地衔接连击，是鬼剑士最常用的起手式。' },
+    { name: '三段斩', elem: '', desc: '向前连续挥砍三刀，每段命中独立判定，最后一击力道最重，能把射程内的敌人一起震退。' },
+    { name: '鬼斩', elem: '', desc: '蓄鬼气于剑锋，向前斩出暗色剑气，命中可使敌人短暂僵直，是输出与控场兼顾的一击。' },
+    { name: '裂波斩', elem: '', desc: '挥剑斩出波动剑气，向前扩散撕开近身魔物护甲，范围虽窄出手极快，适合贴身拼刀。' },
   ],
   fighter: [
-    { name: '上勾拳', type: '物理技', elem: '', desc: '沉腰挥出上勾拳，命中后把敌人挑离地面浮空，可接空中连击，是格斗家的主力起手技。' },
-    { name: '前踢', type: '物理技', elem: '', desc: '正面蹬出势大力沉的直踢，攻击距离远、命中把敌人踢退数步，拉开身位或起动连招皆宜。' },
-    { name: '下段踢', type: '物理技', elem: '', desc: '放低重心贴地横扫，命中使敌人下盘失衡踉跄不稳，能在对方起手时打断其攻击。' },
-    { name: '背摔', type: '物理技', elem: '', desc: '贴身擒抱住敌人，借力一拧将其过肩摔向地面，落地造成伤害并顺势压制，衔接地面连击。' },
+    { name: '上勾拳', elem: '', desc: '沉腰挥出上勾拳，命中后把敌人挑离地面浮空，可接空中连击，是格斗家的主力起手技。' },
+    { name: '前踢', elem: '', desc: '正面蹬出势大力沉的直踢，攻击距离远、命中把敌人踢退数步，拉开身位或起动连招皆宜。' },
+    { name: '下段踢', elem: '', desc: '放低重心贴地横扫，命中使敌人下盘失衡踉跄不稳，能在对方起手时打断其攻击。' },
+    { name: '背摔', elem: '', desc: '贴身擒抱住敌人，借力一拧将其过肩摔向地面，落地造成伤害并顺势压制，衔接地面连击。' },
   ],
   gunner: [
-    { name: '瞬踢', type: '物理技', elem: '', desc: '近身快速一记侧踢，出脚快得难以捕捉，命中把敌人踢得后退，用来摆脱贴身缠斗。' },
-    { name: '浮空弹', type: '物理技', elem: '', desc: '抬枪朝敌人脚下射击，弹着冲击把人抬离地面浮空，为后续连射或连招留出稳定输出窗口。' },
-    { name: '加特林机枪', type: '物理技', elem: '', desc: '架起加特林向前持续扫射，弹幕密集覆盖一线，能把掩体后的敌人压得抬不起头。' },
-    { name: '膝撞', type: '物理技', elem: '', desc: '近身屈膝向上猛顶，命中把人顶得倒退并短暂僵直，趁对方弯腰僵直的功夫补上一枪。' },
+    { name: '瞬踢', elem: '', desc: '近身快速一记侧踢，出脚快得难以捕捉，命中把敌人踢得后退，用来摆脱贴身缠斗。' },
+    { name: '浮空弹', elem: '', desc: '抬枪朝敌人脚下射击，弹着冲击把人抬离地面浮空，为后续连射或连招留出稳定输出窗口。' },
+    { name: '加特林机枪', elem: '', desc: '架起加特林向前持续扫射，弹幕密集覆盖一线，能把掩体后的敌人压得抬不起头。' },
+    { name: '膝撞', elem: '', desc: '近身屈膝向上猛顶，命中把人顶得倒退并短暂僵直，趁对方弯腰僵直的功夫补上一枪。' },
   ],
   mage: [
-    { name: '魔法星弹', type: '魔法技', elem: '', desc: '凝聚魔力射出一枚星形弹丸，碰到目标炸开星屑灼伤周围敌人，消耗少、出手快。' },
-    { name: '杰克爆弹', type: '魔法技', elem: '', desc: '向前掷出杰克南瓜炸弹，落地引爆火焰吞噬范围敌人，冷却短伤害足，清理成片的小怪。' },
-    { name: '冰霜雪人', type: '魔法技', elem: '', desc: '召唤冰霜雪人扑向敌人，撞碎时寒气四散，能让范围内的敌人减速并造成冰属性伤害。' },
-    { name: '魔力护盾', type: '魔法技', elem: '', desc: '张开一面魔力护盾，正面来的一部分伤害会被吸收，护盾碎裂瞬间把近身敌人震开。' },
+    { name: '魔法星弹', elem: '', desc: '凝聚魔力射出一枚星形弹丸，碰到目标炸开星屑灼伤周围敌人，消耗少、出手快。' },
+    { name: '杰克爆弹', elem: '', desc: '向前掷出杰克南瓜炸弹，落地引爆火焰吞噬范围敌人，冷却短伤害足，清理成片的小怪。' },
+    { name: '冰霜雪人', elem: '', desc: '召唤冰霜雪人扑向敌人，撞碎时寒气四散，能让范围内的敌人减速并造成冰属性伤害。' },
+    { name: '魔力护盾', elem: '', desc: '张开一面魔力护盾，正面来的一部分伤害会被吸收，护盾碎裂瞬间把近身敌人震开。' },
   ],
   priest: [
-    { name: '圣光十字', type: '物理技', elem: '', desc: '挥动十字架划出圣光正面扫落，圣光所过之处魔气消散，对黑暗系魔物格外克制。' },
-    { name: '治愈术', type: '魔法技', elem: '', desc: '引导圣光治愈同伴伤势，肉眼可见愈合，战斗中为前排持续回血，是圣职者的续航核心。' },
-    { name: '直拳冲击', type: '物理技', elem: '', desc: '把圣光凝聚在拳头上正拳轰出，命中造成可观伤害，并顺势击退敌人、震散其护体效果。' },
-    { name: '净化', type: '魔法技', elem: '', desc: '释放圣光涤荡体表，驱散诅咒毒素等异常，救急时能清空身上负面状态，稳住局面。' },
+    { name: '圣光十字', elem: '', desc: '挥动十字架划出圣光正面扫落，圣光所过之处魔气消散，对黑暗系魔物格外克制。' },
+    { name: '治愈术', elem: '', desc: '引导圣光治愈同伴伤势，肉眼可见愈合，战斗中为前排持续回血，是圣职者的续航核心。' },
+    { name: '直拳冲击', elem: '', desc: '把圣光凝聚在拳头上正拳轰出，命中造成可观伤害，并顺势击退敌人、震散其护体效果。' },
+    { name: '净化', elem: '', desc: '释放圣光涤荡体表，驱散诅咒毒素等异常，救急时能清空身上负面状态，稳住局面。' },
   ],
 };
 /* 每个职业固定的初始新手武器（对应 ITEM_CHOICES 的 weapon 项） */
@@ -1988,8 +1971,8 @@ let logViewId = null;
 let logFont = 16;
 let logNameHl = true;  // 名称高亮默认开启
 const MEMBER_COLORS = ['#f0c25c', '#58a6ff', '#3fb950', '#f0883e', '#a371f7', '#56d4dd'];
-const RARITY_NAME = { common: '普通', rare: '稀有', epic: '珍贵', legendary: '传说' };
-const RARITY_COLOR = { common: '#8b949e', rare: '#58a6ff', epic: '#a371f7', legendary: '#f0883e' };
+const RARITY_NAME = Object.fromEntries(Object.entries(RARITY_CONFIG).map(([key, value]) => [key, value.name]));
+const RARITY_COLOR = Object.fromEntries(Object.entries(RARITY_CONFIG).map(([key, value]) => [key, value.color]));
 /* 物品名称按稀有度着色：旧存档物品无 rarity 时按普通（灰）处理 */
 const itemColor = it => RARITY_COLOR[(it && it.rarity) || 'common'] || RARITY_COLOR.common;
 const itemCardHTML = (it, actionHTML = '') => `
@@ -2515,7 +2498,7 @@ function memberStatusPanelHTML(s, logId) {
             ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 金币</span>` : ''}
             ${(m.statBuffs || []).map(b => `<span class="msc-buff">${esc(b)}</span>`).join('')}
           </div>
-          ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)} · ${esc(skill.type)}${skill.storage === 'pool' ? '（技能库）' : ''}</span>`).join('')}</div>` : ''}
+          ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)}${skill.storage === 'pool' ? '（技能库）' : ''}</span>`).join('')}</div>` : ''}
           ${m.fate === '阵亡' && m.death_reason ? `<div class="msc-death">☠ ${esc(m.death_reason)}</div>` : ''}
           ${m.loot && m.loot.length ? `<div class="msc-loot"><span class="msc-loot-label">新装备：</span>${m.loot.map(it => `<span class="msc-loot-item" title="${esc(it.desc || '')}"><span style="color:${itemColor(it)}">${esc(it.name)}</span> ×${it.qty || 1} <span class="rarity-tag" style="color:${RARITY_COLOR[it.rarity]};border-color:${RARITY_COLOR[it.rarity]}">${RARITY_NAME[it.rarity] || it.rarity}</span></span>`).join('')}</div>` : ''}
         </div>`).join('')}
@@ -2714,7 +2697,7 @@ const EQUIP_USE = {
     fail: ['{actor}{itemUseVerb}{item}，四处试探，可惜{itemDesc}在此地并不灵验。'],
   },
 };
-/* 物理技/魔法技释放句：是否使用及成败由 AI 判定，成功后按技能描述（{skillDesc}）演绎 */
+/* 技能释放句：是否使用及成败由 AI 判定，成功后按技能描述（{skillDesc}）演绎 */
 const SKILL_USE = {
   explore: {
     ok: ['{actor}默运{skillType}「{skill}」，{skillDesc}。灵光如涓流般散开，{where}中的暗处竟被照得通透，众人顺势前行。', '{actor}凝神掐诀，{skill}应念而动——{skillDesc}。余韵扫过{where}，连雾气都淡了几分。'],
@@ -3089,7 +3072,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
     return {
       name,
       qty: Math.max(1, Math.min(99, Math.round(Number(entry && entry.qty) || 1))),
-      rarity: ['common', 'rare', 'epic', 'legendary'].includes(entry && entry.rarity) ? entry.rarity : null,
+      rarity: LootSettlement.OPEN_DROP_RARITIES.includes(LootSettlement.normalizeRarity(entry && entry.rarity)) ? LootSettlement.normalizeRarity(entry && entry.rarity) : null,
     };
   }).filter(Boolean);
   return { outcome, damage, itemUse, skillUse, loot };
@@ -3107,7 +3090,7 @@ function resolveAiSkillUse(actor, entry) {
   if (!entry || !entry.name) return null;
   const skill = (actor.skills || []).find(s => s && s.name === entry.name);
   if (!skill) return null;
-  return { name: skill.name, type: skill.type || '物理技', elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
+  return { name: skill.name, elem: skill.elem || '', elemMod: elemMatchMod(actor, skill), success: entry.success === true };
 }
 /* AI 单步掉落登记：合并数量与稀有度，并同步写入 gainedLoot */
 function recordAiLoot(dg, actor, entries) {
@@ -3117,7 +3100,8 @@ function recordAiLoot(dg, actor, entries) {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim().slice(0, 12);
     if (!LootSettlement.isValidLootName(name)) continue;
     const qty = Math.max(1, Math.min(99, Math.round(Number(entry && entry.qty) || 1)));
-    const rarity = ['common', 'rare', 'epic', 'legendary'].includes(entry && entry.rarity) ? entry.rarity : null;
+    const candidate = LootSettlement.normalizeRarity(entry && entry.rarity);
+    const rarity = LootSettlement.OPEN_DROP_RARITIES.includes(candidate) ? candidate : null;
     const existing = dg.aiLoot.find(x => x.name === name);
     if (existing) existing.qty += qty;
     else dg.aiLoot.push({ name, qty, rarity });
@@ -3193,7 +3177,7 @@ async function dungeonTick(dg) {
   }
   // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
   applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
@@ -3422,7 +3406,6 @@ function replaceVars(s, dg, actor, support, support2, attrKey, roll, mod, total,
   const items = actor.equipment || [];  // 叙事只读取随身装备，背包不参与
   const supItems = support ? (support.equipment || []) : [];
   const skills = (actor.skills || []).map(s => s.name);
-  const shufa = (actor.skills || []).find(s => s.type === '魔法技');
   const warn = pick(['入此谷者，勿深', '雾起勿行，夜半勿留', '噬骨之渊，慎入', '前路凶险，量力而行']);
   const cur = dg._curEnemy || {};
   // 每件装备独立读取描述：{item}/{itemDesc} 引用判定选中的单件装备；动作按装备类型（防具/武器/药剂/符箓/工具）
@@ -3432,11 +3415,10 @@ function replaceVars(s, dg, actor, support, support2, attrKey, roll, mod, total,
   const singleItemDesc = singleItemObj ? (singleItemObj.desc || '') : '';
   const kind = (singleItemObj && singleItemObj.kind) || 'misc';
   const KA = KIND_ACTION[kind] || KIND_ACTION.misc;
-  // 本步释放的物理技/魔法技：{skill}/{skillDesc}/{skillType} 引用判定选中的技能及其描述
+  // 本步释放的技能：{skill}/{skillDesc} 引用判定选中的技能及其描述
   const usedSkill = skillUse && skillUse.name ? skillUse : null;
-  const singleSkill = usedSkill ? usedSkill.name : (shufa ? shufa.name : (skills[0] || '基础魔法技'));
-  const singleSkillDesc = usedSkill ? (usedSkill.desc || '') : (shufa ? (shufa.desc || '') : '');
-  const singleSkillType = usedSkill ? (usedSkill.type || '物理技') : '物理技';
+  const singleSkill = usedSkill ? usedSkill.name : (skills[0] || '基础技能');
+  const singleSkillDesc = usedSkill ? (usedSkill.desc || '') : ((actor.skills || [])[0] || {}).desc || '';
   // 性别代词：{he}/{his} 按本步主角性别替换（他/她、他的/她的）
   const he = actor.gender === '女' ? '她' : '他';
   const his = actor.gender === '女' ? '她的' : '他的';
@@ -3458,7 +3440,7 @@ function replaceVars(s, dg, actor, support, support2, attrKey, roll, mod, total,
     .replaceAll('{supportItems}', supItems.length ? supItems[0].name : singleItem)
     .replaceAll('{skill}', singleSkill)
     .replaceAll('{skillDesc}', singleSkillDesc)
-    .replaceAll('{skillType}', singleSkillType)
+    .replaceAll('{skillType}', '')
     .replaceAll('{skills}', skills.length ? skills.join('、') : '入门技能')
     .replaceAll('{attr}', ATTR_NAME[attrKey] || '道行')
     .replaceAll('{roll}', roll ? `本步判定结果：${total}` : '')
@@ -3492,7 +3474,7 @@ function localStory(dg, stageKey, actor, support, support2, attrKey, roll, mod, 
       ? rv(pick(usePool.ok)).replace('{where}', scene).replace('{enemy}', scene)
       : rv(pick(usePool.fail)).replace('{where}', scene).replace('{enemy}', scene);
   }
-  // 物理技/魔法技释放句（优先级最高，紧跟行动句）：成功后按技能描述演绎，失败则如实写施法受挫
+  // 技能释放句（优先级最高，紧跟行动句）：成功后按技能描述演绎，失败则如实写施展受挫
   let skillSentence = '';
   if (skillUse) {
     const usePool = SKILL_USE[stageKey] || SKILL_USE.battle;
@@ -3550,7 +3532,7 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
         party: dg.party.map(m => ({
           name: m.name, gender: m.gender || '男', level: Number(m.level) || 1, realm: m.character_class || '',
           personality: m.personality || '',
-          skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', desc: s.desc || '' })),
+          skills: (m.skills || []).map(s => ({ name: s.name, desc: s.desc || '' })),
           equipment: (m.equipment || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
           bag: (m.bag || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
           items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
@@ -3754,7 +3736,7 @@ async function aiExtractLoot(logText) {
           name: String(x && x.name || '').trim(),
           desc: String(x && x.desc || '').trim(),
           qty: Math.max(1, Math.round(Number(x && x.qty) || 1)),
-          rarity: ['common', 'rare', 'epic', 'legendary'].includes(x && x.rarity) ? x.rarity : 'common',
+          rarity: LootSettlement.OPEN_DROP_RARITIES.includes(LootSettlement.normalizeRarity(x && x.rarity)) ? LootSettlement.normalizeRarity(x && x.rarity) : 'common',
         };
         if (!item.name || !item.desc) throw new Error('AI 战利品缺少名称或描述');
         return item;
@@ -3763,12 +3745,12 @@ async function aiExtractLoot(logText) {
     throw new Error('AI 战利品格式无效');
   } catch (e) { throw new Error('AI 战利品提取失败：' + (e && e.message ? e.message : e)); }
 }
-/* 物理技/魔法技技能书：10% 概率的稀有战利品，AI 起名并写描述；AI 失败中止结算 */
-async function aiScroll(type) {
+/* 技能书：10% 概率的稀有战利品，AI 起名并写描述；AI 失败中止结算 */
+async function aiScroll() {
   try {
     const r = await fetch('/api/ai/scroll', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type }),
+      body: JSON.stringify({}),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'AI 卷轴生成失败');
@@ -3916,8 +3898,7 @@ async function settleDungeon(dg) {
         return fallbackDeathSummaryLocal(deadNames, dg.dungeon.name);
       }) : Promise.resolve({ overall: '', roles: [] }),
     ]);
-    const scrollType = aiVerdict.scroll && (aiVerdict.scroll.type === '魔法技' ? '魔法技' : '物理技');
-    if (scrollType) scrollItem = await aiScroll(scrollType);
+    if (aiVerdict.scroll) scrollItem = await aiScroll();
   } catch (e) {
     console.warn('[dungeon] AI 结算失败，取消探险:', e && e.message ? e.message : e);
     cancelDungeon(dg, '', e && e.message ? e.message : e);
@@ -4410,12 +4391,12 @@ function advTabCombat(adv) {
   // —— 背包：进度 + 筛选 + 排序 + 纵向卡片；仅本人可见 ——
   if (adv.is_mine) {
     const bag = (adv.bag || []);
-    const counts = { all: bag.length, common: 0, rare: 0, epic: 0, legendary: 0 };
+        const counts = { all: bag.length, common: 0, advanced: 0, rare: 0, artifact: 0, epic: 0, legendary: 0, mythic: 0 };
     bag.forEach(i => { const r = i.rarity || 'common'; if (counts[r] !== undefined) counts[r]++; });
     let list = bag.map((it, idx) => ({ it, idx }));
     if (advBagFilter !== 'all') list = list.filter(x => (x.it.rarity || 'common') === advBagFilter);
     if (advBagSort === 'rarity') {
-      const order = { legendary: 0, epic: 1, rare: 2, common: 3 };
+          const order = { mythic: 0, legendary: 1, epic: 2, artifact: 3, rare: 4, advanced: 5, common: 6 };
       list.sort((a, b) => (order[a.it.rarity || 'common'] || 9) - (order[b.it.rarity || 'common'] || 9));
     } else if (advBagSort === 'name') {
       list.sort((a, b) => (a.it.name || '').localeCompare(b.it.name || '', 'zh'));
@@ -4425,7 +4406,7 @@ function advTabCombat(adv) {
     html += `<div class="ad-sec-title">背包（${bag.length} / 100）</div>
     <div class="bag-toolbar">
       <div class="bag-chips">
-        ${chip('all', '全部')}${chip('common', '普通')}${chip('rare', '稀有')}${chip('epic', '珍贵')}${chip('legendary', '传说')}
+            ${chip('all', '全部')}${chip('common', '普通')}${chip('advanced', '高级')}${chip('rare', '稀有')}${chip('artifact', '神器')}${chip('epic', '史诗')}${chip('legendary', '传说')}${chip('mythic', '神话')}
       </div>
       <select class="bag-sort" onchange="setBagSort(this.value)">
         <option value="default" ${advBagSort === 'default' ? 'selected' : ''}>默认顺序</option>

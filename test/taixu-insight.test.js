@@ -4,16 +4,14 @@ const test = require('node:test');
 
 const TI = require('../taixu-insight');
 
-test('taixu insight accepts a valid skill and preserves the selected type', () => {
+test('taixu insight returns a skill without a physical or magic type', () => {
   const result = TI.parseTaixuInsight(
     '{"name":"烈焰冲击","type":"物理技","elem":"火","desc":"缠上斗气的一拳，撕开魔物护甲，久用会加速体力消耗。"}',
-    '物理技',
     new Set(['火球术'])
   );
 
   assert.deepEqual(result, {
     name: '烈焰冲击',
-    type: '物理技',
     elem: '火',
     desc: '缠上斗气的一拳，撕开魔物护甲，久用会加速体力消耗。',
   });
@@ -23,21 +21,17 @@ test('taixu insight preserves generated descriptions up to 250 characters', () =
   assert.match(TI.TAIXU_INSIGHT_SYSTEM_PROMPT, /描述[^\n]{0,40}200\s*字以内/);
   const result = TI.parseTaixuInsight(JSON.stringify({
     name: '长篇护体诀', type: '物理技', elem: '火', desc: '护'.repeat(300),
-  }), '物理技', new Set());
+  }), new Set());
   assert.equal(result.desc.length, 250);
 });
 
-test('taixu insight rejects invalid or duplicate AI results', () => {
+test('taixu insight rejects malformed or duplicate AI results', () => {
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"雷诀","type":"魔法技","desc":"护体"}', '物理技', new Set()),
-    /类型/
-  );
-  assert.throws(
-    () => TI.parseTaixuInsight('{"name":"火球术","type":"魔法技","desc":"聚火伤敌"}', '魔法技', new Set(['火球术'])),
+    () => TI.parseTaixuInsight('{"name":"火球术","type":"魔法技","desc":"聚火伤敌"}', new Set(['火球术'])),
     /重复/
   );
   assert.throws(
-    () => TI.parseTaixuInsight('{"name":"破�诀","type":"物理技","desc":"护体"}', '物理技', new Set()),
+    () => TI.parseTaixuInsight('{"name":"破�诀","type":"物理技","desc":"护体"}', new Set()),
     /乱码/
   );
 });
@@ -48,7 +42,7 @@ test('taixu prompt derives the character state from the authoritative skill list
     character_class: '狂战士',
     skills: [{ name: '崩山击', type: '物理技', desc: '奋力一击震荡大地。' }],
     skillPool: [{ name: '怒气爆发', type: '魔法技', desc: '积蓄怒气爆发周身。' }],
-  }, '物理技', '护体并在低血量时反击');
+  }, '护体并在低血量时反击');
 
   assert.doesNotMatch(prompt, /【特质】/);
   for (const expected of ['狂战士', '崩山击', '怒气爆发', '护体并在低血量时反击', '必须降格']) {
@@ -60,7 +54,7 @@ test('taixu prompt keeps player goals from dictating generated names', () => {
   const prompt = TI.buildTaixuInsightPrompt({
     name: '云岚',
     character_class: '狂战士',
-  }, '物理技', '一定要生成强力技能并命名为烈焰真经');
+  }, '一定要生成强力技能并命名为烈焰真经');
 
   const instructions = `${TI.TAIXU_INSIGHT_SYSTEM_PROMPT}\n${prompt}`;
   assert.match(instructions, /期望功能方向（仅影响效果）/);
@@ -176,7 +170,7 @@ test('online mode does not persist passive stamina or HP regeneration', () => {
   assert.match(hp, /if \(!window\.__onlineMode\) saveRole\(\)/);
 });
 
-test('building page exposes taixu realm type selection and a 100 character goal', () => {
+test('building page exposes taixu realm goal without skill type selection', () => {
   const data = fs.readFileSync('data.js', 'utf8');
   const html = fs.readFileSync('index.html', 'utf8');
 
@@ -185,11 +179,10 @@ test('building page exposes taixu realm type selection and a 100 character goal'
   assert.match(html, /data-tab="building"[\s\S]*?<span class="tab-task-count">\$\{FEATURED_BUILDING_CODES\.size\}<\/span>/);
   assert.match(html, /filter\(b\s*=>\s*FEATURED_BUILDING_CODES\.has\(b\.code\)\)/);
   assert.match(html, /openTaixuRealmModal/);
-  assert.match(html, /data-taixu-type="物理技"/);
-  assert.match(html, /data-taixu-type="魔法技"/);
+  assert.doesNotMatch(html, /data-taixu-type="物理技"|data-taixu-type="魔法技"/);
   assert.match(html, /maxlength="100"/);
   assert.match(html, /id="taixu-goal-count"/);
-  const modal = html.slice(html.indexOf('function openTaixuRealmModal'), html.indexOf('function setTaixuType'));
+  const modal = html.slice(html.indexOf('function openTaixuRealmModal'), html.indexOf('function updateTaixuGoalCount'));
   assert.doesNotMatch(modal, /class="taixu-context"/);
   assert.doesNotMatch(modal, /<small>修士<\/small>|<small>境界<\/small>|<small>灵根<\/small>|<small>特质<\/small>/);
 });

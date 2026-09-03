@@ -5,7 +5,7 @@
    字段与玩家角色卡片保持一致（name/title/character_class/
    strength/agility/intelligence/luck/skills/equipment/bag/...），
    并额外提供 biography（bio）。
-   —— DNF60：12 张职业预设冒险家卡（物理技/魔法技 + 四档稀有度）。
+   —— DNF60：12 张职业预设冒险家卡（技能 + DNF 七档稀有度）。
    ============================================================ */
 
 (function (root, factory) {
@@ -38,22 +38,22 @@
   }
 
   const skills = {
-    liguijian: { name: '里鬼剑术', type: '物理技', elem: '', desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
-    sanduanzhan: { name: '三段斩', type: '物理技', elem: '', desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
-    guizhan: { name: '鬼斩', type: '物理技', elem: '', desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
-    yueguangzhan: { name: '月光斩', type: '物理技', elem: '', desc: '剑光如一弯月牙横掠，清冷而致命。' },
-    bengquan: { name: '崩拳', type: '物理技', elem: '', desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
-    beishuai: { name: '背摔', type: '物理技', elem: '', desc: '贴身擒抱，借力把敌人掼向地面，土石四溅。' },
-    tieshankao: { name: '铁山靠', type: '物理技', elem: '', desc: '以肩为锋，沉身撞出，把人连盾带人轰开半丈。' },
-    jialin: { name: '加特林扫射', type: '物理技', elem: '', desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
-    yindan: { name: '银弹', type: '魔法技', elem: '', desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
-    futan: { name: '浮空弹', type: '物理技', elem: '', desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
-    moli: { name: '魔力弹', type: '魔法技', elem: '', desc: '指尖凝出一颗刺目的魔力弹，折线扑向敌人。' },
-    huoqiu: { name: '火球术', type: '魔法技', elem: '', desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
-    bingxue: { name: '冰霜雪人', type: '魔法技', elem: '', desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
-    shengguang: { name: '圣光十字', type: '物理技', elem: '', desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
-    zhiyu: { name: '治愈术', type: '魔法技', elem: '', desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
-    luolei: { name: '落雷符', type: '魔法技', elem: '', desc: '掷出一道符纸召来落雷，噼啪一声焦了敌手。' },
+    liguijian: { name: '里鬼剑术', elem: '', desc: '基础剑法，横斩斜挑一气呵成，收势之间暗藏杀机。' },
+    sanduanzhan: { name: '三段斩', elem: '', desc: '收剑、送肩、连斩三击，借势前突，地下城起手最稳的一招。' },
+    guizhan: { name: '鬼斩', elem: '', desc: '凝怨气于兵刃，一刀劈下，鬼影森森。' },
+    yueguangzhan: { name: '月光斩', elem: '', desc: '剑光如一弯月牙横掠，清冷而致命。' },
+    bengquan: { name: '崩拳', elem: '', desc: '蓄力一击，拳出如崩山，将面前敌人打得踉跄后退。' },
+    beishuai: { name: '背摔', elem: '', desc: '贴身擒抱，借力把敌人掼向地面，土石四溅。' },
+    tieshankao: { name: '铁山靠', elem: '', desc: '以肩为锋，沉身撞出，把人连盾带人轰开半丈。' },
+    jialin: { name: '加特林扫射', elem: '', desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' },
+    yindan: { name: '银弹', elem: '', desc: '给弹头附上圣光，破邪驱魔，击中要害时格外疼痛。' },
+    futan: { name: '浮空弹', elem: '', desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' },
+    moli: { name: '魔力弹', elem: '', desc: '指尖凝出一颗刺目的魔力弹，折线扑向敌人。' },
+    huoqiu: { name: '火球术', elem: '', desc: '聚一团赤焰火球掷出，落地爆开，灼浪翻涌。' },
+    bingxue: { name: '冰霜雪人', elem: '', desc: '召出一只圆滚滚的冰霜雪人扑向敌人，撞碎时寒气四溢。' },
+    shengguang: { name: '圣光十字', elem: '', desc: '以十字架划出一道圣光，正面镇压扑来的魔物。' },
+    zhiyu: { name: '治愈术', elem: '', desc: '引导圣光疗愈伤势，让人在恶战中喘一口气。' },
+    luolei: { name: '落雷符', elem: '', desc: '掷出一道符纸召来落雷，噼啪一声焦了敌手。' },
   };
 
   const cards = [

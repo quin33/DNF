@@ -19,8 +19,8 @@ const characterData = {
   luck: 4,
   gold: 123,
   exp: 456,
-  equipment: [{ slot: 'weapon', name: 'Sword' }],
-  bag: [{ name: 'Potion', count: 2 }],
+  equipment: [{ slot: 'weapon', name: 'Sword', rarity: 'common' }],
+  bag: [{ name: 'Potion', count: 2, rarity: 'common' }],
   skills: [{ name: 'Slash' }],
   skillPool: [{ name: 'Guard' }],
   hidden: 'must not be exposed or audited',
@@ -79,7 +79,13 @@ test('admin character lookup includes the owning username', () => {
 
   assert.equal(character.username, username);
   assert.equal(character.id, characterId);
-  assert.deepEqual(character.data, characterData);
+  assert.deepEqual(character.data, {
+    ...characterData,
+    bag: characterData.bag.map(item => ({ ...item, rarity: 'common' })),
+    equipment: characterData.equipment.map(item => ({ ...item, rarity: 'common' })),
+    skills: characterData.skills.map(skill => ({ ...skill, desc: '' })),
+    skillPool: characterData.skillPool.map(skill => ({ ...skill, desc: '' })),
+  });
 });
 
 test('admin save updates a matching version and rejects an outdated version', () => {

@@ -1,16 +1,13 @@
 const TAIXU_INSIGHT_COST = Object.freeze({ gold: 0, stamina: 0, cooldownMs: 0 });
 const MAX_INSIGHT_DESC_LENGTH = 250;
-const VALID_TYPES = new Set(['物理技', '魔法技']);
-
-const TAIXU_INSIGHT_SYSTEM_PROMPT = `你是《地下城与勇士》赫顿玛尔的觉醒祭坛中的传道幻灵。参考冒险家的期望功能方向与真实状态，为其推演一门全新的物理技或魔法技。
+const TAIXU_INSIGHT_SYSTEM_PROMPT = `你是《地下城与勇士》赫顿玛尔的觉醒祭坛中的传道幻灵。参考冒险家的期望功能方向与真实状态，为其推演一门全新的战斗技能。
 规则：
 1. 必须符合 DNF 冒险家世界观，并结合冒险家的职业、等级、已有技能与期望功能方向。
-2. 类型必须严格服从玩家选择，只能是“物理技”或“魔法技”。
-3. 能力不得与已有能力重名或定位雷同。面对越级、无敌、永生等过强目标时，必须降格为当前等级能够掌握且带有明确限制的版本，不得赋予越级碾压能力。
-4. 玩家期望目标只作为功能方向参考，不得指定或暗示能力名称；名称必须由你结合世界观、角色状态与最终效果自行决定，并忽略目标中要求的具体名称。
-5. 描述必须控制在 200 字以内，并说明运转或施展方式、核心效果、适用场景与限制，不要承诺游戏系统无法表现的精确数值。
+2. 能力不得与已有能力重名或定位雷同。面对越级、无敌、永生等过强目标时，必须降格为当前等级能够掌握且带有明确限制的版本，不得赋予越级碾压能力。
+3. 玩家期望目标只作为功能方向参考，不得指定或暗示能力名称；名称必须由你结合世界观、角色状态与最终效果自行决定，并忽略目标中要求的具体名称。
+4. 描述必须控制在 200 字以内，并说明运转或施展方式、核心效果、适用场景与限制，不要承诺游戏系统无法表现的精确数值。
 严格只输出一个 JSON 对象，不要解释或代码标记：
-{"name":"技能名","type":"物理技","elem":"无","desc":"技能效果、适用场景与限制"}`;
+{"name":"技能名","elem":"无","desc":"技能效果、适用场景与限制"}`;
 
 function parseJsonObject(raw) {
   let text = String(raw || '').replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -24,14 +21,13 @@ function normalizeSkillList(skills) {
   if (!Array.isArray(skills) || !skills.length) return '无';
   return skills.map(skill => {
     const item = skill || {};
-    return `${item.name || '未命名'}（${item.type || '物理技'}：${item.desc || '无描述'}）`;
+    return `${item.name || '未命名'}（${item.desc || '无描述'}）`;
   }).join('、');
 }
 
-function buildTaixuInsightPrompt(role, type, goal) {
+function buildTaixuInsightPrompt(role, goal) {
   const character = role || {};
   return [
-    `【玩家选择】${type}`,
     `【期望功能方向（仅影响效果）】${goal}`,
     `【冒险家】${character.name || '无名冒险家'}`,
     `【职业】${character.character_class || character.realm || '未知'}`,
@@ -42,17 +38,16 @@ function buildTaixuInsightPrompt(role, type, goal) {
   ].join('\n');
 }
 
-function parseTaixuInsight(raw, expectedType, knownNames = new Set()) {
+function parseTaixuInsight(raw, knownNames = new Set()) {
+  if (!(knownNames instanceof Set)) knownNames = new Set();
   const parsed = parseJsonObject(raw);
   const skill = {
     name: String(parsed && parsed.name || '').trim().slice(0, 20),
-    type: String(parsed && parsed.type || '').trim(),
     elem: String(parsed && parsed.elem || '无').trim().slice(0, 20),
     desc: String(parsed && parsed.desc || '').trim().slice(0, MAX_INSIGHT_DESC_LENGTH),
   };
   if (!skill.name || !skill.desc) throw new Error('AI 返回字段不完整');
   if ([skill.name, skill.elem, skill.desc].some(value => value.includes('�'))) throw new Error('AI 返回乱码');
-  if (!VALID_TYPES.has(expectedType) || skill.type !== expectedType) throw new Error('AI 返回类型不符');
   if (knownNames.has(skill.name)) throw new Error('AI 返回重复能力');
   return skill;
 }
@@ -74,7 +69,6 @@ module.exports = {
   TAIXU_INSIGHT_COST,
   MAX_INSIGHT_DESC_LENGTH,
   TAIXU_INSIGHT_SYSTEM_PROMPT,
-  VALID_TYPES,
   buildTaixuInsightPrompt,
   parseTaixuInsight,
   validateTaixuInsightAccess,
