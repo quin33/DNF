@@ -41,7 +41,7 @@ test('moonlit parchment theme exposes shared paper, ink, moon, copper, and wood 
 
 test('DNF rarity configuration exposes seven tiers with only four active drop tiers', () => {
   const source = fs.readFileSync(path.join(ROOT, 'loot-settlement.js'), 'utf8');
-  assert.match(source, /common:\s*\{[\s\S]*name:\s*'普通'[\s\S]*color:\s*'#ffffff'/);
+  assert.match(source, /common:\s*\{[\s\S]*name:\s*'普通'[\s\S]*color:\s*'#8b949e'/);
   assert.match(source, /advanced:\s*\{[\s\S]*name:\s*'高级'[\s\S]*color:\s*'#5aa9e6'/);
   assert.match(source, /rare:\s*\{[\s\S]*name:\s*'稀有'[\s\S]*color:\s*'#b36bdb'/);
   assert.match(source, /artifact:\s*\{[\s\S]*name:\s*'神器'[\s\S]*color:\s*'#ff8ac8'/);
