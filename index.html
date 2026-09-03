@@ -115,7 +115,7 @@ const FEATURED_BUILDING_CODES = new Set(['training_intelligence', 'spirit_platfo
 root.innerHTML = `
   <!-- 页头 -->
   <header class="advs1-header">
-    <div class="advs1-sigil">⚔️</div>
+    <div class="advs1-sigil moonlit-sigil" title="月光酒馆徽记" aria-hidden="true">月</div>
     <div class="advs1-header-copy">
       <span class="advs1-kicker">${esc(T.title_kicker)}</span>
       <h1 class="advs1-title">${esc(T.title)} <em>${esc(T.title_badge)}</em></h1>
@@ -143,13 +143,13 @@ root.innerHTML = `
 
   <!-- 标签页 -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="tavern"><span class="tab-btn-label">🍺 酒馆</span></button>
-    <button class="tab-btn" data-tab="activity"><span class="tab-btn-label">🏆 活动</span></button>
-    <button class="tab-btn" data-tab="building"><span class="tab-btn-label">🏗️ 建筑</span><span class="tab-task-count">${FEATURED_BUILDING_CODES.size}</span></button>
-    <button class="tab-btn" data-tab="mine"><span class="tab-btn-label">👤 我的</span></button>
-    <button class="tab-btn" data-tab="adventurers"><span class="tab-btn-label">⚔️ 冒险者</span></button>
-    <button class="tab-btn" data-tab="party"><span class="tab-btn-label">🛡️ 小队</span></button>
-    <button class="tab-btn" data-tab="logs"><span class="tab-btn-label">📜 探险日志</span></button>
+    <button class="tab-btn active" data-tab="tavern"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">酒</span>酒馆</span></button>
+    <button class="tab-btn" data-tab="activity"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">赛</span>活动</span></button>
+    <button class="tab-btn" data-tab="building"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">建</span>建筑</span><span class="tab-task-count">${FEATURED_BUILDING_CODES.size}</span></button>
+    <button class="tab-btn" data-tab="mine"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">我</span>我的</span></button>
+    <button class="tab-btn" data-tab="adventurers"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">冒</span>冒险者</span></button>
+    <button class="tab-btn" data-tab="party"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">队</span>小队</span></button>
+    <button class="tab-btn" data-tab="logs"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">志</span>探险日志</span></button>
   </nav>
 
   <section class="tab-content active" id="tab-tavern"></section>

@@ -48,6 +48,23 @@ test('game canvas uses the parchment surface while body keeps the sky background
   assert.match(appContent, /margin:\s*0\s+auto/);
 });
 
+test('primary navigation exposes moonlit icon hooks without emoji-only labels', () => {
+  const html = readAsset('index.html');
+  assert.match(html, /class="[^"]*moonlit-sigil[^"]*"/);
+  assert.match(html, /class="moonlit-icon"/);
+  assert.match(html, /data-tab="tavern"[\s\S]*class="moonlit-icon"/);
+  assert.match(html, /data-tab="logs"[\s\S]*class="moonlit-icon"/);
+  assert.doesNotMatch(html, /<button class="tab-btn active"[^>]*>🍺/);
+});
+
+test('moonlit header and tabs use paper, copper, and wood visual hooks', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.advs1-header[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.tabs[\s\S]*var\(--paper-muted\)/);
+  assert.match(styles, /\.tab-btn\.active[\s\S]*var\(--copper\)/);
+  assert.match(styles, /\.moonlit-icon/);
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);
