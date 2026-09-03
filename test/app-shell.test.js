@@ -18,6 +18,16 @@ test('global text uses a slight positive letter spacing', () => {
   assert.match(body, /letter-spacing:\s*var\(--tracking\)/);
 });
 
+test('game content is a centered white canvas with the page image visible on desktop sides', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+
+  assert.match(appContent, /width:\s*min\(100%,\s*1200px\)/);
+  assert.match(appContent, /margin:\s*0\s+auto/);
+  assert.match(appContent, /background:\s*#fff/);
+  assert.match(appContent, /box-shadow:/);
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);

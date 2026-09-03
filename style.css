@@ -167,9 +167,12 @@ button { font-family: var(--font); }
 .online-logout:hover { border-color: var(--color-primary); }
 
 .app-content {
+  width: min(100%, 1200px);
   min-height: 100vh;
   min-width: 0;
-  background: transparent;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.16);
 }
 
 /* ============ 深渊酒馆页头 ============ */
