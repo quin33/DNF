@@ -1,0 +1,56 @@
+diff --git a/server.js b/server.js
+index 0c772b8..f3f657d 100644
+--- a/server.js
++++ b/server.js
+@@ -197,6 +197,7 @@ const MIME = {
+   '.jpg': 'image/jpeg',
+   '.jpeg': 'image/jpeg',
+   '.svg': 'image/svg+xml',
++  '.avif': 'image/avif',
+   '.md': 'text/plain; charset=utf-8',
+   '.ico': 'image/x-icon',
+ };
+@@ -1148,7 +1149,8 @@ function serveStatic(res, urlPath) {
+   }
+   if (p === '/admin') p = '/admin.html';
+   const publicAssets = new Set(['/index.html', '/style.css', '/data.js', '/online.js', '/game-engine.js', '/game-create.js', '/taixu-insight.js', '/ai-companions.js', '/loot-settlement.js', '/site-nav.js']);
+-  if (!publicAssets.has(p) && !adminPaths.has(p)) {
++  const picAsset = p.startsWith('/pic/');
++  if (!publicAssets.has(p) && !adminPaths.has(p) && !picAsset) {
+     res.writeHead(404);
+     res.end('Not Found');
+     return;
+diff --git a/style.css b/style.css
+index 850bd85..c828d05 100644
+--- a/style.css
++++ b/style.css
+@@ -71,8 +71,19 @@
+ 
+ html, body { height: 100%; }
+ 
++body::before {
++  content: "";
++  position: fixed;
++  inset: 0;
++  background: rgba(0, 0, 0, 0.55);
++  z-index: 0;
++  pointer-events: none;
++}
++
++body > * { position: relative; z-index: 1; }
++
+ body {
+-  background: var(--color-bg);
++  background: var(--color-bg) url("pic/天空之城.jpg") center center / cover no-repeat fixed;
+   color: var(--color-text);
+   font-family: var(--font);
+   font-size: 14px;
+@@ -123,7 +134,7 @@ button { font-family: var(--font); }
+ .app-content {
+   min-height: 100vh;
+   min-width: 0;
+-  background: var(--color-bg);
++  background: transparent;
+ }
+ 
+ /* ============ 深渊酒馆页头 ============ */

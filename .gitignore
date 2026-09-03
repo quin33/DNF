@@ -43,3 +43,4 @@ __pycache__/
 .venv/
 venv/
 .worktrees/
+pic/_chrome_profile/
