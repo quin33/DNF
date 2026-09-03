@@ -169,7 +169,17 @@ function migrateExpeditionRuns() {
       CREATE INDEX IF NOT EXISTS idx_expedition_runs_status ON expedition_runs(status);
       CREATE INDEX IF NOT EXISTS idx_expedition_run_members_character
         ON expedition_run_members(user_id, character_id);
+      CREATE TABLE IF NOT EXISTS log_number_meta (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        seq INTEGER NOT NULL
+      );
     `);
+    db.prepare('INSERT OR IGNORE INTO log_number_meta(id,seq) VALUES(1,0)').run();
+    db.prepare(`
+      UPDATE log_number_meta
+      SET seq = (SELECT COALESCE(MAX(id),0) FROM logs)
+      WHERE id = 1 AND seq < (SELECT COALESCE(MAX(id),0) FROM logs)
+    `).run();
     db.prepare("INSERT OR IGNORE INTO schema_migrations(name,applied_at) VALUES('expedition_runs_v1',?)").run(Date.now());
     db.exec('COMMIT');
   } catch (error) {
@@ -506,6 +516,18 @@ function getActiveExpeditionRuns() {
     .all().map(expeditionRunData);
 }
 
+function nextLogNumber() {
+  const result = db.prepare('UPDATE log_number_meta SET seq = seq + 1 WHERE id = 1').run();
+  if (result.changes !== 1) throw new Error('日志编号序列不可用');
+  return Number(db.prepare('SELECT seq FROM log_number_meta WHERE id = 1').get().seq);
+}
+
+function pendingLogNumberFrom(snapshot) {
+  const raw = snapshot && snapshot._lifecycle && snapshot._lifecycle.pendingLogNumber;
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
+}
+
 function beginExpeditionRun({ runId, roomId, snapshot = {}, members = [], staminaCost = 10 }) {
   const normalizedRunId = String(runId || '').trim();
   const normalizedRoomId = String(roomId || '').trim();
@@ -518,7 +540,12 @@ function beginExpeditionRun({ runId, roomId, snapshot = {}, members = [], stamin
     const existingRow = db.prepare('SELECT * FROM expedition_runs WHERE run_id = ?').get(normalizedRunId);
     if (existingRow) {
       db.exec('COMMIT');
-      return { status: 'existing', run: expeditionRunData(existingRow), characters: [] };
+      return {
+        status: 'existing',
+        logNumber: pendingLogNumberFrom(expeditionRunData(existingRow).snapshot),
+        run: expeditionRunData(existingRow),
+        characters: [],
+      };
     }
 
     const loaded = [];
@@ -545,7 +572,14 @@ function beginExpeditionRun({ runId, roomId, snapshot = {}, members = [], stamin
     }
 
     const now = Date.now();
-    const serializedSnapshot = JSON.stringify(snapshot || {});
+    const pendingLogNumber = nextLogNumber();
+    const serializedSnapshot = JSON.stringify({
+      ...(snapshot || {}),
+      _lifecycle: {
+        ...((snapshot && snapshot._lifecycle) || {}),
+        pendingLogNumber,
+      },
+    });
     db.prepare(`
       INSERT INTO expedition_runs(run_id,room_id,status,snapshot,created_at,updated_at,finished_at)
       VALUES(?,?,'starting',?,?,?,NULL)
@@ -583,7 +617,12 @@ function beginExpeditionRun({ runId, roomId, snapshot = {}, members = [], stamin
     db.prepare("UPDATE expedition_runs SET status='running',snapshot=?,updated_at=? WHERE run_id=? AND status='starting'")
       .run(serializedSnapshot, now, normalizedRunId);
     db.exec('COMMIT');
-    return { status: 'started', run: getExpeditionRun(normalizedRunId), characters };
+    return {
+      status: 'started',
+      logNumber: pendingLogNumber,
+      run: getExpeditionRun(normalizedRunId),
+      characters,
+    };
   } catch (error) {
     try { db.exec('ROLLBACK'); } catch (_) {}
     throw error;
@@ -631,6 +670,7 @@ function failExpeditionRun({ runId, terminalStatus = 'failed', reason = '', log 
         restored: 0,
         refunded: 0,
         logKey: Number(current.snapshot && current.snapshot._lifecycle && current.snapshot._lifecycle.logKey) || null,
+        logNumber: Number(current.snapshot && current.snapshot._lifecycle && current.snapshot._lifecycle.logNumber) || null,
       };
     }
 
@@ -675,15 +715,22 @@ function failExpeditionRun({ runId, terminalStatus = 'failed', reason = '', log 
       characterId: member.character_id,
       memberName: member.member_name,
     }));
-    const shared = log && participants.length
-      ? insertSharedLog(participants, { ...log, run_id: normalizedRunId, status: 'failed', cancel_reason: reason || log.cancel_reason || '' })
-      : null;
+    const pendingLogNumber = pendingLogNumberFrom(current.snapshot);
+    const failedLog = log ? {
+      ...log,
+      run_id: normalizedRunId,
+      status: 'failed',
+      cancel_reason: reason || log.cancel_reason || '',
+    } : null;
+    if (failedLog && pendingLogNumber != null && failedLog.log_number == null) failedLog.log_number = pendingLogNumber;
+    const shared = failedLog && participants.length ? insertSharedLog(participants, failedLog) : null;
     const terminalSnapshot = {
       ...(current.snapshot || {}),
       _lifecycle: {
         terminalStatus,
         reason: String(reason || ''),
         logKey: shared ? shared.logKey : null,
+        logNumber: shared ? Number(shared.log.log_number || shared.logKey) : pendingLogNumber,
         finishedAt: now,
       },
     };
@@ -693,7 +740,13 @@ function failExpeditionRun({ runId, terminalStatus = 'failed', reason = '', log 
       WHERE run_id=? AND status IN ('starting','running','waiting_ai','settling')
     `).run(terminalStatus, JSON.stringify(terminalSnapshot), now, now, normalizedRunId);
     db.exec('COMMIT');
-    return { status: terminalStatus, restored, refunded, logKey: shared ? shared.logKey : null };
+    return {
+      status: terminalStatus,
+      restored,
+      refunded,
+      logKey: shared ? shared.logKey : null,
+      logNumber: shared ? Number(shared.log.log_number || shared.logKey) : pendingLogNumber,
+    };
   } catch (error) {
     try { db.exec('ROLLBACK'); } catch (_) {}
     throw error;
@@ -725,6 +778,7 @@ function commitExpeditionSettlement({
           status: 'existing',
           terminalStatus: run.status,
           logKey: Number(run.snapshot && run.snapshot._lifecycle && run.snapshot._lifecycle.logKey) || null,
+          logNumber: Number(run.snapshot && run.snapshot._lifecycle && run.snapshot._lifecycle.logNumber) || null,
           updatedCharacters: [],
           deletedCharacters: [],
         };
@@ -796,10 +850,28 @@ function commitExpeditionSettlement({
       deletedCharacters.push({ userId: entry.userId, characterId: entry.characterId });
     }
 
-    const shared = insertSharedLog(participants, { ...log, run_id: normalizedRunId });
+    const pendingLogNumber = Number(
+      log.log_number != null
+        ? log.log_number
+        : (snapshot && snapshot.room && snapshot.room.dg && snapshot.room.dg.logNumber)
+        || pendingLogNumberFrom(run.snapshot),
+    );
+    const completedLog = {
+      ...log,
+      run_id: normalizedRunId,
+    };
+    if (Number.isSafeInteger(pendingLogNumber) && pendingLogNumber > 0 && completedLog.log_number == null) {
+      completedLog.log_number = pendingLogNumber;
+    }
+    const shared = insertSharedLog(participants, completedLog);
     const terminalSnapshot = {
       ...(snapshot || {}),
-      _lifecycle: { terminalStatus: 'completed', logKey: shared.logKey, finishedAt: now },
+      _lifecycle: {
+        terminalStatus: 'completed',
+        logKey: shared.logKey,
+        logNumber: Number(shared.log.log_number || shared.logKey),
+        finishedAt: now,
+      },
     };
     const completed = db.prepare(`
       UPDATE expedition_runs
@@ -808,7 +880,13 @@ function commitExpeditionSettlement({
     `).run(JSON.stringify(terminalSnapshot), now, now, normalizedRunId);
     if (completed.changes !== 1) throw new Error('副本状态已更新，请重试');
     db.exec('COMMIT');
-    return { status: 'completed', logKey: shared.logKey, updatedCharacters, deletedCharacters };
+    return {
+      status: 'completed',
+      logKey: shared.logKey,
+      logNumber: Number(shared.log.log_number || shared.logKey),
+      updatedCharacters,
+      deletedCharacters,
+    };
   } catch (error) {
     try { db.exec('ROLLBACK'); } catch (_) {}
     throw error;
@@ -1052,7 +1130,9 @@ function insertSharedLog(participants, log) {
     .run(participants[0]?.userId || 0, log.dungeon_name || '', log.status || '', now, JSON.stringify(log));
   const logKey = Number(info.lastInsertRowid);
   // 数据库行主键是日志详情的唯一身份；业务展示编号可能在并发结算时重复。
-  const canonical = { ...log, id: logKey, log_key: logKey };
+  const explicitLogNumber = Number(log.log_number);
+  const logNumber = Number.isSafeInteger(explicitLogNumber) && explicitLogNumber > 0 ? explicitLogNumber : nextLogNumber();
+  const canonical = { ...log, id: logKey, log_key: logKey, log_number: logNumber };
   db.prepare('UPDATE logs SET data=? WHERE id=?').run(JSON.stringify(canonical), logKey);
   const insert = db.prepare('INSERT OR IGNORE INTO log_participants (log_id,user_id,character_id,member_name,personal_data) VALUES(?,?,?,?,?)');
   for (const p of participants || []) {
@@ -1086,6 +1166,7 @@ function logSummaryData(log) {
   return {
     id: log.log_key ?? log.id,
     log_key: log.log_key,
+    log_number: log.log_number,
     run_id: log.run_id,
     party_name: log.party_name,
     dungeon_name: log.dungeon_name,

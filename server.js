@@ -2447,6 +2447,7 @@ function runningSnapshot(room) {
   return {
     id: dg.id,
     runId: dg.id,
+    logNumber: dg.logNumber != null ? Number(dg.logNumber) : null,
     status: room.status,
     startedAt: dg.startedAt,
     dungeon: dg.dungeon,
@@ -2474,7 +2475,13 @@ function durableRunSnapshot(room) {
   return { ...payload, ...(client || {}), client };
 }
 function durableClientSnapshot(run) {
-  if (run && run.snapshot && run.snapshot.client) return run.snapshot.client;
+  if (run && run.snapshot && run.snapshot.client) {
+    const pendingLogNumber = Number(run.snapshot._lifecycle && run.snapshot._lifecycle.pendingLogNumber);
+    return {
+      ...run.snapshot.client,
+      logNumber: Number(run.snapshot.client.logNumber) || (pendingLogNumber > 0 ? pendingLogNumber : null),
+    };
+  }
   const snapshot = run && run.snapshot || {};
   const room = snapshot.room;
   const dg = room && room.dg;
@@ -2483,6 +2490,7 @@ function durableClientSnapshot(run) {
   return {
     id: dg.id,
     runId: dg.id,
+    logNumber: Number(dg.logNumber || (snapshot._lifecycle && snapshot._lifecycle.pendingLogNumber)) || null,
     status: run.status || room.status || 'running',
     startedAt: dg.startedAt,
     dungeon: dg.dungeon,
@@ -2587,6 +2595,11 @@ const { startRoomRun } = createRoomRunner({
         .filter(member => !member.isNpc && member.uid && member.charId)
         .map(member => ({ userId: member.uid, characterId: member.charId, memberName: member.name })),
     });
+    const pendingLogNumber = Number(
+      result.logNumber
+      || (result.run && result.run.snapshot && result.run.snapshot._lifecycle && result.run.snapshot._lifecycle.pendingLogNumber),
+    );
+    dungeon.logNumber = Number.isSafeInteger(pendingLogNumber) && pendingLogNumber > 0 ? pendingLogNumber : null;
     for (const character of result.characters || []) {
       const member = dungeon.party.find(candidate => (
         candidate.uid === character.userId && candidate.charId === character.characterId
@@ -2714,6 +2727,7 @@ async function failRoomRun(room, error) {
       reason: message,
       log: participants.length ? {
         id: DB.nextLogSeq(participants[0].userId), run_id: dg.id,
+        log_number: dg.logNumber || undefined,
         party_name: '匹配小队' + room.id, dungeon_name: dg.dungeon.name,
         status: 'failed', result_summary: storyText, created_at: new Date().toISOString(),
         is_favorited: false, death: diedAny,
@@ -3222,6 +3236,7 @@ async function settleRoom(room) {
   const participants = settledPlayers.map(settled => ({ userId: settled.uid, characterId: dg.party.find(m => m.uid === settled.uid)?.charId, memberName: settled.memberRes.name, personalData: { exp: settled.memberRes.exp, gold: settled.goldGain, items: settled.memberRes.lootItems, damage: settled.damage } }));
   const log = {
     id: DB.nextLogSeq(participants[0]?.userId || 0), run_id: dg.id, party_name: '匹配小队' + room.id, dungeon_name: dg.dungeon.name,
+    log_number: dg.logNumber || undefined,
     status: anyDeath ? 'failed' : (ok ? 'completed' : 'failed'), result_summary: storyText, created_at: new Date().toISOString(),
     is_favorited: false, death: anyDeath,
     summary_text: summaryText || '', death_summary: anyDeath ? deathSummary.overall : '',
@@ -3252,6 +3267,7 @@ async function settleRoom(room) {
     notifyCharacterDeleted(character.userId, character.characterId);
   }
   for (const settled of settledPlayers) settled.memberRes.logId = committed.logKey;
+  for (const settled of settledPlayers) settled.memberRes.logNumber = committed.logNumber || committed.logKey;
   room.status = 'finished';
     broadcastAll({ type: 'settled', runId: dg.id, ok, summary: summaryText || '', death_summary: anyDeath ? deathSummary.overall : '', death_reasons: memberStatuses.filter(member => member.fate === '阵亡').map(member => ({ name: member.name, reason: member.death_reason })), exp, dungeon: dg.dungeon.name, results, consumed: itemSettlement.consumed, returned: itemSettlement.returned, verdict: dg.breakthrough ? (dg.breachSuccess ? 'breakthrough_ok' : 'breakthrough_fail') : (ok ? 'completed' : 'failed') });
   room.party.forEach(member => { if (!member.isNpc && member.ws) member.ws._roomId = null; });
@@ -3546,6 +3562,11 @@ function restorePersistedExpeditions() {
   for (const run of DB.getActiveExpeditionRuns()) {
     const room = hydrateDurableRoom(run);
     if (!room || !['running', 'waiting_ai', 'settling'].includes(run.status)) continue;
+    const persistedLogNumber = Number(
+      (run.snapshot && run.snapshot._lifecycle && run.snapshot._lifecycle.pendingLogNumber)
+      || (room.dg && room.dg.logNumber),
+    );
+    if (Number.isSafeInteger(persistedLogNumber) && persistedLogNumber > 0) room.dg.logNumber = persistedLogNumber;
     if (run.status === 'settling') {
       room.status = 'waiting_ai';
       room.dg.status = 'waiting_ai';

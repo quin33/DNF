@@ -277,6 +277,7 @@ test('settlement commits every character and shared log exactly once', () => {
     ],
     log: {
       id: 1,
+      log_number: 7001,
       run_id: 'run-settlement',
       party_name: '匹配小队R10',
       dungeon_name: '照月台',
@@ -294,6 +295,8 @@ test('settlement commits every character and shared log exactly once', () => {
   assert.equal(first.status, 'completed');
   assert.equal(second.status, 'existing');
   assert.equal(second.logKey, first.logKey);
+  assert.equal(first.logNumber, 7001);
+  assert.equal(second.logNumber, 7001);
   assert.equal(DB.getExpeditionRun(input.runId).status, 'completed');
   assert.deepEqual(
     [DB.getCharacter(userA, charA), DB.getCharacter(userB, charB)]
@@ -305,6 +308,7 @@ test('settlement commits every character and shared log exactly once', () => {
   );
   assert.equal(DB.getLogs(userA).filter(log => log.run_id === input.runId).length, 1);
   assert.equal(DB.getLogs(userB).filter(log => log.run_id === input.runId).length, 1);
+  assert.equal(DB.getAllLogSummaries().find(log => log.log_key === first.logKey).log_number, 7001);
 });
 
 test('invalid settlement rolls back character writes log and lifecycle state', () => {

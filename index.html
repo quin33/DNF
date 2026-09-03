@@ -2086,7 +2086,7 @@ function logRowHTML(l) {
     <span class="log-status st-${esc(l.status || '')} lr-status-top">${esc(stName)}</span>
     <div class="lr-summary">${summaryLine}</div>
     <div class="lr-meta">
-      <span class="lr-id">日志 #${fmtLogId(l.id)}</span>
+      <span class="lr-id">日志 #${fmtLogId(l.log_number != null ? l.log_number : l.id)}</span>
       <span class="lr-time">${fmtTimeFull(l.created_at)}</span>
       ${members ? `<span class="lr-members">${members} 人</span>` : ''}
       <span class="lr-flex"></span>
@@ -2111,7 +2111,7 @@ function runningRowHTML(dg) {
     <span class="log-status st-in_progress lr-status-top">${dg.status === 'waiting_ai' ? '等待 AI' : '进行中'}</span>
     <div class="lr-summary">${dg.status === 'waiting_ai' ? 'AI 服务暂不可用，副本已暂停，将自动恢复' : '探险进行中…'}</div>
     <div class="lr-meta">
-      <span class="lr-id">${dg.status === 'waiting_ai' ? '等待 AI 恢复' : '进行中的副本'}</span>
+      <span class="lr-id">日志 #${fmtLogId(dg.logNumber != null ? dg.logNumber : 0)}</span>
       <span class="lr-time">${fmtTimeFull(new Date(dg.startedAt).toISOString())} 开始</span>
       <span class="lr-members">${dg.party.length} 人</span>
       <span class="lr-flex"></span>
@@ -2461,7 +2461,7 @@ function logDetailHTML(l) {
   ${logToolbarHTML()}
   <div class="log-detail log-theme-${logTheme}" style="font-size:${logFont}px">
     <div class="log-detail-header log-reading-header">
-    <h2 class="log-detail-title">探险日志 #${fmtLogId(l.id)}${l.special_event_theme ? ` <span class="log-special-event">✨ ${esc(l.special_event_theme)}</span>` : ''}</h2>
+    <h2 class="log-detail-title">探险日志 #${fmtLogId(l.log_number != null ? l.log_number : l.id)}${l.special_event_theme ? ` <span class="log-special-event">✨ ${esc(l.special_event_theme)}</span>` : ''}</h2>
     <div class="log-detail-meta">
       <span class="ldm-item">${esc(l.party_name || '匹配小队')}</span>
       <span class="ldm-item ldm-dungeon">${snap.icon} ${esc(snap.name)}</span>
@@ -2847,6 +2847,7 @@ function restoreRuns() {
       if (!s.memberGains) s.memberGains = {};
       s.party.forEach(m => { if (m && !s.memberGains[m.id]) s.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 }; });
       s.status = 'running';
+      if (s.logNumber == null) s.logNumber = nextLogId();
       s.timer = null;
       activeDungeons.push(s);
       restored++;
@@ -2863,7 +2864,7 @@ function restoreRuns() {
 /* 中断副本 → 失败日志（页面临时关闭导致未完成，至少留下记录） */
 function interruptRunToLog(s) {
   const log = {
-    id: nextLogId(), party_name: '匹配小队_' + (s.id || 0), dungeon_name: s.dungeon ? s.dungeon.name : '地下城',
+    id: s.logNumber || nextLogId(), party_name: '匹配小队_' + (s.id || 0), dungeon_name: s.dungeon ? s.dungeon.name : '地下城',
     status: 'failed', result_summary: '探险中断：页面关闭导致本次探险未能完成，仅保留此前推进的剧情。', created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: '', items_used: [], cancel_reason: '页面关闭中断', summary_text: '',
     dg_snapshot: { icon: s.dungeon.icon, name: s.dungeon.name, baseName: s.dungeon.baseName, isHidden: !!s.dungeon.isHidden, desc: s.dungeon.desc, steps: s.steps || [], party: (s.party || []).map(m => ({ name: m.name, is_mine: !!m.is_mine })) },
@@ -3041,7 +3042,7 @@ async function startDungeon(role, npcs, choice) {
     isHidden, baseName: base.name, enemies, bosses, specialEvent, breakthrough,
   };
   const party = [role, ...npcs];
-  const dg = { id: dungeonSeq++, dungeon, party, plan: buildPlan(isHidden, enemies.length, specialEvent, breakthrough), planIdx: 0, stepIdx: 0, totalStep: 0, steps: [], damage: 0, deaths: [], status: 'running', startedAt: Date.now(), timer: null, memberGains: {}, bossDrops: [], _curEnemy: null };
+  const dg = { id: dungeonSeq++, logNumber: nextLogId(), dungeon, party, plan: buildPlan(isHidden, enemies.length, specialEvent, breakthrough), planIdx: 0, stepIdx: 0, totalStep: 0, steps: [], damage: 0, deaths: [], status: 'running', startedAt: Date.now(), timer: null, memberGains: {}, bossDrops: [], _curEnemy: null };
   dg.focusPlan = buildNarrativeFocusPlan(dg);
   dg.party.forEach(m => { dg.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 }; });
   role.stamina = Math.max(0, (role.stamina || 0) - 10);  // 进入副本消耗 10 精力
@@ -3802,7 +3803,7 @@ async function cancelDungeon(dg, reason, errDetail) {
     saveRole();
   }
   const log = {
-    id: nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name,
+    id: dg.logNumber || nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name,
     status: 'failed', result_summary: '', created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: '', items_used: [], cancel_reason: errDetail || 'AI 生成失败', summary_text: '',
     dg_snapshot: { icon: dg.dungeon.icon, name: dg.dungeon.name, baseName: dg.dungeon.baseName, isHidden: !!dg.dungeon.isHidden, desc: dg.dungeon.desc, steps: dg.steps, party: dg.party.map(m => ({ name: m.name, is_mine: !!m.is_mine })) },
@@ -3839,7 +3840,7 @@ async function finishRoleDeath(dg, role) {
     };
   });
   const deathLog = {
-    id: nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name, status: 'failed',
+    id: dg.logNumber || nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name, status: 'failed',
     result_summary: fullText || storyText || `${role.name}在${dg.dungeon.name}中气血耗尽，壮烈阵亡。`,
     created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: dg.dungeon.specialEvent ? '特殊事件' : '', items_used: [],
@@ -4019,7 +4020,7 @@ async function settleDungeon(dg) {
   });
   saveRole();
   const log = {
-    id: nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name, status: ok,
+    id: dg.logNumber || nextLogId(), party_name: '匹配小队_' + dg.id, dungeon_name: dg.dungeon.name, status: ok,
     result_summary: fullText, created_at: new Date().toISOString(), is_favorited: false,
     special_event_theme: dg.dungeon.specialEvent ? '特殊事件' : '', items_used: [],
     death: deadNames.length > 0, summary_text: summaryText || '', death_summary: deathSummary.overall || '',

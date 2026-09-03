@@ -1171,7 +1171,9 @@
     const dgParty = (snapshot.dgParty || []).map(p => ({ uid: p.uid || null, charId: p.charId || null, name: p.name, hp: p.hp, max_hp: p.max_hp || 100, isNpc: !!p.isNpc, isMine: mine && !p.isNpc, card: p.card }));
     registerNpcCardsFromParty(snapshot.dgParty || []);
     const dg = {
-      id: stableId, runId: stableId, isMineRun: mine, dungeon: snapshot.dungeon, party: dgParty.length ? dgParty.map(p => ({ uid: p.uid, charId: p.charId, name: p.name, hp: p.hp, max_hp: p.max_hp, is_mine: p.isMine, isNpc: p.isNpc, card: p.card })) : (snapshot.party || []).map(p => ({ uid: p.uid || null, charId: p.charId || null, name: p.name, is_mine: mine && !p.isNpc, isNpc: !!p.isNpc, card: p.isNpc ? p.card : undefined })),
+      id: stableId, runId: stableId, isMineRun: mine,
+      logNumber: Number(snapshot.logNumber) || null,
+      dungeon: snapshot.dungeon, party: dgParty.length ? dgParty.map(p => ({ uid: p.uid, charId: p.charId, name: p.name, hp: p.hp, max_hp: p.max_hp, is_mine: p.isMine, isNpc: p.isNpc, card: p.card })) : (snapshot.party || []).map(p => ({ uid: p.uid || null, charId: p.charId || null, name: p.name, is_mine: mine && !p.isNpc, isNpc: !!p.isNpc, card: p.isNpc ? p.card : undefined })),
       steps: [], plan: (snapshot.planLabels || []).map((p, i) => ({ key: p.key, label: p.label })), planIdx: 0, stepIdx: 0, totalStep: 0,
       status: snapshot.status || 'running', startedAt: snapshot.startedAt || Date.now(), bossDrops: [], _char_db_id: mine && window.D.my_adventurer && window.D.my_adventurer._char_db_id,
     };
@@ -1336,10 +1338,11 @@
     const myRes = (d.results || []).find(viewerOwnsResult);
     const logKeyValue = myRes && myRes.logId != null ? String(myRes.logId) : ('run:' + String(d.runId || (run && run.id) || Date.now()));
     const logId = myRes && myRes.logId != null ? myRes.logId : nextLogId();
+    const logNumber = myRes && myRes.logNumber != null ? myRes.logNumber : (run && run.logNumber);
     const ownDied = !!(myRes && myRes.fate === '阵亡');
     const anyDeath = results.some(result => result.fate === '阵亡');
     const log = {
-      id: logId, log_key: logKeyValue, run_id: d.runId || (run && run.id) || '', party_name: '匹配小队 (在线)', dungeon_name: d.dungeon || '',
+      id: logId, log_key: logKeyValue, log_number: logNumber != null ? Number(logNumber) : undefined, run_id: d.runId || (run && run.id) || '', party_name: '匹配小队 (在线)', dungeon_name: d.dungeon || '',
       status: ownDied ? 'failed' : (d.ok ? 'completed' : 'failed'), result_summary: (d.summary || ''), created_at: new Date().toISOString(),
       death: anyDeath, summary_text: d.summary || '', death_summary: d.death_summary || '', special_event_theme: '',
       verdict_reason: ownDied ? '角色气血耗尽，壮烈阵亡' : (d.verdict === 'breakthrough_ok' ? '转职试炼成功，踏入 Lv.11' : (d.verdict === 'breakthrough_fail' ? '转职试炼失败' : '')),

@@ -318,6 +318,8 @@ test('running expedition log cards use the matching-party label instead of playe
 
   assert.match(runningRow, /lr-party">\$\{esc\('匹配小队'\)\}/);
   assert.doesNotMatch(runningRow, /dg\.party\.map\(m => m\.name\)/);
+  assert.match(runningRow, /日志 #\$\{fmtLogId\(/);
+  assert.doesNotMatch(runningRow, /进行中的副本|等待 AI 恢复/);
 });
 
 test('party member details load one selected character outside the current page', () => {
