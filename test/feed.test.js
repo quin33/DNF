@@ -37,7 +37,7 @@ test('a forge operation records material consumption and output in one feed entr
 
 test('mine layout keeps the adventurer card above a full-width activity feed', () => {
   assert.match(styles, /:root\s*\{[\s\S]*?--color-bg:\s*#0e1319/);
-  assert.match(styles, /\[data-theme="light"\]\s*\{[\s\S]*?--color-bg:\s*#ffffff/);
+  assert.match(styles, /\[data-theme="light"\]\s*\{[\s\S]*?--color-bg:\s*var\(--paper-bg\)/);
   assert.match(source, /adv-card[^`]*statusClass/, 'adventurer cards should derive a status class');
   assert.match(source, /mine-layout[^`]*adv-grid[^`]*advCardHTML\(me\)[^`]*feed-list/, 'mine page should reuse the adventurer grid sizing for the card');
   assert.doesNotMatch(source, /<div class="mine-card-col" style="flex:1\.4">/, 'activity feed should not remain in a side column');

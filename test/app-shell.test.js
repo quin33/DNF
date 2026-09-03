@@ -84,6 +84,14 @@ test('secondary pages reuse the moonlit parchment panel language', () => {
   assert.match(styles, /\.btn-primary[\s\S]*var\(--moon-blue-dark\)/);
 });
 
+test('moonlit UI defines reduced-motion and mobile stacking rules', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+  assert.match(styles, /@media\s*\(max-width:\s*860px\)[\s\S]*\.tavern-layout/);
+  assert.match(styles, /@media\s*\(max-width:\s*700px\)[\s\S]*\.tabs/);
+  assert.match(styles, /@media\s*\(max-width:\s*520px\)[\s\S]*\.advs1/);
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);
