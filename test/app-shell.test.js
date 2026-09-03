@@ -18,6 +18,36 @@ test('global text uses a slight positive letter spacing', () => {
   assert.match(body, /letter-spacing:\s*var\(--tracking\)/);
 });
 
+test('game content is a centered parchment canvas with the page image visible on desktop sides', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+
+  assert.match(appContent, /width:\s*min\(100%,\s*1200px\)/);
+  assert.match(appContent, /margin:\s*0\s+auto/);
+  assert.match(appContent, /background:\s*var\(--paper-bg\)/);
+  assert.match(appContent, /box-shadow:/);
+});
+
+test('moonlit parchment theme exposes shared paper, ink, moon, copper, and wood tokens', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const rootTheme = styles.slice(styles.indexOf(':root {'), styles.indexOf('/* ============ 白色仙侠风主题'));
+  assert.match(rootTheme, /--paper-bg:\s*#f7f1e5/);
+  assert.match(rootTheme, /--paper-raised:\s*#fffaf0/);
+  assert.match(rootTheme, /--ink:\s*#2c3440/);
+  assert.match(rootTheme, /--moon-blue:\s*#6f879c/);
+  assert.match(rootTheme, /--copper:\s*#b98545/);
+  assert.match(rootTheme, /--wood:\s*#805a3b/);
+});
+
+test('game canvas uses the parchment surface while body keeps the sky background', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  const body = styles.slice(styles.indexOf('body {'), styles.indexOf('::-webkit-scrollbar'));
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+  assert.match(body, /url\("pic\/天空之城\.jpg"\)/);
+  assert.match(appContent, /background:\s*var\(--paper-bg\)/);
+  assert.match(appContent, /margin:\s*0\s+auto/);
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);

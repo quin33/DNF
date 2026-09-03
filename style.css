@@ -27,15 +27,27 @@
   /* 深渊酒馆主题色 */
   --outpost-brass: #5d87b3;
   --amber: #e6a817;
-  --wood: #8b5a2b;
-  --wood-bright: #b87938;
+  --wood: #805a3b;
+  --wood-bright: #a57442;
   --card-brass: #79b8ff;
   --building-card-bg: color-mix(in srgb, var(--color-primary) 8%, var(--color-surface));
   --building-card-hover-bg: color-mix(in srgb, var(--color-primary) 12%, var(--color-surface));
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  /* 月光纸笺·轻复古主题令牌 */
+  --paper-bg: #f7f1e5;
+  --paper-raised: #fffaf0;
+  --paper-muted: #eee4d3;
+  --ink: #2c3440;
+  --ink-muted: #6f7780;
+  --moon-blue: #6f879c;
+  --moon-blue-dark: #31485c;
+  --copper: #b98545;
+  --danger: #a94b4b;
+  --success: #557b5d;
+
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -54,35 +66,34 @@
   --font-numeric: ui-monospace, SFMono-Regular, Consolas, monospace;
   --shadow-color: #000000;
 
-  --radius: 12px;
+  --radius: 8px;
   --font: "Microsoft YaHei Light", "微软雅黑 Light", "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
   --tracking: 0.05em;
 }
 
 /* ============ 白色仙侠风主题（默认） ============ */
 [data-theme="light"] {
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-raised: #f8fafc;
-  --color-border: #e3ddd2;
-  --color-text: #38332b;
-  --color-text-secondary: #8d8578;
-  --color-primary: #52789f;
-  --color-primary-hover: #416783;
-  --color-success: #4d9a6d;
-  --color-danger: #c05a4e;
-  --color-warning: #d9a13b;
-  --color-up: #c05a4e;
-  --color-down: #4d9a6d;
+  --color-bg: var(--paper-bg);
+  --color-surface: var(--paper-raised);
+  --color-surface-raised: #fffdf6;
+  --color-border: #d7c7ad;
+  --color-text: var(--ink);
+  --color-text-secondary: var(--ink-muted);
+  --color-primary: var(--moon-blue-dark);
+  --color-primary-hover: #243d56;
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--copper);
+  --color-up: var(--danger);
+  --color-down: var(--success);
   --color-hover: #0000000a;
   --color-text-inverse: #fff;
-  --color-topbar: #ffffff;
-  --color-shadow: #00000026;
-  --outpost-brass: #52789f;
-  --amber: #c9962e;
-  --wood: #a07a4a;
-  --wood-bright: #b87938;
-  --card-brass: #52789f;
+  --color-topbar: var(--paper-raised);
+  --color-shadow: #4a392b40;
+  --outpost-brass: var(--moon-blue);
+  --amber: var(--copper);
+  --wood-bright: #a57442;
+  --card-brass: var(--moon-blue-dark);
   --building-card-bg: color-mix(in srgb, var(--color-primary) 5%, var(--color-surface));
   --building-card-hover-bg: color-mix(in srgb, var(--color-primary) 9%, var(--color-surface));
   --surface-panel: color-mix(in srgb, var(--color-surface) 88%, transparent);
@@ -109,7 +120,7 @@ body::before {
 }
 
 [data-theme="light"] body::before {
-  background: color-mix(in srgb, #f7f5f1 78%, transparent);
+  background: color-mix(in srgb, var(--moon-blue-dark) 18%, transparent);
 }
 
 body > * { position: relative; z-index: 1; }
@@ -167,9 +178,12 @@ button { font-family: var(--font); }
 .online-logout:hover { border-color: var(--color-primary); }
 
 .app-content {
+  width: min(100%, 1200px);
   min-height: 100vh;
   min-width: 0;
-  background: transparent;
+  margin: 0 auto;
+  background: var(--paper-bg);
+  box-shadow: 0 0 28px rgba(0, 0, 0, 0.16);
 }
 
 /* ============ 深渊酒馆页头 ============ */
