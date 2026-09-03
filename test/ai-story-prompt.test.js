@@ -128,3 +128,36 @@ test('dynamic prompt restricts item use to actor-owned or explicitly loaned item
   assert.match(prompt, /不得擅自使用其他角色/);
   assert.match(prompt, /使用者、原持有人/);
 });
+
+test('story prompts keep DNF dungeon vocabulary and avoid xianxia wording', () => {
+  const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  const systemPrompt = server.slice(server.indexOf('const SYSTEM_PROMPT'), server.indexOf('function buildUserMessage'));
+  const specialPrompt = buildPrompt({
+    flowMode: 'dynamic', dungeon: '洛兰', specialEvent: true, party: [], stepNo: 3, minSteps: 10, preferredMaxSteps: 25, maxSteps: 40,
+    phase: 'explore', stage: 'explore', stageLabel: '探索', quest: { status: 'active', objective: '清剿盘踞洞口的哥布林' },
+    encounter: { status: 'none', name: '' },
+  });
+  const banned = /真元|灵光|掐诀|道友|同道|机缘|入谷|归途|破境|冲关|宝光|凶机/;
+
+  assert.match(systemPrompt, /DNF|阿拉德/);
+  assert.match(systemPrompt, /赫顿玛尔/);
+  assert.match(systemPrompt, /任务板|冒险家公会/);
+  assert.match(systemPrompt, /地下城/);
+  assert.match(systemPrompt, /技能书|生命药水|魔力药水|职业/);
+  assert.match(systemPrompt, /撤离回城/);
+  assert.match(systemPrompt, /金币|报酬/);
+  assert.match(specialPrompt, /副本出现异变|地图异动/);
+  assert.doesNotMatch(systemPrompt, banned);
+  assert.doesNotMatch(specialPrompt, banned);
+});
+
+test('non-dynamic closing prompt frames the return as guild settlement', () => {
+  const prompt = buildPrompt({
+    dungeon: '洛兰', party: [], stepNo: 12, totalSteps: 12, stage: 'closing', stageLabel: '撤离回城',
+  });
+  const banned = /真元|灵光|掐诀|道友|同道|机缘|入谷|归途|破境|冲关|宝光|凶机/;
+
+  assert.match(prompt, /叙事倾向：撤离回城/);
+  assert.match(prompt, /回到赫顿玛尔向公会复命、领取任务报酬/);
+  assert.doesNotMatch(prompt, banned);
+});

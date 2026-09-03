@@ -24,37 +24,37 @@ function canBreakthrough(role) {
 }
 
 const DUNGEON_POOL = [
-  { name: '洛兰', hiddenName: '洛兰·魔王洞穴', icon: '🌲', region: '格兰之森', desc: '格兰之森边缘的魔兽林地，哥布林与牛头兵在此劫掠过往旅人。', hiddenDesc: '密林深处藏着一条直通魔王洞穴的暗道，魔气蠢蠢欲动。',
+  { name: '洛兰', levelMin: 1, levelMax: 3, level_desc: 'Lv.1-3', hiddenName: '洛兰·魔王洞穴', icon: '🌲', region: '格兰之森', desc: '格兰之森边缘的魔兽林地，哥布林与牛头兵在此劫掠过往旅人。', hiddenDesc: '密林深处藏着一条直通魔王洞穴的暗道，魔气蠢蠢欲动。',
     lore: '这里是冒险家踏入地下城的第一步——格兰之森外围的洛兰，哥布林部落盘踞多年，草木间弥漫着粗野的杀气。',
     explore: ['哥布林扼守的林间小径', '坍塌的边境哨塔', '树根盘绕的幽暗洞穴'],
     enemies: [
       { name: '哥布林', desc: '矮小狡诈的绿色魔物，挥舞木棒，成群结队地袭击落单者。' }, { name: '青哥布林', desc: '皮糙肉厚的哥布林，臂力过人，一棒抡下能砸碎岩石。' }, { name: '猫妖', desc: '灵巧的丛林猎手，爪刃锋利，惯于从树影中扑出。' }, { name: '刀锋猫妖', desc: '爪刃淬过毒的猫妖，出手又快又狠。' }, { name: '牛头兵', desc: '蛮横的牛头魔物，手持锈斧，横冲直撞势不可挡。' }, { name: '赤毛野猪', desc: '獠牙外翻的野猪，受惊后横冲直撞，皮糙肉厚。' },
     ],
     bosses: [
-      { name: '烈焰哥布林', desc: '洛兰魔王洞穴的守门领主，手中战斧燃着不灭的火焰。', level: 11, reward: { name: '火焰哥布林战斧', desc: '一柄被烈焰熏得发黑的战斧，斧刃上仍残留灼灼热气。' } }, { name: '牛头巨兵', desc: '洛兰深处被魔气侵蚀的牛头统领，浑身肌肉虬结，一斧劈开山石。', level: 12, reward: { name: '牛头巨兵的裂斧', desc: '断裂的巨斧，斧面刻着扭曲的魔纹。' } },
+      { name: '烈焰哥布林', desc: '洛兰魔王洞穴的守门领主，手中战斧燃着不灭的火焰。', level: 2, reward: { name: '火焰哥布林战斧', desc: '一柄被烈焰熏得发黑的战斧，斧刃上仍残留灼灼热气。' } }, { name: '牛头巨兵', desc: '洛兰深处被魔气侵蚀的牛头统领，浑身肌肉虬结，一斧劈开山石。', level: 3, reward: { name: '牛头巨兵的裂斧', desc: '断裂的巨斧，斧面刻着扭曲的魔纹。' } },
     ],
     loot: [{ name: '哥布林的木棒', desc: '粗犷的木棒，敲上去闷响。' }, { name: '牛头兵的麻布', desc: '牛头兵裹身的粗麻布，带着一股膻味。' }, { name: '猫妖的利爪', desc: '打磨锋利的猫妖爪刃，泛着冷光。' }] },
-  { name: '幽暗密林', hiddenName: '幽暗密林·树精深渊', icon: '🌿', region: '格兰之森', desc: '阳光透不进的深林，树影间潜伏着嗜血的猫妖与巨型哥布林。', hiddenDesc: '越往深处走，古树越粗——那些老树的根系下，似乎埋着什么会呼吸的东西。',
+  { name: '幽暗密林', levelMin: 4, levelMax: 6, level_desc: 'Lv.4-6', hiddenName: '幽暗密林·树精深渊', icon: '🌿', region: '格兰之森', desc: '阳光透不进的深林，树影间潜伏着嗜血的猫妖与巨型哥布林。', hiddenDesc: '越往深处走，古树越粗——那些老树的根系下，似乎埋着什么会呼吸的东西。',
     lore: '幽暗密林的古树已经吞噬了不止一支冒险队。树精与猫妖在这里结成了猎场，专等活人送上门。',
     explore: ['藤蔓垂落的密林小径', '猫妖聚集的枯树广场', '盘根错节的树精巢穴'],
     enemies: [
       { name: '哥布林斥候', desc: '哨探哥布林，瘦小却警觉，一有风吹草动便吹哨示警。' }, { name: '猫妖', desc: '灵巧的丛林猎手，爪刃锋利，惯于从树影中扑出。' }, { name: '巨型哥布林', desc: '哥布林中的异类，体型堪比牛头兵，行动却丝毫不笨拙。' }, { name: '树精', desc: '古树化成的精怪，皮如树皮，挥臂横扫。' }, { name: '毒蘑菇怪', desc: '背生毒斑的蘑菇怪，靠近便释放刺鼻孢子。' }, { name: '猫妖王侍从', desc: '猫妖王的贴身护卫，爪刃缠着血色绷带。' },
     ],
     bosses: [
-      { name: '巨型哥布林', desc: '幽暗密林深处的哥布林之王，腰围惊人，巨棒横扫如砍瓜切菜。', level: 11, reward: { name: '巨棒骨饰', desc: '巨型哥布林的骨制饰物，挂满胜利者的牙齿。' } }, { name: '猫妖王', desc: '密林猎场之主，身法快如鬼魅，双爪泛着幽绿的毒光。', level: 12, reward: { name: '猫妖王毒爪', desc: '淬毒的爪刃，刃上绿光幽幽。' } },
+      { name: '巨型哥布林', desc: '幽暗密林深处的哥布林之王，腰围惊人，巨棒横扫如砍瓜切菜。', level: 5, reward: { name: '巨棒骨饰', desc: '巨型哥布林的骨制饰物，挂满胜利者的牙齿。' } }, { name: '猫妖王', desc: '密林猎场之主，身法快如鬼魅，双爪泛着幽绿的毒光。', level: 6, reward: { name: '猫妖王毒爪', desc: '淬毒的爪刃，刃上绿光幽幽。' } },
     ],
     loot: [{ name: '树精的树皮', desc: '坚韧的树皮，摸上去粗糙温热。' }, { name: '哥布林骨笛', desc: '以兽骨磨制的短笛，呜呜作响。' }, { name: '猫妖的利爪', desc: '打磨锋利的猫妖爪刃，泛着冷光。' }] },
-  { name: '雷鸣废墟', hiddenName: '雷鸣废墟·落雷祭坛', icon: '⛈️', region: '格兰之森', desc: '终日被雷电笼罩的哥布林废墟，断壁残垣间电光如蛇。', hiddenDesc: '废墟中央的祭坛上，雷光汇聚——那里的落雷哥布林似乎正在举行某种仪式。',
+  { name: '雷鸣废墟', levelMin: 7, levelMax: 9, level_desc: 'Lv.7-9', hiddenName: '雷鸣废墟·落雷祭坛', icon: '⛈️', region: '格兰之森', desc: '终日被雷电笼罩的哥布林废墟，断壁残垣间电光如蛇。', hiddenDesc: '废墟中央的祭坛上，雷光汇聚——那里的落雷哥布林似乎正在举行某种仪式。',
     lore: '一处被落雷劈毁的古镇废墟，哥布林巫师借雷光立起祭坛，妄图让整片格兰之森臣服于雷鸣之下。',
     explore: ['雷光闪烁的断壁街道', '焦黑的巨型老树', '半塌的哥布林祭坛'],
     enemies: [
       { name: '落雷哥布林', desc: '手持引雷棒的哥布林，棒尖不时迸出滋滋电弧。' }, { name: '落雷哥布林卫兵', desc: '披着藤甲的落雷哥布林，挺着一根缠电的长矛。' }, { name: '夜视猫妖', desc: '能在雷光中蛰伏的猫妖，漆黑皮毛下藏着杀机。' }, { name: '火花哥布林', desc: '口袋里装满火花的哥布林，一扬手便是一蓬灼热火粒。' }, { name: '祭坛石灵', desc: '祭坛崩落的碎石拼成的石灵，行动迟缓却异常沉重。' }, { name: '雷纹蝙蝠', desc: '翅膜上浮着电纹的蝙蝠，成群掠过时带起一片静电。' },
     ],
     bosses: [
-      { name: '雷光哥布林指挥官', desc: '落雷祭坛的执鞭者，挥动引雷杖召来一道道落雷。', level: 11, reward: { name: '雷光引雷杖', desc: '一根引雷杖，杖头凝着一团噼啪作响的电光。' } }, { name: '大落雷哥布林', desc: '沐浴雷光而生的巨大哥布林，浑身电弧缠动，踏一步地面便爆出火花。', level: 12, reward: { name: '大落雷之核', desc: '落雷哥布林心口凝成的雷核，触碰时指尖微微发麻。' } },
+      { name: '雷光哥布林指挥官', desc: '落雷祭坛的执鞭者，挥动引雷杖召来一道道落雷。', level: 8, reward: { name: '雷光引雷杖', desc: '一根引雷杖，杖头凝着一团噼啪作响的电光。' } }, { name: '大落雷哥布林', desc: '沐浴雷光而生的巨大哥布林，浑身电弧缠动，踏一步地面便爆出火花。', level: 9, reward: { name: '大落雷之核', desc: '落雷哥布林心口凝成的雷核，触碰时指尖微微发麻。' } },
     ],
     loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '哥布林引雷棒', desc: '一根粗制的引雷棒，棒头焦黑。' }, { name: '电光尘土', desc: '废墟里刮起的电光尘土，握在手里酥酥麻麻。' }] },
-  { name: '格拉卡', hiddenName: '格拉卡·哥布林王都', icon: '⚔️', region: '格兰之森', desc: '哥布林王国的腹地，部落的战旗与牛头兵的铁蹄踏满这片草原。', hiddenDesc: '格拉卡深处的王宫正门洞开——哥布林王似乎正为一场大战秣马厉兵。',
+  { name: '格拉卡', levelMin: 10, levelMax: 12, level_desc: 'Lv.10-12', hiddenName: '格拉卡·哥布林王都', icon: '⚔️', region: '格兰之森', desc: '哥布林王国的腹地，部落的战旗与牛头兵的铁蹄踏满这片草原。', hiddenDesc: '格拉卡深处的王宫正门洞开——哥布林王似乎正为一场大战秣马厉兵。',
     lore: '格拉卡是格兰之森里最大的哥布林聚居地，部落林立，牛头兵横行。每当有冒险家试图深入，迎来的都是一场恶战。',
     explore: ['战旗猎猎的哥布林营地', '牛头兵巡逻的草原', '哥布林王的宫殿前庭'],
     enemies: [
@@ -64,37 +64,55 @@ const DUNGEON_POOL = [
       { name: '牛头卫兵队长', desc: '格拉卡草原上最壮硕的牛头，扛着一面嵌满钉刺的塔盾。', level: 11, reward: { name: '钉刺塔盾', desc: '一面嵌满铁钉的塔盾，盾面坑坑洼洼，全是交战的伤疤。' } }, { name: '哥布林王·皮鲁斯', desc: '格拉卡哥布林部落之王，头戴骨冠，挥舞的双斧能劈开一整排盾牌。', level: 12, reward: { name: '哥布林王的骨冠', desc: '一顶白骨雕成的王冠，嵌着几颗暗红的宝石。' } },
     ],
     loot: [{ name: '哥布林战旗', desc: '一面残破的哥布林战旗，旗帜上血渍斑斑。' }, { name: '牛头兵的铁环', desc: '牛头兵鼻梁上的铁环，锈迹里带着倔强。' }, { name: '部落矛尖', desc: '粗制的矛尖，仍留着反复淬火的痕迹。' }] },
-  { name: '天空之城·龙人之塔', hiddenName: '龙人之塔·断裂之巅', icon: '🐉', region: '天空之城', desc: '悬浮于云海之上的龙人之塔，龙人盘踞塔顶，石巨人镇守廊道。', hiddenDesc: '塔顶的龙人祭坛正在苏醒——传说中的龙人之王似乎要在今日现世。',
+  { name: '天空之城·龙人之塔', levelMin: 13, levelMax: 15, level_desc: 'Lv.13-15', hiddenName: '龙人之塔·断裂之巅', icon: '🐉', region: '天空之城', desc: '悬浮于云海之上的龙人之塔，龙人盘踞塔顶，石巨人镇守廊道。', hiddenDesc: '塔顶的龙人祭坛正在苏醒——传说中的龙人之王似乎要在今日现世。',
     lore: '天空之城崩塌后仅存的龙人之塔，古老龙人一族在此盘踞万年，凝视着脚下的大地。',
     explore: ['云海环绕的塔基廊道', '龙人盘踞的盘旋阶梯', '石巨人镇守的殿堂'],
     enemies: [
       { name: '龙人', desc: '半龙半人的魔物，鳞甲坚硬，利爪能撕裂铁甲。' }, { name: '狂龙人', desc: '狂化的龙人，双目赤红，攻速快得惊人。' }, { name: '石巨人', desc: '以塔身岩石凝聚的巨人，一拳砸地震得石屑纷飞。' }, { name: '翼龙', desc: '盘旋塔外的飞龙，俯冲时翼风呼啸。' }, { name: '龙人卫兵', desc: '持长斧的龙人卫兵，列队成阵，杀意森然。' }, { name: '塔灵', desc: '龙人之塔的古老灵体，无形无影，专扰人心神。' },
     ],
     bosses: [
-      { name: '召唤龙人', desc: '龙人一族的守护者，缠着祭坛的古老魔力，召来漫天石与火。', level: 11, reward: { name: '龙人古石', desc: '一枚浸染龙人魔力的古石，内里似有龙影盘旋。' } }, { name: '龙人统领', desc: '龙人塔的至强者，龙鳞泛着暗金光泽，一击便能震断半根塔柱。', level: 12, reward: { name: '龙鳞甲片', desc: '一枚厚重龙鳞，触手冰凉而坚不可摧。' } },
+      { name: '召唤龙人', desc: '龙人一族的守护者，缠着祭坛的古老魔力，召来漫天石与火。', level: 14, reward: { name: '龙人古石', desc: '一枚浸染龙人魔力的古石，内里似有龙影盘旋。' } }, { name: '龙人统领', desc: '龙人塔的至强者，龙鳞泛着暗金光泽，一击便能震断半根塔柱。', level: 15, reward: { name: '龙鳞甲片', desc: '一枚厚重龙鳞，触手冰凉而坚不可摧。' } },
     ],
     loot: [{ name: '龙人鳞片', desc: '一片泛着微光的龙鳞，边缘锋利。' }, { name: '塔岩碎片', desc: '天空之城崩落的塔岩，握在手里轻若无物。' }, { name: '远古石像残块', desc: '石巨人身上崩落的残块，雕刻着看不懂的文字。' }] },
-  { name: '天空之城·黑暗玄廊', hiddenName: '黑暗玄廊·深渊之门', icon: '🌌', region: '天空之城', desc: '阳光无法触及的幽暗长廊，石巨人与暗影怪在黑暗中徘徊。', hiddenDesc: '玄廊尽头那扇紧闭的深渊之门，正渗出令人不安的黑暗气息。',
+  { name: '天空之城·黑暗玄廊', levelMin: 16, levelMax: 18, level_desc: 'Lv.16-18', hiddenName: '黑暗玄廊·深渊之门', icon: '🌌', region: '天空之城', desc: '阳光无法触及的幽暗长廊，石巨人与暗影怪在黑暗中徘徊。', hiddenDesc: '玄廊尽头那扇紧闭的深渊之门，正渗出令人不安的黑暗气息。',
     lore: '黑暗玄廊是天空之城最幽深的角落，巨人与暗影怪把守在此，阻隔着所有窥探深渊的生灵。',
     explore: ['幽暗的玄廊石道', '巨人守卫的空旷大殿', '被封印的深渊之门'],
     enemies: [
       { name: '暗石巨人', desc: '覆着青苔的石巨人，行动迟缓，但一拳足以砸碎石壁。' }, { name: '黑暗鹰', desc: '通体漆黑的鹰，翅展遮光，俯冲无声。' }, { name: '巴罗', desc: '藏在暗处的神秘生物，双爪如钩，伺机扑杀。' }, { name: '暗影蝙蝠', desc: '黑暗里产出的蝙蝠，成群掠过时仿佛一团移动的黑雾。' }, { name: '玄廊魔像', desc: '半毁的魔像，眼窝里燃着幽蓝鬼火。' }, { name: '暗影触手', desc: '深渊之门渗出的黑暗凝成的触手，缠上便拖向深渊。' },
     ],
     bosses: [
-      { name: '暗黑石巨像', desc: '黑暗玄廊的镇守巨像，由深渊之石拼成，眼窝两团暗火腾腾。', level: 11, reward: { name: '深渊之石', desc: '巨像眼窝里取出的黑石，握在掌心冰凉彻骨。' } }, { name: '玄廊之主·巴罗王', desc: '蛰伏玄廊深处的巴罗之王，双翼张开几乎遮住整条长廊。', level: 12, reward: { name: '巴罗王之翼', desc: '一片漆黑的翼膜，边缘锋利如刀。' } },
+      { name: '暗黑石巨像', desc: '黑暗玄廊的镇守巨像，由深渊之石拼成，眼窝两团暗火腾腾。', level: 17, reward: { name: '深渊之石', desc: '巨像眼窝里取出的黑石，握在掌心冰凉彻骨。' } }, { name: '玄廊之主·巴罗王', desc: '蛰伏玄廊深处的巴罗之王，双翼张开几乎遮住整条长廊。', level: 18, reward: { name: '巴罗王之翼', desc: '一片漆黑的翼膜，边缘锋利如刀。' } },
     ],
     loot: [{ name: '暗影晶石', desc: '黑暗里凝结的晶石，触手冰凉。' }, { name: '巨人苔石', desc: '石巨人身上剥落的苔石，覆着厚厚青苔。' }, { name: '玄廊符文', desc: '刻着深渊符文的石片，幽幽发光。' }] },
-  { name: '天帷巨兽·神殿外围', hiddenName: '神殿外围·教团密室', icon: '🔱', region: '天帷巨兽', desc: '矗立在天帷巨兽背上的神殿，GBL 教徒在此狂热朝拜。', hiddenDesc: '神殿地底的密室透出诡异的蓝光——教团似乎正谋划着什么不可告人的仪式。',
+  { name: '天帷巨兽·神殿外围', levelMin: 19, levelMax: 19, level_desc: 'Lv.19', hiddenName: '神殿外围·教团密室', icon: '🔱', region: '天帷巨兽', desc: '矗立在天帷巨兽背上的神殿，GBL 教徒在此狂热朝拜。', hiddenDesc: '神殿地底的密室透出诡异的蓝光——教团似乎正谋划着什么不可告人的仪式。',
     lore: '天帷巨兽背上矗立着古老的教团神殿，GBL 教徒在此日夜朝拜，狂热而排外，任何外来者都是他们口中的异端。',
     explore: ['巨兽背上的青石台阶', '教徒诵经的大殿', '教团封锁的地底密室'],
     enemies: [
       { name: 'GBL 教徒', desc: '披着白袍的狂热教徒，手持短杖，口中念念有词。' }, { name: 'GBL 祭司', desc: '教团的司祭，能引动神殿的蓝光化作护盾。' }, { name: '神殿守卫', desc: '守护教团的巨汉，手持铁锤，面容虔诚而冰冷。' }, { name: '空海翼龙', desc: '盘踞神殿上空的海翼龙，俯冲掀起狂风。' }, { name: '教堂僵尸', desc: '被教团仪式复生的僵尸，动作僵硬却力大无穷。' }, { name: '狂热信徒', desc: '被洗脑的狂热信徒，赤手空拳也奋不顾身。' },
     ],
     bosses: [
-      { name: 'GBL 主教', desc: '神殿外围的主教，掌中托着一团幽蓝的教团圣火。', level: 11, reward: { name: '教团圣火', desc: '一团不灭的蓝色圣火，封在水晶瓶里静静燃烧。' } }, { name: '教团骑士团长', desc: '教团武装的头目，身披重甲，铁锤落下大地都要颤三颤。', level: 12, reward: { name: '骑士团长铁锤', desc: '一把缠着蓝纹的重锤，锤头还残留着圣火的余温。' } },
+      { name: 'GBL 主教', desc: '神殿外围的主教，掌中托着一团幽蓝的教团圣火。', level: 19, reward: { name: '教团圣火', desc: '一团不灭的蓝色圣火，封在水晶瓶里静静燃烧。' } }, { name: '教团骑士团长', desc: '教团武装的头目，身披重甲，铁锤落下大地都要颤三颤。', level: 19, reward: { name: '骑士团长铁锤', desc: '一把缠着蓝纹的重锤，锤头还残留着圣火的余温。' } },
     ],
     loot: [{ name: '教团白袍', desc: '一件洗得发白的教团白袍，反复浆洗过。' }, { name: '圣水瓶', desc: '装过圣水的小瓶，瓶壁泛着淡蓝。' }, { name: '神殿残卷', desc: '一卷残破的教团经文，字迹工整。' }] },
 ];
+
+/* 副本等级带：有明确 levelMin/levelMax 时按表夹紧；旧数据无等级带则兼容 1~19。 */
+function dungeonLevelBand(dungeon) {
+  const min = Number(dungeon && dungeon.levelMin);
+  const max = Number(dungeon && dungeon.levelMax);
+  if (Number.isFinite(min) && Number.isFinite(max) && min >= 1 && max >= min) return [Math.floor(min), Math.floor(max)];
+  return [1, 19];
+}
+function clampDungeonLevel(dungeon, rawLevel) {
+  const [minLevel, maxLevel] = dungeonLevelBand(dungeon);
+  const value = realmWordToLevel(rawLevel);
+  return Math.max(minLevel, Math.min(maxLevel, value > 0 ? Math.round(value) : minLevel));
+}
+function dungeonBossLevels(dungeon) {
+  const [minLevel, maxLevel] = dungeonLevelBand(dungeon);
+  if (maxLevel <= minLevel) return [maxLevel, maxLevel];
+  return [maxLevel - 1, maxLevel];
+}
 
 const rollD20 = () => 1 + Math.floor(Math.random() * 20);
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -132,18 +150,31 @@ const ITEM_BONUS = [
 ];
 function itemBonus(dg, stage) { let b = 0; dg.party.forEach(m => (m.equipment || []).forEach(it => { const hit = ITEM_BONUS.find(x => x.stage === stage && (it.name || '').includes(x.kw)); if (hit) b += hit.mod; })); return Math.min(b, 4); }
 
-/* 开本：随机 0~3 敌人（特殊事件必 ≥1 且等级上调）、首领定型 */
+/* 开本：随机 0~3 敌人（特殊事件必 ≥1 且区间高位）、首领定型 */
 function rollEnemies(dungeon, specialEvent) {
   const pool = (dungeon.enemies || []).slice();
+  const [minLevel, maxLevel] = dungeonLevelBand(dungeon);
   const n = specialEvent ? 1 + Math.floor(Math.random() * 3) : Math.floor(Math.random() * 4);
   const picked = [];
   while (picked.length < n && pool.length) picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  return picked.map(e => { let level = 1 + Math.floor(Math.random() * 10); if (specialEvent) level = Math.min(10, level + 2 + Math.floor(Math.random() * 3)); return { ...e, level }; });
+  return picked.map(e => {
+    let level;
+    if (specialEvent && maxLevel > minLevel) {
+      const low = maxLevel - Math.floor((maxLevel - minLevel) / 2);
+      level = low + Math.floor(Math.random() * (maxLevel - low + 1));
+    } else {
+      level = minLevel + Math.floor(Math.random() * (maxLevel - minLevel + 1));
+    }
+    return { ...e, level };
+  });
 }
 function pickDungeon(role) {
-  const pool = DUNGEON_POOL.filter(d => d.rank * 0 + (role.level || 1) <= 18);
-  const idx = Math.min(pool.length - 1, Math.floor(((role.level || 1) - 1) / 3) + Math.floor(Math.random() * 2));
-  return DUNGEON_POOL[Math.max(0, Math.min(idx, DUNGEON_POOL.length - 1))];
+  const level = Math.max(1, Number(role && role.level) || 1);
+  const exact = DUNGEON_POOL.findIndex(d => level >= d.levelMin && level <= d.levelMax);
+  const reachable = DUNGEON_POOL.findIndex(d => level <= d.levelMax);
+  const start = Math.max(0, exact >= 0 ? exact : reachable >= 0 ? reachable : DUNGEON_POOL.length - 1);
+  const idx = Math.min(DUNGEON_POOL.length - 1, start + Math.floor(Math.random() * 2));
+  return DUNGEON_POOL[idx];
 }
 /* 副本阶段计划：联机与单机统一为 10~40 段。加权分配；首领始终可；突破/特殊事件影响 */
 function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
@@ -606,14 +637,15 @@ function applyDungeonSetup(base, setup) {
   const specialEvent = s.specialEvent === true;
   const breakthrough = s.breakthrough === true;
   const pool = Array.isArray(base && base.enemies) ? base.enemies : [];
+  const bossLevels = dungeonBossLevels(base);
   const chosen = (Array.isArray(s.enemies) ? s.enemies : []).map(entry => {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim();
     const src = pool.find(x => String(x.name || '').trim() === name);
     if (!src) return null;
-    const level = realmWordToLevel(entry && (entry.level != null ? entry.level : entry.realm));
-    return { ...src, level: Number.isFinite(level) && level > 0 ? level : 1 };
+    const level = clampDungeonLevel(base, realmWordToLevel(entry && (entry.level != null ? entry.level : entry.realm)));
+    return { ...src, level };
   }).filter(Boolean).slice(0, specialEvent ? 4 : 3);
-  const bosses = (base && Array.isArray(base.bosses) ? base.bosses : []).map((b, i) => ({ ...b, level: i === 1 ? 12 : 11 }));
+  const bosses = (base && Array.isArray(base.bosses) ? base.bosses : []).map((b, i) => ({ ...b, level: bossLevels[Math.min(i, bossLevels.length - 1)] }));
   return {
     ...base,
     name: isHidden && base ? (base.hiddenName || base.name) : (base && base.name) || '',
@@ -873,7 +905,8 @@ function createDg(hostChar, opts = {}) {
     const specialEvent = Math.random() < 0.1;
     const breakthrough = canBreakthrough(hostChar) && Math.random() < 0.1;
     const enemies = rollEnemies(base, specialEvent);
-    const bosses = (base.bosses || []).map((b, i) => ({ ...b, level: i === 1 ? 12 : 11 }));
+    const bossLevels = dungeonBossLevels(base);
+    const bosses = (base.bosses || []).map((b, i) => ({ ...b, level: bossLevels[Math.min(i, bossLevels.length - 1)] }));
     return { ...base, name: isHidden ? (base.hiddenName || base.name) : base.name, desc: isHidden ? (base.hiddenDesc || base.desc) : base.desc, isHidden, baseName: base.name, enemies, bosses, specialEvent, breakthrough };
   })();
   const objective = String(dungeon.lore || '').trim() || `探索${dungeon.name}`;
@@ -930,6 +963,7 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
 module.exports = {
   DUNGEON_POOL, STAGE_ATTR, ATTR_NAME, QI_LAYER, MAX_SKILLS, NPC_NAME_POOL, BREAKTHROUGH_EXP, STEP_OUTCOMES,
   rollD20, pick, itemBonus, realmBonus, realmDiffMod, elemMatchMod,
+  dungeonLevelBand, clampDungeonLevel, dungeonBossLevels,
   rollEnemies, pickDungeon, buildPlan, buildNarrativeFocusPlan, dynamicNarrativeFocus, appendDynamicNarrativeFocus, itemUseCheck, recordItemLoan, recordItemLoansFromText, collectItemLoansFromText, itemUseExplicitInText, consumeItemUse, settleItemLoans, availableItemsForActor, skillUseCheck, parseLootMarkers, extractGold,
   registerLootOwnership, validateStepItemUsage, itemGuardFeedback,
   applyStageEffects, genNpc, createDg, aiStoryPayload, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,

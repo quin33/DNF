@@ -2637,44 +2637,44 @@ const DUNGEON_POOL = [
       { name: '龙人法师·雷波', desc: '操控天雷的龙人法师，挥手间电光裂空，是通往塔顶的最后一道门槛。', level: 16, reward: { name: '雷波法杖', desc: '镶嵌着雷晶的法杖，握在手中隐隐发麻。' } },
     ],
     loot: [{ name: '龙鳞', desc: '龙人脱落的鳞片，又韧又亮，是上好的防具材料。' }, { name: '云海之晶', desc: '塔顶凝结的晶石，内里流着淡淡云彩。' }, { name: '古塔残卷', desc: '半卷泛黄的塔内手记，字迹磨损难辨。' }] },
-  { name: '天帷巨兽·神殿外围', hiddenName: '天帷巨兽·雷暴神殿', level_desc: 'Lv.16-18', icon: '⚡', desc: '趴在云海上的巨兽背脊，神殿在雷暴中矗立，守护着通往天界的门扉。', hiddenDesc: '雷云低得压到神殿尖顶，雷暴化作的守护灵正在苏醒——它似乎把所有人都当成了闯入者。',
-    lore: '天帷巨兽驮着一整座神殿在云海中巡游，神殿外壁常年被雷暴环绕。据说穿过神殿便能到达天界，但千百年来无人做到。',
-    explore: ['雷暴笼罩的献祭广场', '被雷劈开的巨兽背脊', '神殿边缘的乱石祭坛'],
+  { name: '天空之城·黑暗玄廊', levelMin: 16, levelMax: 18, level_desc: 'Lv.16-18', hiddenName: '黑暗玄廊·深渊之门', icon: '🌌', region: '天空之城', desc: '阳光无法触及的幽暗长廊，石巨人与暗影怪在黑暗中徘徊。', hiddenDesc: '玄廊尽头那扇紧闭的深渊之门，正渗出令人不安的黑暗气息。',
+    lore: '黑暗玄廊是天空之城最幽深的角落，巨人与暗影怪把守在此，阻隔着所有窥探深渊的生灵。',
+    explore: ['幽暗的玄廊石道', '巨人守卫的空旷大殿', '被封印的深渊之门'],
     enemies: [
-      { name: '雷兽', desc: '沐浴天雷而生的异兽，皮毛间电弧流窜。' },
-      { name: '雷暴石像', desc: '神殿前的石像，受雷意驱动，出手便引动雷霆。' },
-      { name: '天雷余威', desc: '残留的雷意凝成人形，触之如遭雷击。' },
-      { name: '雷音蝠群', desc: '雷电环绕的蝙蝠群，尖啸声与雷鸣共振，震得人气血翻涌。' },
-      { name: '紫电蛇', desc: '通体缠绕紫色电弧的蛇兽，速度极快，咬中便是一道电光入体。' },
-      { name: '雷纹石人', desc: '雷纹密布的山石化形，一拳砸下带着闷雷之声。' },
+      { name: '暗石巨人', desc: '覆着青苔的石巨人，行动迟缓，但一拳足以砸碎石壁。' },
+      { name: '黑暗鹰', desc: '通体漆黑的鹰，翅展遮光，俯冲无声。' },
+      { name: '巴罗', desc: '藏在暗处的神秘生物，双爪如钩，伺机扑杀。' },
+      { name: '暗影蝙蝠', desc: '黑暗里产出的蝙蝠，成群掠过时仿佛一团移动的黑雾。' },
+      { name: '玄廊魔像', desc: '半毁的魔像，眼窝里燃着幽蓝鬼火。' },
+      { name: '暗影触手', desc: '深渊之门渗出的黑暗凝成的触手，缠上便拖向深渊。' },
     ],
     bosses: [
-      { name: '雷暴·守护灵', desc: '神殿前的雷暴凝成的守护之灵，通体电光，威严如神祇降世。', level: 18, reward: { name: '雷暴玉髓', desc: '雷暴之灵核心处的玉髓，入手酥麻，蕴含纯净雷力。' } },
-      { name: '光之兵·范哲利斯', desc: '镇守神殿外围的光之魔将，光刃所指，阴影片片剥落。', level: 19, reward: { name: '范哲利斯光刃', desc: '魔将遗落的残刃，刃口始终泛着一道冷光。' } },
+      { name: '暗黑石巨像', desc: '黑暗玄廊的镇守巨像，由深渊之石拼成，眼窝两团暗火腾腾。', level: 17, reward: { name: '深渊之石', desc: '巨像眼窝里取出的黑石，握在掌心冰凉彻骨。' } },
+      { name: '玄廊之主·巴罗王', desc: '蛰伏玄廊深处的巴罗之王，双翼张开几乎遮住整条长廊。', level: 18, reward: { name: '巴罗王之翼', desc: '一片漆黑的翼膜，边缘锋利如刀。' } },
     ],
-    loot: [{ name: '雷击木', desc: '被天雷劈中的古木，木纹间流窜细碎电光。' }, { name: '雷石砂', desc: '神殿前的砂砾，触碰时指尖微微发麻。' }, { name: '引雷针', desc: '一指长的银针，雷雨天会自己指向天空。' }] },
-  { name: '天帷巨兽·登陆场', hiddenName: '天帷巨兽·献祭神殿', level_desc: 'Lv.19', icon: '🏯', desc: '巨兽背脊尽头的空港，残破殿宇立于云海之上，是通往天界的最后关口。', hiddenDesc: '云海翻涌，神殿深处的机关全部亮起——传说那位陨落的天界使者的执念，正在等待一个闯入者。',
-    lore: '这里是天帷巨兽背脊的尽头，天界使者在远征中坠落于此，残躯至今仍镇着通往天界的门户。殿宇残骸悬浮在云海上，靠近核心的冒险家，无一例外地失去了音讯。',
-    explore: ['云海浮桥', '残破的献祭神殿', '天界使者的封存之所'],
+    loot: [{ name: '暗影晶石', desc: '黑暗里凝结的晶石，触手冰凉。' }, { name: '巨人苔石', desc: '石巨人身上剥落的苔石，覆着厚厚青苔。' }, { name: '玄廊符文', desc: '刻着深渊符文的石片，幽幽发光。' }] },
+  { name: '天帷巨兽·神殿外围', levelMin: 19, levelMax: 19, level_desc: 'Lv.19', hiddenName: '神殿外围·教团密室', icon: '🔱', region: '天帷巨兽', desc: '矗立在天帷巨兽背上的神殿，GBL 教徒在此狂热朝拜。', hiddenDesc: '神殿地底的密室透出诡异的蓝光——教团似乎正谋划着什么不可告人的仪式。',
+    lore: '天帷巨兽背上矗立着古老的教团神殿，GBL 教徒在此日夜朝拜，狂热而排外，任何外来者都是他们口中的异端。',
+    explore: ['巨兽背上的青石台阶', '教徒诵经的大殿', '教团封锁的地底密室'],
     enemies: [
-      { name: '神殿守卫傀儡', desc: '殿内残留的守卫傀儡，机关铭文明灭，依旧尽职地驱逐入侵者。' },
-      { name: '迷失幻影', desc: '守护执念滋生的幻影，映照出每个冒险家心底最深的恐惧。' },
-      { name: '上古机关阵', desc: '残缺的机关阵法，无人主持却仍在缓缓运转。' },
-      { name: '云海天鹰', desc: '云海灵气凝成的天鹰残影，翻腾之间掀起风雷。' },
-      { name: '光之祈祷者', desc: '殿中残存的光之祈祷者，每一声祷唱都直震神魂。' },
-      { name: '圣物书灵', desc: '圣书化形的灵体，以圣文为刃，字字皆是杀机。' },
+      { name: 'GBL 教徒', desc: '披着白袍的狂热教徒，手持短杖，口中念念有词。' },
+      { name: 'GBL 祭司', desc: '教团的司祭，能引动神殿的蓝光化作护盾。' },
+      { name: '神殿守卫', desc: '守护教团的巨汉，手持铁锤，面容虔诚而冰冷。' },
+      { name: '空海翼龙', desc: '盘踞神殿上空的海翼龙，俯冲掀起狂风。' },
+      { name: '教堂僵尸', desc: '被教团仪式复生的僵尸，动作僵硬却力大无穷。' },
+      { name: '狂热信徒', desc: '被洗脑的狂热信徒，赤手空拳也奋不顾身。' },
     ],
     bosses: [
-      { name: '神殿镇守者', desc: '神殿最后的镇守者，半身已石化，眼中圣光却未熄灭。', level: 19, reward: { name: '神殿令牌', desc: '镇守者腰间的令牌，镌刻着古老的纹章，圣光自蕴。' } },
-      { name: '天界使者·残念', desc: '陨落使者的执念，举手投足皆是圣光轰鸣。', level: 19, reward: { name: '使者圣徽', desc: '使者残念凝成的圣徽，内里日月流转，是不可错过的机缘。' } },
+      { name: 'GBL 主教', desc: '神殿外围的主教，掌中托着一团幽蓝的教团圣火。', level: 19, reward: { name: '教团圣火', desc: '一团不灭的蓝色圣火，封在水晶瓶里静静燃烧。' } },
+      { name: '教团骑士团长', desc: '教团武装的头目，身披重甲，铁锤落下大地都要颤三颤。', level: 19, reward: { name: '骑士团长铁锤', desc: '一把缠着蓝纹的重锤，锤头还残留着圣火的余温。' } },
     ],
-    loot: [{ name: '神殿残卷', desc: '殿内残卷，字迹流转不定。' }, { name: '圣辉茶饼', desc: '使者遗落的茶饼，泡开时有圣光流转。' }, { name: '星图残片', desc: '星图一角，凑齐三块可开启隐藏试炼。' }] },
+    loot: [{ name: '教团白袍', desc: '一件洗得发白的教团白袍，反复浆洗过。' }, { name: '圣水瓶', desc: '装过圣水的小瓶，瓶壁泛着淡蓝。' }, { name: '神殿残卷', desc: '一卷残破的教团经文，字迹工整。' }] },
 ];
 const AI_COMPANIONS = window.AI_COMPANION_CARDS || { DEFAULT_CARDS: [], NPC_NAME_POOL: [] };
 const NPC_NAME_POOL = AI_COMPANIONS.NPC_NAME_POOL.length ? AI_COMPANIONS.NPC_NAME_POOL : ['赛丽亚·克鲁敏', '林纳斯', '卡妮娜', '凯丽', '莎兰', '风振', 'G.S.D', '歌兰蒂斯', '阿尔伯特', '辛达', '罗莉安', '奥兰奶奶', '阿甘左', '西岚', '布万加', '巴恩', '卢克西', '帕丽丝', '沙影·贝利特', '尼尔巴斯·格拉西亚'];
 const TRAIT_POOL = ['明察秋毫', '胆大心细', '夜视之眼', '听风辨位', '老练猎手', '心狠手辣', '寻宝直觉', '百毒不侵', '好运缠身'];
 const BAD_TRAIT_POOL = ['重伤未愈', '惊吓过度', '中了尸毒', '心有余悸'];
-// 物品描述驱动的本地效果（真实 AI 模式下由 LLM 依据描述生成，此表仅作离线降级）
+// 以下本地效果表与叙事模板已冻结：真实 AI 模式连接失败会由上层取消探险，不再读取这些降级文本。
 const ITEM_BONUS = [
   { kw: '避瘴珠', stage: 'explore', mod: 2 }, { kw: '引灵灯', stage: 'explore', mod: 2 }, { kw: '罗盘', stage: 'explore', mod: 2 },
   { kw: '灵锄', stage: 'explore', mod: 1 }, { kw: '灵锄', stage: 'loot', mod: 1 },
@@ -2729,14 +2729,14 @@ function elemMatchMod(actor, sk) {
 }
 /* 副本阶段计划：普通 10 步（10 段以上即可，允许一行一段）；隐藏副本（首领 10% 概率触发）额外含首领阶段，共 12 步 */
 /* 副本阶段计划：整局 10~40 段，每段 ≤250 字（不设最低字数，长短随叙事节奏）；
-   步数按阶段加权分配——入谷/归途各 1 段固定，其余按 探索/战斗/搜刮/首领 权重随机分配；
+   步数按阶段加权分配——进入地下城/撤离回城各 1 段固定，其余按 探索/战斗/搜刮/首领 权重随机分配；
    首领阶段：普通副本 10% 概率遇到（1 段起），隐藏副本必定遭遇（普通首领 Lv.10 + 隐藏首领 Lv.12）；
    本局敌人为 0 种时跳过战斗阶段 */
 function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
   const hasBoss = isHidden || specialEvent || Math.random() < 0.1;
   const hasBattle = (enemyCount || 0) > 0;
   const total = 10 + Math.floor(Math.random() * 31);  // 10~40 段
-  // 各阶段最低段数：探索 2、搜刮 2、战斗 2（有敌人）、首领 1（有首领；隐藏副本保底 2，确保普通首领 + 隐藏首领都遭遇）；入谷/归途固定各 1
+  // 各阶段最低段数：探索 2、搜刮 2、战斗 2（有敌人）、首领 1（有首领；隐藏副本保底 2，确保普通首领 + 隐藏首领都遭遇）；进入地下城/撤离回城固定各 1
   const minE = 2, minL = 2, minB = hasBattle ? 2 : 0, minBo = hasBoss ? (isHidden ? 2 : 1) : 0;
   let explore = minE, loot = minL, battle = minB, boss = minBo;
   let extra = Math.max(0, total - 2 - minE - minL - minB - minBo);
@@ -2750,15 +2750,15 @@ function buildPlan(isHidden, enemyCount, specialEvent, breakthrough) {
     extra--;
   }
   const p = [
-    { key: 'opening', label: '入谷', steps: 1, check: false },
+    { key: 'opening', label: '进入地下城', steps: 1, check: false },
     { key: 'explore', label: '探索', steps: explore, check: true },
   ];
   if (hasBattle) p.push({ key: 'battle', label: '战斗', steps: battle, check: true });
   if (hasBoss) p.push({ key: 'boss', label: '首领', steps: boss, check: true });
   p.push({ key: 'loot', label: '搜刮', steps: loot, check: true });
-  // 转职试炼：Lv.10 满经验触发后，在归途前安排一段转职试炼（成功判定 1~2 段）
+  // 转职试炼：Lv.10 满经验触发后，在撤离回城前安排一段转职试炼（成功判定 1~2 段）
   if (breakthrough) p.push({ key: 'breakthrough', label: '突破', steps: 1 + Math.floor(Math.random() * 2), check: true });
-  p.push({ key: 'closing', label: '归途', steps: 1, check: false });
+  p.push({ key: 'closing', label: '撤离回城', steps: 1, check: false });
   return p;
 }
 function buildNarrativeFocusPlan(dg) {
@@ -2918,7 +2918,12 @@ function genNpc(name) {
   };
 }
 
-/* ---------- 匹配 ---------- */
+/* ---------- 匹配（单机遗留，不再维护） ----------
+   本项目只维护在线玩法：online.js 已覆盖 startMatch/cancelMatch/matchTick，
+   并改为服务端权威匹配（WS /ws + /api/...）。下方本地排队、模拟 NPC、
+   rollEnemies/normalizeAiSetupClient/startDungeon 及本文件内的
+   DUNGEON_POOL 仅保留给直接打开 index.html 的历史单机兜底，不再接受修复；
+   需要改副本数据或规则请改 server.js / game-engine.js 的权威实现。 */
 let matchDungeonChoice = null;  // 自选地图（null = 随机）
 function selectMatchDungeon(name) {
   if (matchQueue) { toastMsg('匹配中不可更换地图'); return; }
@@ -3235,7 +3240,7 @@ function enemyRealmVal(input) {
 function actorRealmVal(actor) { const lv = Number(actor && actor.level); return Number.isFinite(lv) && lv > 0 ? lv : 1; }
 function realmDiffMod(actor, enemy) { if (!enemy) return 0; const ev = enemyRealmVal(enemy); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
 
-/* ---------- 本地叙事引擎（AI 润色降级；remote 模式由 LLM 按同结构生成） ---------- */
+/* ---------- 本地叙事引擎（已冻结：remote 模式由 LLM 生成，失败由上层取消探险） ---------- */
 /* 句子库：每步由 环境句+行动句+结果句+收尾句 拼成 150~280 字段落，17 步合计约 3000~5000 字 */
 const NARR = {
   opening: [

@@ -546,10 +546,10 @@ function sanitizeAdminCompanion(input, existing) {
 /* ============================================================
    AI 提示词（整合世界观 / 结构 / 叙事 / 装备 / 技能 / 判定）
    ============================================================ */
-const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险日志作家，一名DNF题材冒险小说作者。游戏世界观：玩家是**阿拉德大陆的冒险家**，在城镇**赫顿玛尔**从**冒险家公会任务板**接取悬赏差遣，组队进入**阿拉德地下城**刷图，清怪 → 领主 → 翻牌/撤离 → 回城领金币。战斗体系为职业+等级与技能描述，稀有度采用 DNF 七档：普通/高级/稀有/神器/史诗/传说/神话；当前副本掉落仅开放普通、高级、稀有、神器，史诗保留合法性但不由副本或 AI 产出，传说与神话暂不开放；角色四维为**力量/敏捷/智力/幸运**；货币为**金币**。角色从五大初始职业中择一（鬼剑士/格斗家/神枪手/魔法师/圣职者），Lv10 死亡门是**转职**，此后职业前挂子职业（如「鬼剑士·剑魂」）。
+const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险日志作家，一名DNF题材冒险小说作者。游戏世界观：玩家是**阿拉德大陆的冒险家**，在城镇**赫顿玛尔**从**冒险家公会任务板**接取悬赏差遣，组队进入**阿拉德地下城**刷图，清怪 → 领主 → 翻牌/撤离 → 回城领金币。战斗体系为职业+等级与技能描述，稀有度采用 DNF 七档：普通/高级/稀有/神器/史诗/传说/神话；当前副本掉落仅开放普通、高级、稀有、神器，史诗保留合法性但不由副本或 AI 产出，传说与神话暂不开放；角色四维为**力量/敏捷/智力/幸运**；货币为**金币**。角色从五大初始职业中择一（鬼剑士/格斗家/神枪手/魔法师/圣职者），Lv10 觉醒门是**转职**，此后职业前挂子职业（如「鬼剑士·剑魂」）。
 
 叙事规则：
-1. 使用 DNF 风味冒险笔法（兼具白话叙事与画面感），节奏张弛有度，可写出地下城的阴森、怪物的狰狞与冒险家间的默契。
+1. **DNF 地城文风**：叙事要像冒险家接单刷图、撤出地下城后回城结算，而不是仙侠修炼日志。正文随阶段落到具体场景：探索写地下城的房间、走廊、陷阱、旧装备、怪物巢穴与任务线索；战斗写技能名、职业动作、站位、药水与队友支援；首领战写地形压迫、召唤物与领主机制、队伍配合击杀；搜刮写尸体、箱子、坏装备、材料与金币；收尾写离开副本回到赫顿玛尔，向公会复命、领取金币、修理或出售装备。优先使用「冒险家/队友/地下城/领主/技能书/生命药水/魔力药水/任务报酬」等 DNF 用语。**禁用仙侠与修真题材的措辞和意象**：不写修炼、渡劫、门派、飞升、洞府、灵气、口诀、丹田、五行、灵石等词汇；招式就是职业技能，收获就是掉落与报酬，转职就是职业试炼。叙事保持 DNF 那种硬朗、利落、带烟火气的冒险感，节奏张弛有度，可写出地下城的阴森、怪物的狰狞与冒险家间的默契。
 2. 战斗描写要符合职业与等级特性，避免一刀清场或无脑碾压；若敌人等级高于队伍，需体现苦战、智取或撤退。
 3. 角色融入：每名角色的性格（重诺/好奇/莽撞/明哲/高傲/仗义/孤僻/狡诈）、职业、等级体现在言行与战斗方式中。**代词严格按角色性别**：男用「他/他的」，女用「她/她的」，绝不错用（队伍信息中每名成员都标注了性别）。**称呼规则：角色名是一个完整的代号，一体不可拆分——凡称呼角色（含老兄/姑娘/前辈等任何称谓或直接提及）必须使用其完整全名，禁止任何形式的省略、缩写、截取部分字符或昵称化，每次提及都必须写全名；不得依据角色名推断性别、身份、来历或性格等任何信息，这些一律以【队伍】标注为准。**
 4. **队伍差异化**：四名队员必须有差异化的表现：依据其性格、职业和技能分配高光时刻，避免一人独揽。副本会为角色安排连续焦点窗口；同一角色应在窗口内保持叙事焦点，不得无理由切换到其他角色的内心或主视角。每一步都有明确的【本步允许出场】名单与【本步禁止主动出场】名单：默认只写允许出场角色；名单外角色不得主动出现、说话、行动、观察、回头、站立、描写心理或承担镜头收尾。未授权角色只有在其已经发生的物理因果直接影响当前事件时，才可短暂出现，并且必须写出具体作用；不得为了让所有人露脸而添加无功能出场。高光时刻应集中于单一角色，必须形成"技能/装备或性格依据 → 关键选择或行动 → 明确改变局面或带来结果"的完整因果链，不能只写"参与攻击"或被顺带点名。每名角色都应至少获得一次这样的个人高光；高光段中其他角色只作必要的反应或协助，不要抢走焦点。若某角色未出场，不要强行提及。
@@ -558,16 +558,16 @@ const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险�
 6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
 7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
 8. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
-9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主凶威、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
-10. **晋级/转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职**关隘。**本阶段必须围绕该角色（主角）安排一场转职试炼**：可写技能觉醒、职业之魂考验、心魔问心等（贴合其职业与技能路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业真意，晋升子职业，如「鬼剑士·剑魂」）；失败则功亏一篑（受伤、受创，等级仍留 Lv.10，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
+9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主压制过强、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（按撤离失败收尾，回赫顿玛尔向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与撤离后的剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
+10. **转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职试炼**。**本阶段必须围绕该角色（主角）安排一场职业试炼**：可写公会考核、职业导师布置的任务、实战试炼、技能觉醒或信念考验（贴合其职业与技能路数），风险与收益并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业方向，晋升子职业，如「鬼剑士·剑魂」）；失败则受伤受创，等级仍留 Lv.10，回赫顿玛尔休整后可再次挑战。叙事要写出“试炼将至、尝试与成败”的过程。
 
-阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出"依据 → 行动 → 结果"，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或归途步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
+阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出"依据 → 行动 → 结果"，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或撤离回城步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
 
 function buildUserMessage(b) {
   const lines = [];
   const dynamic = b.flowMode === 'dynamic';
   lines.push(`【副本】${b.dungeon}${b.isHidden ? '（隐藏副本，原名 ' + b.baseDungeon + '）' : ''}`);
-  if (b.specialEvent) lines.push('【特殊事件】本局触发异象：副本整体凶险更甚（敌人等级更高、机关更险），但机缘亦更丰厚——剧情中应烘托出异象骤生、凶机并现的氛围，战利品与报酬可以更丰。');
+  if (b.specialEvent) lines.push('【特殊事件】本局副本出现异变：整体难度上调（敌人等级更高、机关更险），掉落与报酬也更丰厚——剧情中应体现地图异动、领主戒备加重的氛围，战利品与金币可以给得更足。');
   if (b.lore) lines.push(`【背景】${b.lore}`);
   if (b.enemies && b.enemies.length) lines.push(`【此间生灵】${b.enemies.map(e => e.name + '（' + (e.level != null ? 'Lv.' + e.level : (e.realm || '等级不明')) + '）：' + e.desc).join('；')}`);
   if (b.bosses && b.bosses.length) lines.push(`【深处首领】${b.bosses.map(x => x.name + '（' + (x.level != null ? 'Lv.' + x.level : (x.realm || '等级不明')) + '）：' + x.desc).join('；')}`);
@@ -1802,7 +1802,7 @@ const OUTCOME_PROMPT = `你是《地下城与勇士》的公会执事。阅读�
 1. **成功**：队伍达成了任务目标或至少全身而退（即使中途有波折、受伤、损失道具，只要最终完成任务或顺利撤离）；
 2. **失败**：剧情明确以任务失败、队伍溃败/团灭、被逐出副本、核心目标未达成且付出惨重代价告终；**队伍在途中逃跑/撤退脱身同样视为失败**（未完成任务，哪怕保住了性命）。
 注意：仅凭单次受挫、一次大失败、或某段描写凶险，不构成失败；必须以全文的最终结局为准。
-同时决定本局结算中的成长与机缘：
+同时决定本局结算中的成长与收益：
 1. statBuffs：依据每位成员在本局中的实际表现，自行决定是否获得 1 点属性成长以及加在哪一项（力量/敏捷/智力/幸运）；没有则留空数组。不要随机补发，成员必须有明确的成长理由。
 2. injury：只能从输入列出的“重伤候选”中选择至多一人判断是否获得临时受伤状态。通常不要授予，仅在剧情明确支持且伤势会形成持续影响的少数情况下低概率授予；不授予时为 null。授予时 grant 必须为 true，名称必须为 6~12 字，描述必须为 20~100 字并详细说明受伤经历与伤势效果。
 3. scroll：依据本局是否明确获得技能传承或技能书，自行决定是否掉落；没有则 null，有则给出名称与描述。
@@ -1850,10 +1850,10 @@ const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执�
 
 /* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级 */
 const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色状态，决定本次探险的局势：
-1. hidden：是否触发隐藏凶地（首领盘踞、名称改变、凶险加倍）；normal：false。
-2. specialEvent：是否触发特殊异象（整体难度与机缘上调）；normal：false。
+1. hidden：是否触发隐藏地下城（首领盘踞、名称改变、凶险加倍）；normal：false。
+2. specialEvent：是否触发特殊异变（整体难度与奖励上调）；normal：false。
 3. breakthrough：仅当队伍中有 Lv.10 圆满的角色时可为 true，否则必须 false。
-4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定合理等级（1~10，特殊事件可至 11/12，即"Lv.11"）。
+4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定本副本【等级区间】内的等级（"Lv.N"），普通与特殊事件都不得低于下限或高于上限；特殊事件应尽量取区间偏高位。
 严格只输出一个 JSON 对象，不要任何解释或标记：
 {"hidden":false,"specialEvent":false,"breakthrough":false,"enemies":[{"name":"敌人名","level":3}]}`;
 
@@ -1868,13 +1868,19 @@ function parseSetupJson(raw) {
 
 function normalizeAiSetup(parsed, payload = {}) {
   const pool = Array.isArray(payload.enemies) ? payload.enemies : [];
+  const levelMin = Number(payload.levelMin);
+  const levelMax = Number(payload.levelMax);
+  const minLevel = Number.isFinite(levelMin) && levelMin >= 1 ? Math.floor(levelMin) : 1;
+  const maxLevel = Number.isFinite(levelMax) && levelMax >= minLevel ? Math.floor(levelMax) : 19;
   const seen = new Set();
   const enemies = (Array.isArray(parsed.enemies) ? parsed.enemies : []).map(entry => {
     const name = String(entry && entry.name || '').replace(/\s+/g, '').trim();
     const src = pool.find(x => String(x.name || '').trim() === name);
     if (!src || seen.has(name)) return null;
-    const rawLevel = Number(entry && entry.level != null ? entry.level : (String(entry && entry.realm || '').match(/Lv\.?(\d+)/i) || [])[1]);
-    const level = Number.isFinite(rawLevel) && rawLevel > 0 ? Math.min(19, Math.round(rawLevel)) : 1;
+    const rawText = String(entry && entry.level != null ? entry.level : (entry && entry.realm || ''));
+    const numeric = Number(rawText);
+    const rawLevel = Number.isFinite(numeric) ? numeric : Number((String(rawText).match(/Lv\.?(\d+)/i) || [])[1]);
+    const level = Number.isFinite(rawLevel) && rawLevel > 0 ? Math.max(minLevel, Math.min(maxLevel, Math.round(rawLevel))) : minLevel;
     seen.add(name);
     return { ...src, level };
   }).filter(Boolean);
@@ -1888,18 +1894,24 @@ function normalizeAiSetup(parsed, payload = {}) {
 }
 
 async function aiDecideSetup(payload = {}) {
+  const band = payload.dungeon && GE.dungeonLevelBand ? GE.dungeonLevelBand(payload.dungeon) : [1, 19];
+  const bandLabel = payload.dungeon && payload.dungeon.level_desc
+    || (band[0] === band[1] ? 'Lv.' + band[0] : 'Lv.' + band[0] + '-' + band[1]);
   const body = {
     dungeon: String(payload.dungeon && (payload.dungeon.name || payload.dungeon) || ''),
     lore: String(payload.dungeon && payload.dungeon.lore || ''),
     enemies: Array.isArray(payload.dungeon && payload.dungeon.enemies) ? payload.dungeon.enemies : [],
     bosses: Array.isArray(payload.dungeon && payload.dungeon.bosses) ? payload.dungeon.bosses : [],
+    levelMin: band[0],
+    levelMax: band[1],
+    level_desc: bandLabel,
     role: payload.role || {},
     breakthroughEligible: !!(payload.role && GE.canBreakthrough && GE.canBreakthrough(payload.role)),
   };
   let lastError = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const raw = await callLLM('副本：' + body.dungeon + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.level != null ? 'Lv.' + b.level : '等级不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（Lv.' + (body.role.level || 1) + '·' + (body.role.character_class || '职业不明') + (body.role.classTitle ? '·' + body.role.classTitle : '') + '）\n' + (body.breakthroughEligible ? '【突破】该角色已至 Lv.10 圆满，可触发转职试炼。' : ''), SETUP_PROMPT, 1200);
+      const raw = await callLLM('副本：' + body.dungeon + '\n【等级区间】' + (body.level_desc || 'Lv.1-19') + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.level != null ? 'Lv.' + b.level : '等级不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（Lv.' + (body.role.level || 1) + '·' + (body.role.character_class || '职业不明') + (body.role.classTitle ? '·' + body.role.classTitle : '') + '）\n' + (body.breakthroughEligible ? '【突破】该角色已至 Lv.10 圆满，可触发转职试炼。' : ''), SETUP_PROMPT, 1200);
       return normalizeAiSetup(parseSetupJson(raw), body);
     } catch (e) {
       lastError = e;
@@ -2408,6 +2420,9 @@ function roomStatePublic(room) {
     dungeon: room.choice || (room.dg ? room.dg.dungeon.name : null),
     description: room.description || '',
     created_at: room.createdAt || Date.now(),
+    level_desc: (room.dg && room.dg.dungeon && room.dg.dungeon.level_desc)
+      || (((typeof GE !== 'undefined') && GE.DUNGEON_POOL.find(dungeon => dungeon.name === room.choice)) || {}).level_desc
+      || null,
     host: room.host,
     party: (room.party || []).map(m => m ? {
       uid: m.uid || null, name: m.name, charId: m.charId || null, isNpc: !!m.isNpc,
