@@ -2731,7 +2731,7 @@ button { font-family: var(--font); }
   padding: 2px 8px;
   border-radius: 6px;
   border: 1px solid color-mix(in srgb, var(--card-brass) 25%, var(--color-border));
-  background: color-mix(in srgb, var(--card-brass) 8%, var(--color-bg));
+  background: transparent;
   cursor: help;
 }
 .msc-loot-item .rarity-tag { margin-left: 2px; }
