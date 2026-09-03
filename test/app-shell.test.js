@@ -65,6 +65,25 @@ test('moonlit header and tabs use paper, copper, and wood visual hooks', () => {
   assert.match(styles, /\.moonlit-icon/);
 });
 
+test('tavern hall exposes paper desk and guestbook visual surfaces', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.tavern-layout/);
+  assert.match(styles, /\.hall-tables/);
+  assert.match(styles, /\.chat-col/);
+  assert.match(styles, /\.chat-col[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.seat-vacant[\s\S]*dashed/);
+  assert.match(styles, /\.table-seats[\s\S]*var\(--wood\)/);
+});
+
+test('secondary pages reuse the moonlit parchment panel language', () => {
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.match(styles, /\.event-header[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.build-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.adv-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.log-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.btn-primary[\s\S]*var\(--moon-blue-dark\)/);
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);

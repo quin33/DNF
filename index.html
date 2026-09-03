@@ -253,7 +253,7 @@ function renderTavern() {
   });
   const chatCol = `
     <div class="chat-col">
-      <div class="chat-title-bar"><h3 class="col-title">💬 酒馆闲聊</h3></div>
+      <div class="chat-title-bar"><h3 class="col-title"><span class="moonlit-icon" aria-hidden="true">聊</span>酒馆闲聊</h3></div>
       <div class="chat-messages" id="chat-messages">
         ${D.chat.slice().reverse().map(m => `
           <div class="chat-msg">
@@ -277,7 +277,7 @@ function renderTavern() {
     const a = s.adventurer;
     if (!a) return `
       <div class="seat seat-vacant" title="点击空位让你的冒险者入座">
-        <span class="seat-empty-icon">🪑</span>
+        <span class="seat-empty-icon" aria-hidden="true">⌂</span>
         <span class="seat-empty-label">空位</span>
       </div>`;
     const drink = s.drink;

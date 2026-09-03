@@ -745,11 +745,9 @@ button { font-family: var(--font); }
 .tavern-layout { align-items: flex-start; gap: 14px; display: flex; flex-wrap: wrap; }
 
 .tavern-hall {
-  background:
-    radial-gradient(circle at 12% 0%, #c2823e21, transparent 34%),
-    linear-gradient(155deg, color-mix(in srgb, #8b5a2b 8%, var(--color-surface)), var(--color-surface) 58%);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--wood) 54%, var(--color-border));
+  border-radius: var(--radius-md);
   flex: 1;
   min-width: 0;
   padding: 12px;
@@ -757,43 +755,44 @@ button { font-family: var(--font); }
 
 .tavern-hall-heading { justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; display: flex; }
 .tavern-hall-heading .col-title { align-items: center; gap: 8px; margin-bottom: 0; display: flex; }
-.tavern-hall-heading .col-title::before { content: "◆"; color: #b87938; text-shadow: 0 0 12px #b8793873; font-size: 11px; }
+.tavern-hall-heading .col-title::before { content: "◆"; color: var(--copper); font-size: 11px; }
 
 .hall-bar {
-  background: linear-gradient(180deg, color-mix(in srgb, #9a6334 9%, var(--color-bg)), var(--color-bg));
-  border: 1px solid color-mix(in srgb, #8b5a2b 44%, var(--color-border));
-  border-radius: 12px;
+  background: var(--paper-muted);
+  border: 1px solid color-mix(in srgb, var(--wood) 52%, var(--color-border));
+  border-radius: var(--radius-md);
   margin-bottom: 14px;
   padding: 13px;
 }
 .hall-bar .bar-name { font-size: 13px; font-weight: 700; color: var(--wood-bright); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-.hall-bar .bar-name::before { content: "🍺"; }
+.hall-bar .bar-name::before { content: "◈"; color: var(--copper); }
 
 .bar-stools, .table-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; display: grid; }
+.table-seats { padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--wood) 24%, transparent); }
 
 .hall-tables { grid-template-columns: 1fr; gap: 12px; display: grid; }
 .hall-table {
-  background: linear-gradient(145deg, color-mix(in srgb, #8b5a2b 7%, var(--color-bg)), var(--color-bg));
-  border: 1px solid color-mix(in srgb, #8b5a2b 34%, var(--color-border));
-  border-radius: 12px;
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--wood) 38%, var(--color-border));
+  border-radius: var(--radius-md);
   min-width: 0;
   padding: 11px;
   position: relative;
 }
 .table-name {
-  color: var(--wood-bright);
+  color: var(--wood);
   font-size: 12px;
   font-weight: 700;
   margin-bottom: 8px;
   letter-spacing: .04em;
 }
-.table-name::before { content: "🪑 "; }
+.table-name::before { content: "◆ "; color: var(--copper); }
 
 .hall-hint {
   color: var(--color-text-secondary);
-  background: color-mix(in srgb, #b87938 6%, var(--color-bg));
-  border-left: 3px solid #b87938;
-  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--copper) 8%, var(--paper-raised));
+  border-left: 3px solid var(--copper);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   margin: 13px 2px 0;
   padding: 9px 11px;
   font-size: 12px;
@@ -801,9 +800,9 @@ button { font-family: var(--font); }
 }
 
 .seat {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 9px;
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--moon-blue) 38%, var(--color-border));
+  border-radius: var(--radius-sm);
   flex-direction: column;
   gap: 2px;
   min-height: 84px;
@@ -814,20 +813,21 @@ button { font-family: var(--font); }
 .seat-vacant {
   color: var(--color-text-secondary);
   box-shadow: none;
-  background: 0 0;
+  background: color-mix(in srgb, var(--paper-muted) 48%, transparent);
+  border-color: color-mix(in srgb, var(--copper) 54%, var(--color-border));
   border-style: dashed;
   justify-content: center;
   align-items: center;
   cursor: pointer;
   transition: border-color .15s, transform .15s;
 }
-.seat-vacant:hover { border-color: var(--color-primary); color: var(--color-text); transform: translateY(-2px); }
+.seat-vacant:hover { border-color: var(--copper); color: var(--color-text); transform: translateY(-2px); }
 .seat-clickable { cursor: pointer; transition: transform .15s, border-color .15s, background .15s, box-shadow .15s; }
-.seat-clickable:hover { border-color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg)); transform: translateY(-2px); box-shadow: 0 7px 16px #2418101a; }
+.seat-clickable:hover { border-color: var(--moon-blue); background: color-mix(in srgb, var(--moon-blue) 7%, var(--paper-raised)); transform: translateY(-2px); box-shadow: 0 7px 16px color-mix(in srgb, var(--wood) 15%, transparent); }
 .seat-mine {
-  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 22%, transparent), 0 5px 13px #24181012;
+  border-color: color-mix(in srgb, var(--copper) 65%, var(--color-border));
+  background: color-mix(in srgb, var(--copper) 8%, var(--paper-raised));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--copper) 22%, transparent), 0 5px 13px color-mix(in srgb, var(--wood) 13%, transparent);
 }
 .seat-empty-icon { opacity: .72; filter: saturate(.78); font-size: 20px; line-height: 1; }
 .seat-empty-label { font-size: 11px; }
@@ -840,9 +840,9 @@ button { font-family: var(--font); }
 .seat-chatter {
   color: var(--color-text);
   word-break: break-word;
-  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-bg));
-  border-left: 2px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
-  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, var(--moon-blue) 8%, var(--paper-raised));
+  border-left: 2px solid color-mix(in srgb, var(--moon-blue) 52%, var(--color-border));
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   margin: 4px 0 0;
   padding: 4px 6px;
   font-size: 11px;
@@ -851,9 +851,9 @@ button { font-family: var(--font); }
 
 /* 酒馆闲聊 */
 .chat-col {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
+  background: var(--paper-raised);
+  border: 1px solid color-mix(in srgb, var(--wood) 42%, var(--color-border));
+  border-radius: var(--radius-md);
   flex-direction: column;
   padding: 12px;
   display: flex;
@@ -861,12 +861,12 @@ button { font-family: var(--font); }
   flex-shrink: 0;
   min-height: 420px;
 }
-.chat-title-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.chat-title-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid color-mix(in srgb, var(--copper) 42%, var(--color-border)); }
 .chat-title-bar .col-title { margin: 0; }
 .chat-messages { flex-direction: column; flex: 1; gap: 10px; min-height: 280px; max-height: 460px; padding-right: 4px; display: flex; overflow-y: auto; }
 .load-more {
   border: 1px solid var(--color-border);
-  background: var(--color-bg);
+  background: var(--paper-muted);
   color: var(--color-text-secondary);
   cursor: pointer;
   border-radius: 12px;
@@ -875,7 +875,7 @@ button { font-family: var(--font); }
   font-size: 12px;
 }
 .load-more:hover { color: var(--color-text); border-color: var(--color-primary); }
-.chat-msg { background: var(--color-bg); border-radius: 8px; padding: 8px 10px; }
+.chat-msg { background: var(--paper-bg); border: 1px solid color-mix(in srgb, var(--moon-blue) 20%, var(--color-border)); border-left: 2px solid var(--moon-blue); border-radius: var(--radius-sm); padding: 8px 10px; }
 .chat-msg-head { justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 2px; display: flex; }
 .chat-nick { color: var(--color-text); font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-title { margin-right: 4px; color: var(--color-text-secondary); font-size: 11px; font-weight: 400; }
@@ -885,8 +885,8 @@ button { font-family: var(--font); }
 .chat-input {
   width: 100%;
   color: var(--color-text);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--paper-bg);
+  border: 1px solid color-mix(in srgb, var(--moon-blue) 35%, var(--color-border));
   resize: vertical;
   border-radius: 6px;
   outline: none;
@@ -901,16 +901,16 @@ button { font-family: var(--font); }
 .chat-input-foot { justify-content: space-between; align-items: center; margin-top: 6px; display: flex; }
 .char-count { color: var(--color-text-secondary); font-size: 11px; }
 .btn-send {
-  border: 1px solid var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
-  color: var(--color-primary);
-  border-radius: 8px;
+  border: 1px solid var(--copper);
+  background: color-mix(in srgb, var(--copper) 13%, var(--paper-raised));
+  color: var(--wood);
+  border-radius: var(--radius-sm);
   padding: 4px 14px;
   font-size: 12px;
   cursor: pointer;
   transition: background .15s;
 }
-.btn-send:hover { background: color-mix(in srgb, var(--color-primary) 26%, transparent); }
+.btn-send:hover { background: color-mix(in srgb, var(--copper) 24%, var(--paper-raised)); }
 
 /* ============ 通用按钮 ============ */
 .btn {
@@ -926,8 +926,8 @@ button { font-family: var(--font); }
 }
 .btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .btn:not(:disabled):active { transform: translateY(1px); }
-.btn-primary { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
-.btn-primary:hover { background: var(--color-primary-hover); color: #fff; }
+.btn-primary { background: var(--moon-blue-dark); border-color: var(--moon-blue-dark); color: #fff; }
+.btn-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); color: #fff; }
 .btn-primary:not(:disabled):hover { box-shadow: 0 5px 14px color-mix(in srgb, var(--color-primary) 26%, transparent); }
 .btn-success { color: var(--color-success); border-color: color-mix(in srgb, var(--color-success) 50%, var(--color-border)); background: color-mix(in srgb, var(--color-success) 10%, transparent); }
 .btn-danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 50%, var(--color-border)); background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
@@ -1312,6 +1312,127 @@ button { font-family: var(--font); }
 }
 .fav-btn { background: none; border: 1px solid var(--color-border); color: var(--color-text-secondary); border-radius: 8px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
 .fav-btn.on { color: #ffc107; border-color: #ffc107; }
+
+/* ============ 月光纸笺·次级面板统一覆写 ============ */
+[data-theme="dark"] {
+  --paper-bg: var(--color-bg);
+  --paper-raised: var(--color-surface);
+  --paper-muted: var(--color-surface-raised);
+  --ink: var(--color-text);
+  --ink-muted: var(--color-text-secondary);
+  --moon-blue: var(--color-primary);
+  --moon-blue-dark: var(--color-primary);
+  --copper: var(--color-warning);
+  --wood: #9b7655;
+  --wood-bright: #c69a67;
+}
+
+.event-header {
+  border: 1px solid color-mix(in srgb, var(--copper) 58%, var(--color-border));
+  background: var(--paper-raised);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--moon-blue) 14%, transparent), 0 5px 14px color-mix(in srgb, var(--wood) 12%, transparent);
+}
+.event-kicker { color: var(--copper); }
+.event-title { color: var(--ink); }
+.event-desc { color: var(--ink-muted); }
+.event-meta .chip {
+  border-color: color-mix(in srgb, var(--copper) 34%, var(--color-border));
+  background: var(--paper-muted);
+  color: var(--ink-muted);
+}
+.event-rules {
+  border-color: color-mix(in srgb, var(--wood) 34%, var(--color-border));
+  border-radius: var(--radius-md);
+  background: var(--paper-raised);
+}
+.event-rules h4 { color: var(--moon-blue-dark); }
+.event-rules li { color: var(--ink-muted); }
+.event-rules li::before { color: var(--copper); }
+.stage-row, .rank-row {
+  border-color: color-mix(in srgb, var(--wood) 30%, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--paper-raised);
+}
+.stage-row:hover, .rank-row:hover { border-color: var(--copper); }
+.stage-num, .rank-pos { color: var(--copper); }
+.rank-pos { background: var(--paper-muted); border-color: color-mix(in srgb, var(--copper) 32%, var(--color-border)); }
+
+.build-card {
+  background: var(--paper-raised);
+  border-color: color-mix(in srgb, var(--wood) 32%, var(--color-border));
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--wood) 10%, transparent);
+}
+.build-card:hover { background: var(--paper-raised); border-color: var(--copper); box-shadow: 0 6px 14px color-mix(in srgb, var(--wood) 16%, transparent); }
+.build-card .b-icon { color: var(--moon-blue-dark); }
+.build-card .b-name { color: var(--ink); }
+.build-card .b-cat, .build-card .b-desc { color: var(--ink-muted); }
+.build-card .b-status { border-color: color-mix(in srgb, var(--copper) 46%, var(--color-border)); color: var(--copper); background: color-mix(in srgb, var(--copper) 8%, var(--paper-raised)); }
+.build-card .b-status.built { color: var(--success); border-color: color-mix(in srgb, var(--success) 52%, var(--color-border)); }
+
+.adv-card {
+  background: var(--paper-raised);
+  background-image: none;
+  border-color: color-mix(in srgb, var(--card-brass) 38%, var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--wood) 10%, transparent);
+}
+.adv-card:hover { background: var(--paper-raised); border-color: color-mix(in srgb, var(--card-brass) 62%, var(--color-border)); box-shadow: 0 7px 18px color-mix(in srgb, var(--wood) 16%, transparent); }
+.adv-card::after { display: none; }
+.adv-status { background: color-mix(in srgb, var(--card-brass) 10%, var(--paper-raised)); }
+.adv-row:not(.secondary) > span { background: color-mix(in srgb, var(--card-brass) 8%, var(--paper-raised)); }
+.adv-row.secondary { background: color-mix(in srgb, var(--card-brass) 6%, var(--paper-raised)); }
+.tag-badge, .equip-badge { background: color-mix(in srgb, var(--card-brass) 7%, var(--paper-raised)); }
+.history-btn, .follow-btn { background: var(--paper-muted); }
+
+.party-mode-switch, .party-hall-actions, .my-party-section, .party-match-section, .invite-section {
+  border-color: color-mix(in srgb, var(--wood) 34%, var(--color-border));
+  background: var(--paper-raised);
+}
+.party-mode-switch { border-radius: var(--radius-sm); }
+.party-mode-tab { border-radius: 4px; }
+.party-mode-tab.active { background: color-mix(in srgb, var(--copper) 15%, var(--paper-raised)); color: var(--moon-blue-dark); box-shadow: inset 0 -2px 0 var(--copper); }
+.party-map-card, .public-party-card, .dungeon-card, .party-row {
+  border-color: color-mix(in srgb, var(--wood) 30%, var(--color-border));
+  background: var(--paper-raised);
+  border-radius: var(--radius-sm);
+}
+.party-map-card:hover, .party-map-card:focus-visible, .dungeon-card:hover, .party-row:hover { border-color: var(--copper); }
+.party-map-card.selected, .dungeon-card.selected, .public-party-card.is-mine { background: color-mix(in srgb, var(--moon-blue) 8%, var(--paper-raised)); border-color: var(--moon-blue); }
+.party-map-realm, .dungeon-wait, .public-party-state { color: var(--moon-blue-dark); }
+.party-hall-section-head .col-title::before { color: var(--copper); }
+.public-party-map { background: color-mix(in srgb, var(--moon-blue) 10%, var(--paper-raised)); border-color: color-mix(in srgb, var(--moon-blue) 40%, var(--color-border)); }
+.public-party-members { border-top-color: color-mix(in srgb, var(--wood) 30%, var(--color-border)); }
+.public-party-member { background: var(--paper-muted); border-color: color-mix(in srgb, var(--moon-blue) 32%, var(--color-border)); }
+
+.log-card, .log-row {
+  background: var(--paper-raised);
+  border-color: color-mix(in srgb, var(--wood) 30%, var(--color-border));
+  border-radius: var(--radius-sm);
+}
+.log-card:hover, .log-row:hover { border-color: var(--copper); }
+.log-card.running-entry, .log-row.running-entry { background: color-mix(in srgb, var(--moon-blue) 7%, var(--paper-raised)); border-color: color-mix(in srgb, var(--moon-blue) 52%, var(--color-border)); }
+.lr-party, .log-party, .lr-summary, .log-summary, .lr-meta, .log-card-meta { color: var(--ink-muted); }
+.lr-dungeon, .log-where, .log-where .dungeon { color: var(--ink); }
+.lr-click-hint { color: var(--moon-blue-dark); }
+.log-status.st-completed { color: var(--success); border-color: var(--success); }
+.log-status.st-generating, .log-status.st-in_progress { color: var(--moon-blue-dark); border-color: var(--moon-blue); }
+.log-special-event { border-color: color-mix(in srgb, var(--copper) 50%, var(--color-border)); background: color-mix(in srgb, var(--copper) 10%, var(--paper-raised)); color: var(--copper); }
+
+.log-detail, .adv-log-shell { background: var(--paper-raised); border-color: color-mix(in srgb, var(--wood) 30%, var(--color-border)); }
+.modal-box.log-modal .log-detail-toolbar { background: var(--paper-muted); border-bottom-color: color-mix(in srgb, var(--wood) 30%, var(--color-border)); }
+.log-detail-summary { background: color-mix(in srgb, var(--moon-blue) 7%, var(--paper-raised)); border-left-color: var(--copper); }
+.log-detail-step { border-bottom-color: color-mix(in srgb, var(--wood) 26%, var(--color-border)); }
+.lds-no { background: color-mix(in srgb, var(--moon-blue) 13%, var(--paper-raised)); color: var(--moon-blue-dark); border-color: color-mix(in srgb, var(--moon-blue) 42%, var(--color-border)); }
+.log-detail-summary-end { background: color-mix(in srgb, var(--copper) 8%, var(--paper-raised)); border-color: color-mix(in srgb, var(--copper) 46%, var(--color-border)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .adv-card, .build-card, .party-map-card, .dungeon-card, .log-card, .log-row { transition: none; }
+  .adv-card:hover, .build-card:hover { transform: none; }
+  .adv-card:hover::after { animation: none; }
+  .taixu-progress-dot { animation: none; }
+}
 
 /* ============ 炼器坊（仿铁匠铺设施布局） ============ */
 .facility-tag {
