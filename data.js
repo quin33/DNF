@@ -69,6 +69,7 @@ window.TAVERN_DATA = {
     { id: 14, code: 'memorial', name: '英雄纪念碑', icon: '🪦', category: '纪念', description: '陨落冒险家的归宿，碑文刻其生前最后的叙事。', status: 'built', upgrade_level: 1 },
     { id: 15, code: 'gambling', name: '娱乐场', icon: '🎲', category: '休闲', description: '小赌怡情，押注今日战利，须有庄家当值方可开市。', status: 'built', upgrade_level: 1 },
     { id: 16, code: 'hidden_exchange', name: '战利品珍藏馆', icon: '🏛️', category: '收藏', description: '陈列地下城带回的珍奇；可按固定组合兑换隐藏副本门票。', status: 'built', upgrade_level: 1 },
+    { id: 17, code: 'mailbox', name: '公会邮箱', icon: '📮', category: '通讯', description: '公会与冒险家送来的补给和福利，会不定期投递到这里。', status: 'built', upgrade_level: 1 },
   ],
 
   drinks: [

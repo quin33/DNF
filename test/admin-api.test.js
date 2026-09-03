@@ -36,6 +36,12 @@ const originalCharacter = {
   skillPool: [{ name: 'Guard', desc: 'A guarded stance.' }],
   hidden: 'must survive admin updates',
 };
+const wellRestedCharacter = {
+  ...originalCharacter,
+  stamina: 100,
+  max_stamina: 100,
+  status: 'resting',
+};
 
 let userId;
 let characterId;
@@ -163,15 +169,14 @@ test.before(async () => {
     status: 'resting',
   }));
   pushCharacterId = Number(DB.createCharacter(userId, `Push ${suffix}`, {
-    ...originalCharacter,
+    ...wellRestedCharacter,
     name: `Push ${suffix}`,
     hp: 20,
-    status: 'resting',
   }));
   playerToken = `${suffix}-player-token`;
   DB.createSession(userId, playerToken);
   secondUserId = Number(DB.createUser(secondUsername, 'hash', 'salt'));
-  secondCharacterId = Number(DB.createCharacter(secondUserId, `Guest ${suffix}`, { ...originalCharacter, name: `Guest ${suffix}` }));
+  secondCharacterId = Number(DB.createCharacter(secondUserId, `Guest ${suffix}`, { ...wellRestedCharacter, name: `Guest ${suffix}` }));
   secondPlayerToken = `${suffix}-guest-token`;
   DB.createSession(secondUserId, secondPlayerToken);
   for (let index = 3; index <= 5; index++) {
@@ -183,7 +188,7 @@ test.before(async () => {
   }
   for (let index = 1; index <= 4; index++) {
     const id = Number(DB.createUser(`room-start-${index}-${suffix}`, 'hash', 'salt'));
-    const characterId = Number(DB.createCharacter(id, `Room Start ${index} ${suffix}`, { ...originalCharacter, name: `Room Start ${index} ${suffix}` }));
+    const characterId = Number(DB.createCharacter(id, `Room Start ${index} ${suffix}`, { ...wellRestedCharacter, name: `Room Start ${index} ${suffix}` }));
     const token = `${suffix}-room-start-${index}-token`;
     DB.createSession(id, token);
     roomStartPlayers.push({ id, characterId, token });
@@ -287,7 +292,7 @@ test('public character data exposes class, personality, and current state fields
       max_stamina: character.max_stamina,
       status: character.status,
     },
-    { character_class: 'Warrior', personality: '重诺', hp: 20, max_hp: 50, stamina: 12, max_stamina: 20, status: 'resting' },
+    { character_class: 'Warrior', personality: '重诺', hp: 20, max_hp: 50, stamina: 100, max_stamina: 100, status: 'resting' },
   );
 });
 

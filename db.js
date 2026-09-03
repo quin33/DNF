@@ -1334,6 +1334,7 @@ function publicCharacterData(row) {
   delete result.traits;
   delete result.traitDescs;
   delete result.root;
+  delete result.mailbox;
   return result;
 }
 function getPublicCharacters() {

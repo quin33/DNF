@@ -18,6 +18,7 @@ const GC = require('./game-create.js');
 const GE = require('./game-engine.js');
 const TI = require('./taixu-insight.js');
 const AI_COMPANIONS = require('./ai-companions.js');
+const MB = require('./mailbox.js');
 const { createRoomRunner } = require('./room-runner.js');
 const {
   classifyAiFailure,
@@ -1617,6 +1618,68 @@ async function handleAuthAPI(req, res, urlPath) {
     });
     return true;
   }
+  const mailboxMatch = urlPath.match(/^\/api\/character\/(\d+)\/mailbox$/);
+  if (mailboxMatch && req.method === 'GET') {
+    const u = authUser(req);
+    if (!u) { sendJSON(res, 401, { error: '未登录' }); return true; }
+    const charId = Number(mailboxMatch[1]);
+    const character = DB.getCharacter(u.id, charId);
+    if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    const running = findRunningRoomMember(u.id, charId);
+    if (running) {
+      sendJSON(res, 200, {
+        ok: true,
+        generated: 0,
+        mailbox: MB.mailboxView(character.data),
+        updated_at: character.updated_at,
+      });
+      return true;
+    }
+    const settled = MB.settleMailbox(character.data);
+    let updatedAt = character.updated_at;
+    if (settled.changed) {
+      const saved = DB.saveCharacterIfCurrent(u.id, charId, character.updated_at, character.data, character.data.name);
+      if (!saved) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
+      updatedAt = saved.updated_at;
+      notifyCharacterUpdated(u.id, charId, saved.updated_at);
+    }
+    sendJSON(res, 200, {
+      ok: true,
+      generated: settled.generated.length,
+      mailbox: MB.mailboxView(character.data),
+      character: character.data,
+      updated_at: updatedAt,
+    });
+    return true;
+  }
+  const mailboxClaimMatch = urlPath.match(/^\/api\/character\/(\d+)\/mailbox\/claim$/);
+  if (mailboxClaimMatch && req.method === 'POST') {
+    const u = authUser(req);
+    if (!u) { sendJSON(res, 401, { error: '未登录' }); return true; }
+    const charId = Number(mailboxClaimMatch[1]);
+    const body = JSON.parse(await readBody(req));
+    const mailId = String(body.id || '').trim();
+    if (!mailId) { sendJSON(res, 400, { error: '缺少邮件编号' }); return true; }
+    const character = DB.getCharacter(u.id, charId);
+    if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settlePassiveRecovery(character.data);
+    const busy = characterBusyReason(character.data);
+    if (busy) { sendJSON(res, 400, { error: busy, code: 'character_busy' }); return true; }
+    const collected = MB.collectLetter(character.data, mailId);
+    if (!collected.ok) { sendJSON(res, collected.code === 'already_claimed' ? 409 : 400, { error: collected.error, code: collected.code }); return true; }
+    const saved = DB.saveCharacterIfCurrent(u.id, charId, character.updated_at, character.data, character.data.name);
+    if (!saved) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
+    notifyCharacterUpdated(u.id, charId, saved.updated_at);
+    sendJSON(res, 200, {
+      ok: true,
+      claimedMailId: collected.mailId,
+      items: collected.items,
+      mailbox: MB.mailboxView(character.data),
+      character: character.data,
+      updated_at: saved.updated_at,
+    });
+    return true;
+  }
   const characterActionMatch = urlPath.match(/^\/api\/character\/(\d+)\/action$/);
   if (characterActionMatch) {
     const u = authUser(req);
@@ -1774,7 +1837,7 @@ async function handleAuthAPI(req, res, urlPath) {
 }
 
 /* 道具描述生成：为每件新获得的战利品编写修仙风格描述（严格 JSON 输出） */
-const LOOT_PROMPT = `你是《问道仙坊》的宝物文案作者。为给定列表中的每件道具编写一段 15~40 字的修仙风格描述：点明材质、来历或用途，语言凝练有古意，贴合道具名。严格只输出一个 JSON 数组，不要任何解释或标记，格式：[{"name":"道具名","desc":"描述"}]，数组必须包含输入的全部道具名，顺序不限。`;
+const LOOT_PROMPT = `你是《问道仙坊》的宝物文案作者。为给定列表中的每件道具编写一段 15~40 字的修仙风格描述：先简要点明材质或来历，再**明确写出该道具在修行中的用途或去向**（如疗伤回气、增幅术法、炼器布阵材料、采集工具、任务信物、可交易或收藏，按道具性质判断），不得只写外观与氛围而遗漏用途。语言凝练有古意，贴合道具名。严格只输出一个 JSON 数组，不要任何解释或标记，格式：[{"name":"道具名","desc":"描述"}]，数组必须包含输入的全部道具名，顺序不限。`;
 
 /* 探险总结生成：为整篇探险日志写一段 ≤200 字的总结 */
 const SUMMARY_PROMPT = `你是《问道仙坊》的日志编者。请只根据本局提供的完整探险段落，写一段本局独有的总结，不超过 150 字。必须引用本局实际发生的至少一个具体事件、角色行动、敌人或收获；不得只根据副本名、固定背景或模板作答。每局措辞和内容都应随日志变化。语言凝练，带仙侠韵味，只输出总结正文，不要标题，不要解释。`;
@@ -1802,7 +1865,7 @@ const OUTCOME_PROMPT = `你是《问道仙坊》的执事长老。阅读这篇�
 /* 功法/术法卷轴生成：10% 概率的稀有战利品（严格 JSON 输出） */
 const SCROLL_PROMPT = `你是《问道仙坊》的藏经阁执事。创作一部{type}卷轴——不是功法本体，而是记载修炼之法的卷轴（拓本/残卷/秘录皆可）。要求：
 1. 起一个简洁贴切的名字（2~12 字，如"《青木养气诀》残卷""御风术·拓本""庚金炼体要旨"）；
-2. 写一段 15~40 字的描述：来历、内容、价值；
+2. 写一段 15~40 字的描述：来历、内容与参悟后的实际作用（习得哪门功法/术法或增强何种修行），并写明用途；
 3. 卷轴名与描述都要有修仙韵味，风格与《问道仙坊》一致。
 严格只输出一个 JSON 对象，不要任何解释或标记：{"name":"卷轴名","desc":"描述"}`;
 
@@ -1825,7 +1888,7 @@ const EXTRACT_LOOT_PROMPT = `你是《问道仙坊》的结算师。只根据带
 **必须穷尽列举**：只要出现获得动作指向的物品，即使一句话带过、即使只有一枚/半张，也要列出（例："拾起一枚幽绿磷骨珠""弯腰捡起半张兽皮"都要列入）。不设掉落件数、数量或稀有度预算，剧情没有明确获得任何道具时允许输出空数组。
 为每件道具填写：
 - name：该段原文中的道具名（4~12 字）；canonicalName：同一实体在全文中的统一名称（4~12 字），别名必须统一；
-- desc：15~40 字修仙风格描述；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/rare/epic/legendary；
+- desc：15~40 字修仙风格描述，**必须写明该道具的用途/作用或去向**（如疗伤回气、增幅术法、炼器布阵材料、采集工具、任务信物、可交易或收藏），不得只写材质、来历、外观或氛围而遗漏用途；qty：数量按剧情中的实际数量，默认 1；稀有度只能是 common/rare/epic/legendary；
 - owner：剧情明确写出最终拿取、收下或持有者时填队伍成员完整姓名；集体保管、无人明确取得或无法判断时填空字符串；
 - sourceStep：首次明确获得所在的段落编号；entityId：同一实体稳定且简短的标识；
 - sameAsStep：若本条只是后文再次提到此前已获得的同一实体，填写首次获得段落编号，此时不得当作新掉落；若是新的获得事件则填 null。
@@ -3267,9 +3330,8 @@ async function settleRoom(room) {
       role.traitDescs[aiInjury.name] = aiInjury.desc;
       memberRes.newTraits.push(aiInjury);
     }
-    // 结算完成：状态恢复为休息，精力回复 +30（封顶上限），气血/精力时间戳复位（与单机版一致）
+    // 结算完成：状态恢复为休息，气血/精力时间戳复位；精力不再由结算额外回复
     role.status = 'resting';
-    role.stamina = Math.min(role.max_stamina || 100, (role.stamina || 0) + 30);
     role.staminaTs = Date.now();
     role.hpTs = Date.now();
     // 结算后气血并入真实结算值（服务端权威，m.hp 为冒险中扣血后的值）

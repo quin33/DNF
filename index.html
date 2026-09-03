@@ -111,7 +111,7 @@ applyTheme(localStorage.getItem('dnf_theme') || 'light');
 /* ---------- 渲染主框架 ---------- */
 const root = $('#app-root');
 const T = D.tavern;
-const FEATURED_BUILDING_CODES = new Set(['training_intelligence', 'spirit_platform', 'taixu_realm', 'forge']);
+const FEATURED_BUILDING_CODES = new Set(['training_intelligence', 'spirit_platform', 'taixu_realm', 'forge', 'mailbox']);
 
 root.innerHTML = `
   <!-- 页头 -->
@@ -459,6 +459,10 @@ function renderBuilding() {
   });
   const statusText = s => ({built: '已建成', building: '建造中', upgrading: '升级中', disabled: '未开放'}[s] || s || '');
   const npc = D.npcs && D.npcs.building;
+  const role = D.my_adventurer;
+  const mailboxUnread = role && role.mailbox && Array.isArray(role.mailbox.letters)
+    ? role.mailbox.letters.filter(letter => !letter.claimedAt).length
+    : 0;
 
   let html = '';
   if (npc) {
@@ -484,7 +488,7 @@ function renderBuilding() {
     html += `<div class="build-zone-title">${esc(zone)} <span class="z-meta">${built}/${list.length} 已建成</span></div>
       <div class="build-grid">
         ${list.map(b => `
-          <div class="build-card" title="${esc(b.description || '')}" ${b.code === 'forge' ? `onclick="openForgeModal()" style="cursor:pointer"` : ''} ${b.code === 'training_intelligence' ? `onclick="openLibraryModal()" style="cursor:pointer"` : ''} ${b.code === 'spirit_platform' ? `onclick="openSpiritPlatformModal()" style="cursor:pointer"` : ''} ${b.code === 'taixu_realm' ? `onclick="openTaixuRealmModal()" style="cursor:pointer"` : ''}>
+          <div class="build-card" title="${esc(b.description || '')}" ${b.code === 'forge' ? `onclick="openForgeModal()" style="cursor:pointer"` : ''} ${b.code === 'training_intelligence' ? `onclick="openLibraryModal()" style="cursor:pointer"` : ''} ${b.code === 'spirit_platform' ? `onclick="openSpiritPlatformModal()" style="cursor:pointer"` : ''} ${b.code === 'taixu_realm' ? `onclick="openTaixuRealmModal()" style="cursor:pointer"` : ''} ${b.code === 'mailbox' ? `onclick="openMailboxModal()" style="cursor:pointer"` : ''}>
             <span class="b-status ${b.status}">${esc(statusText(b.status))}</span>
             <span class="b-icon">${esc(b.icon || '🏠')}</span>
             <div class="b-name">${esc(b.name)}</div>
@@ -494,10 +498,132 @@ function renderBuilding() {
             ${b.code === 'training_intelligence' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入技能导师馆</div>` : ''}
             ${b.code === 'spirit_platform' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入修炼</div>` : ''}
             ${b.code === 'taixu_realm' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入领悟</div>` : ''}
+            ${b.code === 'mailbox' ? `<div class="b-cat" style="color:var(--color-amber)">${mailboxUnread ? mailboxUnread + ' 封未读 · 点击查看' : '点击查看邮件'}</div>` : ''}
           </div>`).join('')}
       </div>`;
   });
   el.innerHTML = html;
+}
+
+/* ============================================================
+   公会邮箱：服务端不定期发放道具福利
+   ============================================================ */
+const MAILBOX_TITLE = '公会邮箱';
+function mailboxStateFromRole() {
+  const role = D.my_adventurer || {};
+  const raw = role.mailbox && typeof role.mailbox === 'object' ? role.mailbox : {};
+  const letters = Array.isArray(raw.letters) ? raw.letters : [];
+  return {
+    letters: letters.slice().sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)),
+    unreadCount: letters.filter(letter => !letter.claimedAt).length,
+    nextAt: Number(raw.nextAt) || 0,
+  };
+}
+function mailboxBusyReason(role) {
+  if (!role) return '';
+  if (role.status === 'adventuring') return '角色正在地下城探险';
+  if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
+  if (role.cultivation || role.status === 'cultivating' || role.status === 'breaking_through') return '角色正在修炼';
+  if (role.status === 'in_party') return '角色正在队伍中';
+  return '';
+}
+function mailboxAttachmentsHTML(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `<div class="mail-attachments">${items.map(item => {
+    const rarity = (item && item.rarity) || 'common';
+    const color = RARITY_COLOR[rarity] || itemColor(item);
+    const rarityName = RARITY_NAME[rarity] || '';
+    const qty = Number(item && item.qty) || 1;
+    return `<span class="mail-attach" title="${esc((item && item.desc) || '')}">
+      <span style="color:${color}">${esc((item && item.name) || '未知道具')}</span>
+      ${qty > 1 ? `<b>×${qty}</b>` : ''}
+      ${rarityName ? `<em style="color:${color}">${esc(rarityName)}</em>` : ''}
+    </span>`;
+  }).join('')}</div>`;
+}
+function renderMailboxModal(result = null) {
+  const role = D.my_adventurer;
+  if (!role) { closeModal(); return; }
+  const mailbox = result && result.mailbox ? result.mailbox : mailboxStateFromRole();
+  const letters = Array.isArray(mailbox.letters) ? mailbox.letters : [];
+  const unread = Number(mailbox.unreadCount != null ? mailbox.unreadCount : letters.filter(letter => !letter.claimedAt).length) || 0;
+  const busy = mailboxBusyReason(role);
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  const letterList = letters.length
+    ? `<div class="lib-list">${letters.map(letter => {
+        const claimed = !!letter.claimedAt;
+        return `<div class="lib-item mail-letter ${claimed ? 'is-claimed' : 'is-unread'}">
+          <div class="mail-letter-head">
+            ${claimed ? '' : '<span class="mail-letter-unread-mark" aria-hidden="true"></span>'}
+            <span class="li-name">${esc(letter.title || '邮件')}</span>
+            <span class="mail-letter-sender">${esc(letter.sender || '')}</span>
+          </div>
+          <div class="mail-letter-body">${esc(letter.body || '')}</div>
+          ${mailboxAttachmentsHTML(letter.items)}
+          <div class="li-foot">
+            <span class="mail-letter-time">${letter.createdAt ? fmtTime(new Date(letter.createdAt).toISOString()) : ''}</span>
+            ${claimed ? '<span class="mail-state">已领取</span>' : busy ? `<span class="mail-state locked" title="${esc(busy)}">状态锁定</span>` : `<button class="btn btn-primary btn-sm" onclick="claimMailboxLetter('${letter.id}')">领取附件</button>`}
+          </div>
+        </div>`;
+      }).join('')}</div>`
+    : '<div class="mail-empty">邮箱里暂时没有来信，公会福利会不定期投递到这里。</div>';
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="facility-tag">OUTPOST FACILITY · 驻地设施</div>
+    <h2 class="modal-title">📮 ${MAILBOX_TITLE} <span class="built-badge">✓ 已建成</span></h2>
+    <p class="facility-desc">公会邮差会不定期送来补给与福利，领取后道具直接进入背包。</p>
+    <div class="mailbox-summary">
+      <strong>${esc(role.name)}</strong>
+      <span class="mailbox-unread">${unread} 封未读</span>
+    </div>
+    ${letterList}`;
+  showModal();
+}
+function openMailboxModal() {
+  const role = D.my_adventurer;
+  if (!role) { toastMsg('请先创建角色'); return; }
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  box.innerHTML = `<div class="mailbox-loading">正在收取来信…</div>
+    <div style="margin-top:14px;text-align:right"><button class="btn" onclick="closeModal()">关闭</button></div>`;
+  showModal();
+  if (window.__onlineMode && typeof window.mailboxSync === 'function') {
+    window.mailboxSync().then(result => {
+      renderMailboxModal(result);
+      if (result && Number(result.generated || 0) > 0) toastMsg('📮 收到新的福利邮件');
+    }).catch(error => {
+      box.innerHTML = `<div class="mailbox-loading">邮箱暂时无法连接：${esc(error && error.message || '网络异常')}</div>
+        <div style="margin-top:14px;text-align:right"><button class="btn" onclick="closeModal()">关闭</button></div>`;
+    });
+    return;
+  }
+  if (role.mailbox) renderMailboxModal();
+  else toastMsg('邮箱福利仅支持在线角色');
+}
+async function claimMailboxLetter(mailId) {
+  const role = D.my_adventurer;
+  if (!role) return;
+  if (window.__onlineMode && typeof window.mailboxClaim === 'function') {
+    try {
+      const result = await window.mailboxClaim(mailId);
+      if (result && Array.isArray(result.items) && result.items.length) {
+        const summary = result.items.map(item => `${item.name}×${item.qty || 1}`).join('、');
+        feedItems(result.items, MAILBOX_TITLE, '邮件福利', '📮', '+');
+        toastMsg('已领取：' + summary);
+      } else {
+        toastMsg('该邮件已领取');
+      }
+      renderMailboxModal(result);
+      if (window.renderMine) renderMine();
+      if (window.renderBuilding) renderBuilding();
+    } catch (error) {
+      toastMsg(error.message || '领取失败');
+      renderMailboxModal();
+    }
+    return;
+  }
+  toastMsg('邮箱福利仅支持在线角色');
 }
 
 /* ============================================================
@@ -3987,8 +4113,7 @@ async function settleDungeon(dg) {
     addInjury(role, aiVerdict.injury.name, aiVerdict.injury.desc);
   }
   role.status = 'resting';
-  role.stamina = Math.min(role.max_stamina || 100, (role.stamina || 0) + 30);
-  role.hpTs = Date.now();  // 结算完成：气血从此刻起重新计时回复
+  role.hpTs = Date.now();  // 结算完成：气血从此刻起重新计时回复；精力不再由结算额外回复
   saveRole();
   // —— 最近动态流水：探险获得道具 / 金币 / 消耗品 ——
   const myLoot = (lootAssign[role.id] || []).filter(x => x.qty > 0);
@@ -4581,7 +4706,7 @@ function injuryTick() {
 }
 setInterval(injuryTick, 1000);
 </script>
-<script src="online.js?v=20260826-public-log-feed"></script>
+<script src="online.js?v=20260904-mailbox"></script>
 <script src="site-nav.js"></script>
 </body>
 </html>

@@ -43,8 +43,14 @@
   <div id="view-auth" style="display:none">
     <div class="ol-card">
       <h2>⚔️ 地下城与勇士 · 登录</h2>
-      <div class="ol-row"><label>用户名</label><input id="auth-user" placeholder="2~20 字符（中文/字母/数字）" maxlength="20"></div>
-      <div class="ol-row"><label>密码</label><input id="auth-pass" type="password" placeholder="4~64 字符" maxlength="64"></div>
+      <div class="ol-row"><label>用户名</label><input id="auth-user" autocomplete="username" placeholder="2~20 字符（中文/字母/数字）" maxlength="20"></div>
+      <div class="ol-row"><label>密码</label><input id="auth-pass" type="password" autocomplete="current-password" placeholder="4~64 字符" maxlength="64"></div>
+      <div class="ol-row" style="margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:6px;width:auto;font-size:12.5px;color:var(--color-text-secondary);cursor:pointer">
+          <input id="auth-remember" type="checkbox" style="accent-color:var(--color-primary)" checked>
+          <span>在本机保存账号和密码</span>
+        </label>
+      </div>
       <div class="ol-err" id="auth-err"></div>
       <div class="ol-row">
         <button class="btn btn-primary" onclick="doAuth('login')">登录</button>
@@ -151,6 +157,7 @@ const D = window.TAVERN_DATA;
 const API = { token: null, user: null };
 const $ = s => document.querySelector(s);
 const sel = { root: 'slayer', pers: '重诺', gender: '男', items: new Set() };
+const REMEMBER_KEY = 'dnf_saved_login';
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function api(path, opts = {}) {
@@ -166,6 +173,32 @@ function showView(id) {
   ['view-auth', 'view-hall', 'view-create', 'view-room'].forEach(v => document.getElementById(v).style.display = v === id ? 'block' : 'none');
 }
 
+function restoreAuthCredentials() {
+  const user = $('#auth-user');
+  const pass = $('#auth-pass');
+  const remember = $('#auth-remember');
+  if (!user || !pass || !remember) return;
+  let saved = null;
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (raw) saved = JSON.parse(raw);
+  } catch (_) {}
+  user.value = saved && typeof saved.username === 'string' ? saved.username : '';
+  pass.value = saved && typeof saved.password === 'string' ? saved.password : '';
+  remember.checked = true;
+}
+function saveAuthCredentials(username, password) {
+  const remember = $('#auth-remember');
+  const enabled = !remember || remember.checked;
+  try {
+    if (!enabled || !username) {
+      localStorage.removeItem(REMEMBER_KEY);
+      return;
+    }
+    localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }));
+  } catch (_) {}
+}
+
 /* ---------- 登录 / 注册 ---------- */
 async function doAuth(action) {
   const username = $('#auth-user').value.trim();
@@ -174,6 +207,7 @@ async function doAuth(action) {
     const j = await api('/api/auth/' + action, { method: 'POST', body: { username, password } });
     API.token = j.token; API.user = j.user;
     localStorage.setItem('dnf_online_token', j.token);
+    saveAuthCredentials(username, password);
     enterHall();
   } catch (e) { $('#auth-err').textContent = e.message; }
 }
@@ -188,6 +222,7 @@ async function logout() {
   try { await api('/api/auth/logout', { method: 'POST' }); } catch (e) {}
   API.token = null; API.user = null;
   localStorage.removeItem('dnf_online_token');
+  restoreAuthCredentials();
   showView('view-auth');
 }
 async function refreshChars() {
@@ -360,8 +395,8 @@ async function submitCreate() {
   const t = localStorage.getItem('dnf_online_token');
   if (t) {
     API.token = t;
-    api('/api/me').then(j => { API.user = j.user; enterHall(); }).catch(() => showView('view-auth'));
-  } else showView('view-auth');
+    api('/api/me').then(j => { API.user = j.user; enterHall(); }).catch(() => { restoreAuthCredentials(); showView('view-auth'); });
+  } else { restoreAuthCredentials(); showView('view-auth'); }
 })();
 </script>
 <script src="site-nav.js"></script>

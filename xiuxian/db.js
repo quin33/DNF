@@ -1257,7 +1257,7 @@ function publicCharacterData(row) {
   const data = hydrated.data;
   // 公共角色卡片与“我的”使用同一套完整角色字段；不再单独维护容易漏字段的白名单。
   // 角色数据本身不包含密码、令牌等账号认证信息，可安全用于公开角色展示。
-  return {
+  const result = {
       ...data,
       id: row.id,
       name: row.name,
@@ -1290,6 +1290,8 @@ function publicCharacterData(row) {
       equippedItems: Array.isArray(data.equippedItems) ? data.equippedItems : [],
       updated_at: row.updated_at,
   };
+  delete result.mailbox;
+  return result;
 }
 function getPublicCharacters() {
   return db.prepare('SELECT id, user_id, name, data, updated_at FROM characters ORDER BY updated_at DESC').all().map(publicCharacterData).filter(Boolean);

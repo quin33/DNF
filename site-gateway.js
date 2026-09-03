@@ -125,16 +125,21 @@ function renderHome(sites) {
   nav a { display: block; padding: 11px 20px; color: #c9ccd4; text-decoration: none; font-size: 14px;
           border-left: 3px solid transparent; }
   nav a:hover { background: #171a20; color: #fff; border-left-color: #d8a24a; }
-  main { flex: 1; padding: 56px 40px; max-width: 1200px; }
-  main > h2 { margin: 0 0 6px; font-size: 26px; }
-  main > p { margin: 0 0 32px; color: #8b8f9a; font-size: 14px; }
-  .auth-box { max-width: 420px; margin: 0 0 40px; padding: 24px; background: #191c23; border: 1px solid #23262e; border-radius: 12px; }
+  main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+         padding: 48px 28px; }
+  main > h2 { margin: 0 0 6px; font-size: 26px; text-align: center; }
+  main > p { margin: 0 0 32px; color: #8b8f9a; font-size: 14px; text-align: center; }
+  .auth-box { width: min(100%, 420px); margin: 0 0 36px; padding: 24px; background: #191c23;
+              border: 1px solid #23262e; border-radius: 12px; text-align: left; }
   .auth-box h3 { margin: 0 0 18px; font-size: 18px; }
   .auth-row { margin-bottom: 14px; }
   .auth-row label { display: block; margin-bottom: 6px; font-size: 13px; color: #8b8f9a; }
   .auth-row input { width: 100%; padding: 10px 12px; background: #0d0f13; border: 1px solid #23262e; border-radius: 8px;
                     color: #e8e6e3; font-size: 14px; }
   .auth-row input:focus { outline: none; border-color: #d8a24a; }
+  .auth-row .auth-remember { display: flex; align-items: center; gap: 8px; margin: 0; color: #9aa0aa; cursor: pointer; }
+  .auth-row .auth-remember input { width: 15px; height: 15px; flex: none; accent-color: #d8a24a; }
+  .auth-remember-row { margin-top: -4px; }
   .auth-btns { display: flex; gap: 10px; margin-top: 18px; }
   .btn { padding: 10px 18px; background: #d8a24a; color: #0d0f13; border: none; border-radius: 999px; font-size: 14px;
          font-weight: 600; cursor: pointer; }
@@ -142,12 +147,12 @@ function renderHome(sites) {
   .btn.secondary { background: #23262e; color: #c9ccd4; }
   .btn.secondary:hover { background: #2d3139; }
   .error { color: #e76f51; font-size: 13px; margin-top: 8px; min-height: 20px; }
-  .user-info { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 16px; background: #0d0f13;
+  .user-info { display: flex; align-items: center; gap: 12px; margin: 0 auto 28px; padding: 16px; background: #0d0f13;
                border: 1px solid #23262e; border-radius: 10px; }
   .user-info strong { color: #d8a24a; }
   .link-btn { background: none; border: none; color: #8b8f9a; text-decoration: underline; cursor: pointer; padding: 0; font-size: 13px; }
-  .cards { display: flex; flex-wrap: wrap; gap: 18px; }
-  .card { width: 260px; padding: 22px; background: #191c23; border: 1px solid #23262e; border-radius: 10px;
+  .cards { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
+  .card { width: 260px; max-width: 100%; padding: 22px; background: #191c23; border: 1px solid #23262e; border-radius: 10px;
           cursor: pointer; color: inherit; }
   .card:hover { border-color: #d8a24a; background: #1d212a; }
   .card h2 { margin: 0 0 8px; font-size: 19px; }
@@ -157,7 +162,9 @@ function renderHome(sites) {
   @media (max-width: 640px) {
     body { flex-direction: column; }
     nav { width: auto; border-right: none; border-bottom: 1px solid #23262e; padding: 18px 0; }
-    main { padding: 32px 20px; }
+    nav h1 { text-align: center; }
+    nav a { text-align: center; }
+    main { padding: 28px 16px; }
   }
 </style>
 </head>
@@ -183,11 +190,17 @@ ${sites.map(s => `  <a href="/${escapeHtml(s.prefix)}/">${escapeHtml(s.name)}</a
     <h3 id="auth-title">登录</h3>
     <div class="auth-row">
       <label>用户名</label>
-      <input id="username" type="text" placeholder="3~32 字符（字母/数字/下划线）" maxlength="32">
+      <input id="username" type="text" autocomplete="username" placeholder="3~32 字符（字母/数字/下划线）" maxlength="32">
     </div>
     <div class="auth-row">
       <label>密码</label>
-      <input id="password" type="password" placeholder="至少 6 位" maxlength="64">
+      <input id="password" type="password" autocomplete="current-password" placeholder="至少 6 位" maxlength="64">
+    </div>
+    <div class="auth-row auth-remember-row">
+      <label class="auth-remember">
+        <input id="remember-auth" type="checkbox" checked>
+        <span>在本机保存账号和密码</span>
+      </label>
     </div>
     <div class="error" id="auth-error"></div>
     <div class="auth-btns">
@@ -202,9 +215,36 @@ ${sites.map(s => `  <a href="/${escapeHtml(s.prefix)}/">${escapeHtml(s.name)}</a
 
 <script>
 const API = { token: null, user: null, mode: 'login' };
+const REMEMBER_KEY = 'gateway_saved_login';
 
 function showError(msg) {
   document.getElementById('auth-error').textContent = msg;
+}
+
+function restoreSavedCredentials() {
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  const remember = document.getElementById('remember-auth');
+  if (!user || !pass || !remember) return;
+  let saved = null;
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (raw) saved = JSON.parse(raw);
+  } catch (_) {}
+  user.value = saved && typeof saved.username === 'string' ? saved.username : '';
+  pass.value = saved && typeof saved.password === 'string' ? saved.password : '';
+  remember.checked = true;
+}
+function saveSavedCredentials(username, password) {
+  const remember = document.getElementById('remember-auth');
+  const enabled = !remember || remember.checked;
+  try {
+    if (!enabled || !username) {
+      localStorage.removeItem(REMEMBER_KEY);
+      return;
+    }
+    localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }));
+  } catch (_) {}
 }
 
 function toggleMode() {
@@ -241,6 +281,7 @@ async function doAuth() {
     API.user = data.user;
     sessionStorage.setItem('gateway_token', data.token);
     sessionStorage.setItem('gateway_user', JSON.stringify(data.user));
+    saveSavedCredentials(username, password);
 
     showLoggedIn();
   } catch (err) {
@@ -262,8 +303,7 @@ function logout() {
 
   document.getElementById('auth-section').classList.remove('hidden');
   document.getElementById('user-section').classList.add('hidden');
-  document.getElementById('username').value = '';
-  document.getElementById('password').value = '';
+  restoreSavedCredentials();
   showError('');
 }
 
@@ -287,6 +327,7 @@ document.querySelectorAll('.card').forEach(card => {
 
 // 初始化：检查是否已登录
 (function init() {
+  restoreSavedCredentials();
   const token = sessionStorage.getItem('gateway_token');
   const user = sessionStorage.getItem('gateway_user');
 

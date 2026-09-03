@@ -70,6 +70,7 @@ window.TAVERN_DATA = {
     { id: 14, code: 'memorial', name: '问心台', icon: '🪦', category: '纪念', description: '陨落修士的归宿，碑文刻其生前最后的叙事。', status: 'built', upgrade_level: 1 },
     { id: 15, code: 'gambling', name: '灵签阁', icon: '🎲', category: '休闲', description: '求签问卜，押注今日机缘，须有签师当值方可开市。', status: 'built', upgrade_level: 1 },
     { id: 16, code: 'hidden_exchange', name: '秘境收藏馆', icon: '🏛️', category: '收藏', description: '陈列灵墟带回的珍奇；可按固定组合兑换隐藏秘境门票。', status: 'built', upgrade_level: 1 },
+    { id: 17, code: 'mailbox', name: '传讯邮箱', icon: '📮', category: '通讯', description: '坊市与宗门寄来的补给和福利，会不定期投递到这里。', status: 'built', upgrade_level: 1 },
   ],
 
   drinks: [

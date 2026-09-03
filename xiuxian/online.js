@@ -8,6 +8,7 @@
   window.__onlineMode = true;
   const TOKEN_KEY = 'xiuxian_online_token';
   const ROLE_CACHE_KEY = 'xiuxian_role_cache_v1';
+  const REMEMBER_KEY = 'xiuxian_saved_login';
   // D 在首个 script 中是局部 const，需要暴露到 window 供 online overlay 使用
   if (!window.D) window.D = window.TAVERN_DATA;
   const API = { token: localStorage.getItem(TOKEN_KEY) || '', user: null, chars: [] };
@@ -56,6 +57,36 @@
     } catch (_) {}
   }
   hydrateCachedRole();
+
+  function readSavedLogin() {
+    try {
+      const raw = localStorage.getItem(REMEMBER_KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      return saved && typeof saved.username === 'string' && typeof saved.password === 'string' ? saved : null;
+    } catch (_) { return null; }
+  }
+  function restoreSavedLogin() {
+    const user = $('#ol-user');
+    const pass = $('#ol-pass');
+    const remember = $('#ol-remember');
+    if (!user || !pass || !remember) return;
+    const saved = readSavedLogin();
+    user.value = saved ? saved.username : '';
+    pass.value = saved ? saved.password : '';
+    remember.checked = true;
+  }
+  function persistSavedLogin(username, password) {
+    const remember = $('#ol-remember');
+    const enabled = !remember || remember.checked;
+    try {
+      if (!enabled || !username) {
+        localStorage.removeItem(REMEMBER_KEY);
+        return;
+      }
+      localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }));
+    } catch (_) {}
+  }
 
   /* ---------- 基础请求 ---------- */
   async function api(path, opts = {}) {
@@ -122,6 +153,8 @@
           .ol-auth-field label{display:block;font-size:13px;font-weight:600;color:#30394a;margin-bottom:6px}
           .ol-auth-field input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d4dae3;border-radius:8px;background:#f7f9fc;color:#1c2333;font-size:14px}
           .ol-auth-field input:focus{outline:none;border-color:#2f6fed;background:#fff;box-shadow:0 0 0 3px #2f6fed22}
+          .ol-auth-field .ol-auth-remember{display:flex;align-items:center;gap:7px;margin:0;font-size:13px;font-weight:500;color:#5b6472;cursor:pointer}
+          .ol-auth-field .ol-auth-remember input{width:15px;height:15px;flex:none;accent-color:#2f6fed}
           .ol-auth-hint{margin:5px 0 0;font-size:12px;color:#8a94a3}
           .ol-auth-err{min-height:18px;margin:2px 0 8px;font-size:12.5px;color:#c0392b}
           .ol-auth-submit{width:100%;padding:11px;border:0;border-radius:8px;background:#2f6fed;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
@@ -149,6 +182,12 @@
             <input id="ol-pass" type="password" maxlength="64" autocomplete="current-password" placeholder="请输入密码">
             <p class="ol-auth-hint" id="ol-pass-hint">至少 6 位密码</p>
           </div>
+          <div class="ol-auth-field">
+            <label class="ol-auth-remember" for="ol-remember">
+              <input id="ol-remember" type="checkbox" checked>
+              <span>在本机保存账号和密码</span>
+            </label>
+          </div>
           <div class="ol-auth-field" id="ol-confirm-field" hidden>
             <label for="ol-confirm">确认密码</label>
             <input id="ol-confirm" type="password" maxlength="64" autocomplete="new-password" placeholder="再次输入密码">
@@ -168,6 +207,7 @@
     }
     overlay.style.display = 'flex';
     switchAuthMode('login');
+    restoreSavedLogin();
   }
   function switchAuthMode(mode) {
     authMode = mode === 'register' ? 'register' : 'login';
@@ -211,6 +251,7 @@
       API.token = j.token;
       API.user = j.user;
       localStorage.setItem(TOKEN_KEY, j.token);
+      persistSavedLogin(u, p);
       window.__onlineRoleLoading = true;
       hideAuthLayer();
       await afterLogin();
@@ -1437,6 +1478,44 @@
       renderAdventurers();
       toastMsg('角色已删除，可以重新创建');
     } catch (e) { toastMsg(e.message || '删除角色失败'); }
+  };
+  window.mailboxSync = async function mailboxSync() {
+    const role = window.D && window.D.my_adventurer;
+    if (!role || !role._char_db_id) throw new Error('请先创建角色');
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+    const result = await api('/api/character/' + role._char_db_id + '/mailbox', { method: 'GET' });
+    Object.assign(role, result.character || {}, {
+      _char_db_id: role._char_db_id,
+      _char_updated_at: result.updated_at,
+      is_mine: true,
+    });
+    const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
+    if (match && match !== role) Object.assign(match, role);
+    try { localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(role)); } catch (_) {}
+    if (window.renderMine) renderMine();
+    if (window.renderAdventurers) renderAdventurers();
+    if (window.renderBuilding) renderBuilding();
+    return result;
+  };
+  window.mailboxClaim = async function mailboxClaim(mailId) {
+    const role = window.D && window.D.my_adventurer;
+    if (!role || !role._char_db_id) throw new Error('请先创建角色');
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+    const result = await api('/api/character/' + role._char_db_id + '/mailbox/claim', {
+      method: 'POST', body: { id: mailId },
+    });
+    Object.assign(role, result.character || {}, {
+      _char_db_id: role._char_db_id,
+      _char_updated_at: result.updated_at,
+      is_mine: true,
+    });
+    const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
+    if (match && match !== role) Object.assign(match, role);
+    try { localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(role)); } catch (_) {}
+    if (window.renderMine) renderMine();
+    if (window.renderAdventurers) renderAdventurers();
+    if (window.renderBuilding) renderBuilding();
+    return result;
   };
   window.startMatch = startMatchOnline;
   window.cancelMatch = cancelMatchOnline;
