@@ -18,6 +18,17 @@ test('global text uses a slight positive letter spacing', () => {
   assert.match(body, /letter-spacing:\s*var\(--tracking\)/);
 });
 
+test('log identity stays unique when concurrent logs share a display id', () => {
+  const html = readAsset('index.html');
+  const start = html.indexOf('const logKey =');
+  const end = html.indexOf('function saveLogs', start);
+  assert.ok(start >= 0 && end > start, 'logKey helper should be present');
+  const expression = html.slice(start, end).replace(/^const logKey = /, '').trim().replace(/;$/, '');
+  const logKey = Function(`return (${expression})`)();
+  assert.notEqual(logKey({ id: 7, run_id: 'run-a' }), logKey({ id: 7, run_id: 'run-b' }));
+  assert.notEqual(logKey({ id: 7, log_key: 101 }), logKey({ id: 7, log_key: 102 }));
+});
+
 test('game text uses Microsoft YaHei Light as the primary font with Microsoft YaHei fallback', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /--font:\s*["']Microsoft YaHei Light["']/);

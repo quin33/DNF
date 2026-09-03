@@ -2027,7 +2027,12 @@ function nextLogId() {
   return logSeq;
 }
 const fmtLogId = id => String(id).padStart(3, '0');
-const logKey = l => String((l && (l.log_key ?? l.run_id ?? l.id)) ?? '');
+const logKey = l => {
+  if (!l) return '';
+  if (l.log_key != null && String(l.log_key).trim() !== '') return String(l.log_key);
+  if (l.run_id != null && String(l.run_id).trim() !== '') return 'run:' + String(l.run_id);
+  return 'local:' + String(l.id ?? '') + ':' + String(l.created_at ?? '');
+};
 function saveLogs() {
   let list = (D.logs || []).slice();
   // 上限保留：收藏的优先保留
@@ -2167,7 +2172,7 @@ function renderLogs() {
       (l.dungeon_name || '').toLowerCase().includes(q) ||
       (l.result_summary || '').toLowerCase().includes(q) ||
       (l.summary_text || '').toLowerCase().includes(q) ||
-      String(l.log_key ?? l.run_id ?? l.id).includes(q));
+      logKey(l).includes(q));
   }
   const total = logs.length;
   const pages = Math.max(1, Math.ceil(total / LOG_PAGE_SIZE));
@@ -3060,6 +3065,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
   const input = raw && typeof raw === 'object' ? raw : {};
   const outcome = AI_STEP_OUTCOMES.includes(input.outcome) ? input.outcome : fallbackOutcome;
   const damage = Number.isFinite(Number(input.damage)) ? Math.max(0, Math.round(Number(input.damage))) : 0;
+  const heal = Number.isFinite(Number(input.heal)) ? Math.max(0, Math.round(Number(input.heal))) : 0;
   const itemUse = input.itemUse && input.itemUse.name
     ? { name: String(input.itemUse.name).trim().slice(0, 20), success: input.itemUse.success === true }
     : null;
@@ -3075,7 +3081,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
       rarity: LootSettlement.OPEN_DROP_RARITIES.includes(LootSettlement.normalizeRarity(entry && entry.rarity)) ? LootSettlement.normalizeRarity(entry && entry.rarity) : null,
     };
   }).filter(Boolean);
-  return { outcome, damage, itemUse, skillUse, loot };
+  return { outcome, damage, heal, itemUse, skillUse, loot };
 }
 /* AI 返回的装备/药剂使用：只从本步主角自己的随身装备与背包里解析 */
 function resolveAiItemUse(dg, actor, entry) {
@@ -3171,14 +3177,16 @@ async function dungeonTick(dg) {
   }
   const cleanText = text.replace(/【获得：[^】]*】/g, '').trim();
   // 消耗品（药剂/符箓）：AI 判定成功且本步使用 → 记录待结算扣除
-  if (itemUse && itemUse.success && (itemUse.item.kind === 'pill' || itemUse.item.kind === 'talisman')) {
+  const itemExplicit = itemUse && itemUse.success && itemUseExplicitInText(cleanText, itemUse.item, actor);
+  const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
+  if (itemExplicit && (itemUse.item.kind === 'pill' || itemUse.item.kind === 'talisman')) {
     if (!dg.consumed) dg.consumed = [];
     dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common' });
   }
   // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
-  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage);
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, aiHeal: gs.heal || 0, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs.heal, healAllowed);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
   if (support && cleanText.includes(support.name)) { const sg = dg.memberGains[support.id]; if (sg) sg.acts++; }
@@ -3543,7 +3551,7 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
     const j = await r.json();
     if (j && j.text) {
       const step = normalizeAiStepResult(j, (dg.plan[dg.planIdx] || {}).check ? 'mid' : 'good');
-      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
+      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, heal: step.heal, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
     }
     throw new Error('服务器返回异常：' + (j.error || 'AI 返回空内容'));
   } catch (e) {
@@ -3556,7 +3564,7 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
 }
 
 /* ---------- 阶段效果（记录每名成员的 AI 战损与收获） ---------- */
-function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage) {
+function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage, aiHeal = 0, healAllowed = false) {
   const g = dg.memberGains[actor.id];
   const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
   if (dmg > 0) {
@@ -3568,6 +3576,15 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
       dg.deaths = dg.deaths || [];
       dg.deaths.push(actor.name);
     }
+  }
+  const heal = Number.isFinite(Number(aiHeal)) ? Math.max(0, Math.round(Number(aiHeal))) : 0;
+  if (healAllowed && heal > 0 && actor.hp > 0 && !actor.isDead) {
+    const beforeHp = Math.max(0, Number(actor.hp) || 0);
+    const maxHp = Math.max(0, Number(actor.max_hp) || 100);
+    const actualHeal = Math.max(0, Math.min(maxHp, beforeHp + heal) - beforeHp);
+    actor.hp = beforeHp + actualHeal;
+    dg.healing = (dg.healing || 0) + actualHeal;
+    if (g) g.healing = (g.healing || 0) + actualHeal;
   }
   if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     // 首领战：胜利掉落首领专属战利品，是否受伤完全由 AI damage 决定
@@ -3789,7 +3806,7 @@ async function cancelDungeon(dg, reason, errDetail) {
   D.logs.unshift(log);
   saveLogs();
   saveRuns();  // 清理已取消副本的持久化快照
-  logViewId = log.id;
+  logViewId = logKey(log);
   toastMsg('⚠️ AI 生成失败，已重试仍未得到有效内容，本次探险已取消');
   switchTab('logs');
 }
@@ -4023,10 +4040,10 @@ async function settleDungeon(dg) {
   saveRuns();  // 清理已结束副本的持久化快照
   // 若弹窗正在实时观看该副本：无缝切换为完成后的日志详情（含结算面板），而不是被定时器关闭
   if (logModalId !== null && String(logModalId) === 'run' + dg.id) {
-    logModalId = log.id;
+    logModalId = logKey(log);
     renderLogDetailModal();
   }
-  logViewId = log.id;
+  logViewId = logKey(log);
   switchTab('logs');
 }
 function applyLocalLevelGrowth(role, breakthrough = false) {

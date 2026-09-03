@@ -622,13 +622,15 @@ function buildUserMessage(b) {
   if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（撤离回城）：请描写队伍**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），回顾得失，收束故事，留有余韵。');
   if (dynamic) {
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
-    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"heal":0,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
+    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），heal 是本步实际恢复的生命（无则为 0）；damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；只有成功使用恢复类药品或成功施展治疗技能，且正文明确写出实际生效时，heal 才能为正整数，否则必须为 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
   } else {
     if (Array.isArray(b.availableItems) && b.availableItems.length) lines.push(`【本步可用道具】${b.availableItems.map(i => `${i.name}（${i.userName || b.actor || '当前角色'}使用，原持有人：${i.ownerName || i.userName || b.actor || '当前角色'}${i.loaned ? '，已明确借出' : '，自有'}）`).join('；')}`);
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"itemUse":null,"skillUse":null,"loot":[]}');
-    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"heal":0,"itemUse":null,"skillUse":null,"loot":[]}');
+    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），heal 是本步实际恢复的生命（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；只有成功使用恢复类药品或成功施展治疗技能，且正文明确写出实际生效时，heal 才能为正整数，否则必须为 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
   }
   return lines.join('\n');
 }
@@ -2134,7 +2136,7 @@ const server = http.createServer(async (req, res) => {
         violations = [...validateStoryOwnership(body, generated.text).violations, ...validateStoryAiResult(body, generated)];
         if (!violations.length) {
           sendJSON(res, 200, {
-            text: generated.text, outcome: generated.outcome, damage: generated.damage,
+            text: generated.text, outcome: generated.outcome, damage: generated.damage, heal: generated.heal,
             itemUse: generated.itemUse, skillUse: generated.skillUse, loot: generated.loot,
             structured: generated.structured,
           });
@@ -2779,14 +2781,16 @@ async function dungeonStep(room) {
     outcome = aiStep.outcome;
     const itemUse = resolveAiItemUse(dg, actor, aiStep.itemUse);
     const skillUse = resolveAiSkillUse(actor, aiStep.skillUse);
-    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage);
+    const itemExplicit = itemUse && itemUse.success && GE.itemUseExplicitInText(cleanText, itemUse.item, actor);
+    const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
+    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed);
     if (typeof GE.recordItemLoansFromText === 'function') GE.recordItemLoansFromText(dg, cleanText);
-    if (itemUse && itemUse.success && typeof GE.itemUseExplicitInText === 'function' && GE.itemUseExplicitInText(cleanText, itemUse.item, actor) && typeof GE.consumeItemUse === 'function') {
+    if (itemExplicit && typeof GE.consumeItemUse === 'function') {
       GE.consumeItemUse(dg, itemUse, { explicitUse: true, actor });
     }
     stepRec = {
       stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
-      stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage,
+      stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage, aiHeal: aiStep.heal,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
       skillUse: skillUse ? { name: skillUse.name, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
     };
@@ -2839,7 +2843,7 @@ async function dungeonStep(room) {
 function parseAiStoryResponse(content, fallback = {}) {
   const raw = String(content || '').trim();
   const fallbackOutcome = fallback.needsCheck === false ? 'good' : 'mid';
-  const defaultStep = { outcome: fallbackOutcome, damage: 0, itemUse: null, skillUse: null, loot: [] };
+  const defaultStep = { outcome: fallbackOutcome, damage: 0, heal: 0, itemUse: null, skillUse: null, loot: [] };
   let parsed = null;
   try { parsed = JSON.parse(raw); } catch {
     const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -2849,7 +2853,7 @@ function parseAiStoryResponse(content, fallback = {}) {
   const text = String(parsed.text || parsed.content || '').trim() || raw;
   const decision = GE.normalizeAiDecision(parsed, fallback);
   const aiStep = GE.normalizeAiStepResult(parsed, { outcome: fallbackOutcome });
-  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
+  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, heal: aiStep.heal, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
 }
 async function callAIStory(payload, extraInstruction = '') {
   if (process.env.ROOM_FAST === '1') {
@@ -2909,10 +2913,10 @@ async function callAIStory(payload, extraInstruction = '') {
         const lastDot = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('！'), cut.lastIndexOf('？'), cut.lastIndexOf('…'));
         return {
           text: lastDot > 100 ? cut.slice(0, lastDot + 1) : cut, decision: parsed.decision, structured: parsed.structured,
-          outcome: parsed.outcome, damage: parsed.damage, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
+          outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
         };
       }
-      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
+      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
     } catch (e) {
       lastError = e;
       if (attempt === 0) {

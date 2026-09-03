@@ -1294,11 +1294,12 @@
     }));
     // 日志编号：优先用服务端分配的本局日志 id（001 起递增）
     const myRes = (d.results || []).find(viewerOwnsResult);
-    const logId = myRes && myRes.logId != null ? myRes.logId : (Date.now() % 100000);
+    const logKeyValue = myRes && myRes.logId != null ? String(myRes.logId) : ('run:' + String(d.runId || (run && run.id) || Date.now()));
+    const logId = myRes && myRes.logId != null ? myRes.logId : nextLogId();
     const ownDied = !!(myRes && myRes.fate === '阵亡');
     const anyDeath = results.some(result => result.fate === '阵亡');
     const log = {
-      id: logId, log_key: logId, run_id: d.runId || (run && run.id) || '', party_name: '匹配小队 (在线)', dungeon_name: d.dungeon || '',
+      id: logId, log_key: logKeyValue, run_id: d.runId || (run && run.id) || '', party_name: '匹配小队 (在线)', dungeon_name: d.dungeon || '',
       status: ownDied ? 'failed' : (d.ok ? 'completed' : 'failed'), result_summary: (d.summary || ''), created_at: new Date().toISOString(),
       death: anyDeath, summary_text: d.summary || '', death_summary: d.death_summary || '', special_event_theme: '',
       verdict_reason: ownDied ? '角色气血归零，道消身殒' : (d.verdict === 'breakthrough_ok' ? '突破试炼成功，踏入筑基前期' : (d.verdict === 'breakthrough_fail' ? '突破试炼失败' : '')),
@@ -1316,7 +1317,7 @@
     if (mine) {
       if (mine.fate === '阵亡') {
         if (typeof window.showDeathDialog === 'function') {
-          window.showDeathDialog(mine.name || (my && my.name) || '角色', d.dungeon || '灵墟', log.id, log.death_summary);
+          window.showDeathDialog(mine.name || (my && my.name) || '角色', d.dungeon || '灵墟', logKey(log), log.death_summary);
         }
       } else {
         toastMsg(d.ok ? ('✨ 探险胜利！获得经验 +' + (mine.exp || d.exp || 0)) : '💔 探险受挫，望道友莫灰心');
@@ -1335,11 +1336,11 @@
       if (typeof window.saveFeed === 'function') window.saveFeed();
     } catch (e) { /* 动态失败不影响结算 */ }
     // 仅保存结算日志，不强制打断用户当前界面；用户可从“探险日志”主动打开详情。
-    D.logs = [log, ...(D.logs || []).filter(existing => String(existing.log_key ?? existing.run_id ?? existing.id) !== String(log.log_key ?? log.run_id ?? log.id))];
-    if (window.logDetailCache) window.logDetailCache.set(String(log.log_key ?? log.run_id ?? log.id), log);
+    D.logs = [log, ...(D.logs || []).filter(existing => logKey(existing) !== logKey(log))];
+    if (window.logDetailCache) window.logDetailCache.set(logKey(log), log);
     if (typeof logViewId !== 'undefined') logViewId = null;
     if (runningRunId && typeof window.completeRunningLogModal === 'function') {
-      window.completeRunningLogModal(runningRunId, log.id);
+      window.completeRunningLogModal(runningRunId, logKey(log));
     }
     if (run) { const i = (window.activeDungeons || []).indexOf(run); if (i >= 0) window.activeDungeons.splice(i, 1); }
     activeWsRun = null;
@@ -1524,7 +1525,7 @@
   const LOG_SYNC_MIN_MS = 3000;
   const isLogListView = () => typeof logViewId === 'undefined' || logViewId === null;
   const logsSignature = logs => (logs || []).map(l => [
-    String(l.log_key ?? l.run_id ?? l.id),
+    logKey(l),
     l.status || '',
     l.created_at || '',
     (l.party_name || '').slice(0, 40),

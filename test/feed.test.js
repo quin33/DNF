@@ -144,8 +144,8 @@ test('settlement keeps the running log modal open and switches it to the complet
   const settlement = online.slice(online.indexOf('async function onRunSettled'), online.indexOf('/* ============================================================\n     启动', online.indexOf('async function onRunSettled')));
   assert.match(html, /window\.completeRunningLogModal\s*=\s*function/);
   assert.match(html, /String\(logModalId\) !== 'run' \+ runId/);
-  assert.match(settlement, /window\.completeRunningLogModal\(runningRunId, log\.id\)/);
-  assert.ok(settlement.indexOf('window.completeRunningLogModal(runningRunId, log.id)') < settlement.lastIndexOf('window.activeDungeons.splice'));
+  assert.match(settlement, /window\.completeRunningLogModal\(runningRunId, logKey\(log\)\)/);
+  assert.ok(settlement.indexOf('window.completeRunningLogModal(runningRunId, logKey(log))') < settlement.lastIndexOf('window.activeDungeons.splice'));
 });
 
 test('online settlement summary prompt is tied to each run narrative', () => {

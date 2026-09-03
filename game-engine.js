@@ -566,6 +566,7 @@ function normalizeAiStepResult(raw, fallback = {}) {
   const fallbackOutcome = STEP_OUTCOMES.includes(fallback.outcome) ? fallback.outcome : 'mid';
   const outcome = STEP_OUTCOMES.includes(input.outcome) ? input.outcome : fallbackOutcome;
   const damage = Number.isFinite(Number(input.damage)) ? Math.max(0, Math.round(Number(input.damage))) : 0;
+  const heal = Number.isFinite(Number(input.heal)) ? Math.max(0, Math.round(Number(input.heal))) : 0;
   const itemUse = normalizeNamedResult(input.itemUse);
   const skillUse = normalizeNamedResult(input.skillUse);
   const loot = (Array.isArray(input.loot) ? input.loot : []).map(entry => {
@@ -576,7 +577,7 @@ function normalizeAiStepResult(raw, fallback = {}) {
     const rarity = LootSettlement.OPEN_DROP_RARITIES.includes(candidate) ? candidate : null;
     return { name, qty, rarity };
   }).filter(Boolean);
-  return { outcome, damage, itemUse, skillUse, loot };
+  return { outcome, damage, heal, itemUse, skillUse, loot };
 }
 
 /* AI 掉落登记：合并数量与稀有度，并把道具名登记给获得它的角色。 */
@@ -622,7 +623,7 @@ function applyDungeonSetup(base, setup) {
 }
 
 /* 单步效果应用：AI 伤害/首领掉落/突破结果（服务端权威修改 party 成员状态） */
-function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
+function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal = 0, healAllowed = false) {
   const g = dg.memberGains[actor.id];
   const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
   if (dmg > 0) {
@@ -634,6 +635,15 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
       dg.deaths = Array.isArray(dg.deaths) ? dg.deaths : [];
       dg.deaths.push(actor.name);
     }
+  }
+  const heal = Number.isFinite(Number(aiHeal)) ? Math.max(0, Math.round(Number(aiHeal))) : 0;
+  if (healAllowed && heal > 0 && actor.hp > 0 && !actor.isDead) {
+    const beforeHp = Math.max(0, Number(actor.hp) || 0);
+    const maxHp = Math.max(0, Number(actor.max_hp) || 100);
+    const actualHeal = Math.max(0, Math.min(maxHp, beforeHp + heal) - beforeHp);
+    actor.hp = beforeHp + actualHeal;
+    dg.healing = (dg.healing || 0) + actualHeal;
+    if (g) g.healing = (g.healing || 0) + actualHeal;
   }
   if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     const boss = dg._curEnemy;

@@ -4,10 +4,11 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const GE = require('../game-engine.js');
 
-test('normalizeAiStepResult keeps AI outcome, damage, item/skill use, and loot metadata', () => {
+test('normalizeAiStepResult keeps AI outcome, damage, healing, item/skill use, and loot metadata', () => {
   const step = GE.normalizeAiStepResult({
     outcome: 'crit',
     damage: '18',
+    heal: '12',
     itemUse: { name: '聚气丹', success: true },
     skillUse: { name: '火球术', success: false },
     loot: [{ name: '幽绿灵骨珠', qty: 2, rarity: 'rare' }],
@@ -15,6 +16,7 @@ test('normalizeAiStepResult keeps AI outcome, damage, item/skill use, and loot m
   assert.deepEqual(step, {
     outcome: 'crit',
     damage: 18,
+    heal: 12,
     itemUse: { name: '聚气丹', success: true },
     skillUse: { name: '火球术', success: false },
     loot: [{ name: '幽绿灵骨珠', qty: 2, rarity: 'rare' }],
@@ -103,7 +105,7 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
 
   assert.doesNotMatch(tick, /rollD20|itemUseCheck|skillUseCheck/);
   assert.match(tick, /outcome = gs\.outcome/);
-  assert.match(tick, /applyStageEffects\(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage\)/);
+  assert.match(tick, /applyStageEffects\(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs\.heal, healAllowed\)/);
   assert.match(html, /fetch\('\/api\/ai\/setup'/);
   assert.match(step, /availableItems: availableItemsForActor\(dg, actor\)/);
   assert.match(step, /outcome: step\.outcome, damage: step\.damage/);

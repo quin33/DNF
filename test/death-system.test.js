@@ -48,6 +48,23 @@ test('AI damage is authoritative and positive damage applies regardless of outco
   assert.equal(dg.memberGains.u1.damage, 7);
 });
 
+test('successful AI healing restores HP without exceeding max HP', () => {
+  const dg = {
+    damage: 0,
+    deaths: [],
+    memberGains: { u1: { damage: 0, healing: 0 } },
+    _curEnemy: null,
+    bossDrops: [],
+  };
+  const actor = { id: 'u1', name: '测试冒险家', hp: 40, max_hp: 50 };
+
+  applyStageEffects(dg, 'battle', actor, 0, 'good', 0, 20, true);
+
+  assert.equal(actor.hp, 50);
+  assert.equal(dg.healing, 10);
+  assert.equal(dg.memberGains.u1.healing, 10);
+});
+
 test('settlement permanently deletes dead characters and keeps death logs', () => {
   const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   const online = fs.readFileSync(path.join(ROOT, 'online.js'), 'utf8');

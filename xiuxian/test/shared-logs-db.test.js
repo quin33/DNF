@@ -53,6 +53,18 @@ test('shared log APIs collapse one run and expose it to every participant', () =
   assert.equal(full.settlement.items.length, 1);
 });
 
+test('shared logs replace duplicate display ids with their canonical row key', () => {
+  const db = require('../db');
+  const userId = Number(db.createUser(`parallel-${process.pid}`, 'hash', 'salt'));
+  const first = db.addSharedLog([{ userId }], { id: 1, run_id: 'parallel-a', status: 'completed', dungeon_name: '甲' });
+  const second = db.addSharedLog([{ userId }], { id: 1, run_id: 'parallel-b', status: 'completed', dungeon_name: '乙' });
+  const logs = db.getAllLogs().filter(log => [first.logKey, second.logKey].includes(log.log_key));
+  assert.equal(logs.length, 2);
+  assert.notEqual(logs[0].id, logs[1].id);
+  assert.equal(logs[0].id, logs[0].log_key);
+  assert.equal(logs[1].id, logs[1].log_key);
+});
+
 test('startup migration collapses duplicate run rows', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tavern-migrate-'));
   const dbPath = path.join(dir, 'legacy.db');

@@ -1073,7 +1073,8 @@ function insertSharedLog(participants, log) {
   const info = db.prepare('INSERT INTO logs (user_id, dungeon_name, status, created_at, data) VALUES (?,?,?,?,?)')
     .run(participants[0]?.userId || 0, log.dungeon_name || '', log.status || '', now, JSON.stringify(log));
   const logKey = Number(info.lastInsertRowid);
-  const canonical = { ...log, log_key: logKey };
+  // 数据库行主键是日志详情的唯一身份；业务展示编号可能在并发结算时重复。
+  const canonical = { ...log, id: logKey, log_key: logKey };
   db.prepare('UPDATE logs SET data=? WHERE id=?').run(JSON.stringify(canonical), logKey);
   const insert = db.prepare('INSERT OR IGNORE INTO log_participants (log_id,user_id,character_id,member_name,personal_data) VALUES(?,?,?,?,?)');
   for (const p of participants || []) {
@@ -1095,17 +1096,17 @@ function getLogParticipants(logKey) {
 }
 function getLogs(userId) {
   return db.prepare('SELECT l.id,l.data FROM logs l JOIN log_participants p ON p.log_id=l.id WHERE p.user_id = ? ORDER BY l.created_at DESC,l.id DESC').all(userId)
-    .map(r => ({ ...JSON.parse(r.data), log_key: JSON.parse(r.data).log_key || r.id }));
+    .map(r => { const data = JSON.parse(r.data); const logKey = data.log_key || r.id; return { ...data, id: logKey, log_key: logKey }; });
 }
 function getAllLogs() {
   return db.prepare('SELECT id,data FROM logs ORDER BY created_at DESC,id DESC').all()
-    .map(r => ({ ...JSON.parse(r.data), log_key: JSON.parse(r.data).log_key || r.id }));
+    .map(r => { const data = JSON.parse(r.data); const logKey = data.log_key || r.id; return { ...data, id: logKey, log_key: logKey }; });
 }
 function logSummaryData(log) {
   const snap = log.dg_snapshot || {};
   const settlement = log.settlement;
   return {
-    id: log.id,
+    id: log.log_key ?? log.id,
     log_key: log.log_key,
     run_id: log.run_id,
     party_name: log.party_name,
@@ -1145,7 +1146,8 @@ function getLogById(id) {
   const row = db.prepare('SELECT id,data FROM logs WHERE id=?').get(id);
   if (!row) return null;
   const data = JSON.parse(row.data);
-  return { ...data, log_key: data.log_key || row.id };
+  const logKey = data.log_key || row.id;
+  return { ...data, id: logKey, log_key: logKey };
 }
 function publicCharacterData(row) {
   const hydrated = hydrateCharacterRow(row);

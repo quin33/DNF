@@ -245,16 +245,27 @@ test('dungeon step checks only the acting member items and consumes after explic
   const make = () => makeDg({ totalStep: 12, party: [first, structuredClone(actor)], memberGains: { p1: { acts: 0, rolls: [], damage: 0 }, p2: { acts: 0, rolls: [], damage: 0 } } });
 
   const mentioned = make();
-  let harness = createHarness({ text: '乙取出聚气丹看了看，最终仍将它收回储物袋。', structured: true, itemUse: null, decision: { phase: 'explore', questStatus: 'active', encounterStatus: 'none', continue: true } });
+  let harness = createHarness({ text: '乙取出聚气丹看了看，最终仍将它收回储物袋。', structured: true, itemUse: null, heal: 25, decision: { phase: 'explore', questStatus: 'active', encounterStatus: 'none', continue: true } });
   await harness.step({ dg: mentioned });
+  assert.equal(mentioned.party[1].hp, 100);
   assert.equal(mentioned.party[1].bag[0].qty, 1);
   assert.deepEqual(mentioned.consumed, []);
 
   const used = make();
-  harness = createHarness({ text: '乙仰头服下聚气丹，药力随即散入经脉。', structured: true, itemUse: { name: '聚气丹', success: true }, decision: { phase: 'explore', questStatus: 'active', encounterStatus: 'none', continue: true } });
+  used.party[1].hp = 60;
+  harness = createHarness({ text: '乙仰头服下聚气丹，药力随即散入经脉。', structured: true, itemUse: { name: '聚气丹', success: true }, heal: 25, decision: { phase: 'explore', questStatus: 'active', encounterStatus: 'none', continue: true } });
   await harness.step({ dg: used });
+  assert.equal(used.party[1].hp, 85);
   assert.equal(used.party[1].bag.length, 0);
   assert.deepEqual(used.consumed[0], { name: '聚气丹', ownerId: 'p2', userId: 'p2', qty: 1, loaned: false });
+});
+
+test('dungeon step applies AI healing from a successful treatment skill', async () => {
+  const actor = { id: 'p1', name: '甲', hp: 55, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [], skills: [{ name: '疗伤术' }] };
+  const dg = makeDg({ party: [actor], memberGains: { p1: { acts: 0, rolls: [], damage: 0 } } });
+  const harness = createHarness({ text: '甲施展疗伤术，柔和的灵光修复了伤口。', structured: true, skillUse: { name: '疗伤术', success: true }, heal: 30, decision: decision() });
+  await harness.step({ dg });
+  assert.equal(dg.party[0].hp, 85);
 });
 
 test('dungeon step records an explicit narrative loan for later use', async () => {
