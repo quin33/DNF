@@ -1169,6 +1169,7 @@
   function onRunResumed(snapshot, runId, status) {
     const dg = onRunStarted(snapshot, runId);
     if (!dg) return;
+    if (snapshot.logNumber != null) dg.logNumber = Number(snapshot.logNumber) || dg.logNumber;
     const localSteps = Array.isArray(dg.steps) ? dg.steps : [];
     const incomingSteps = Array.isArray(snapshot.steps) ? snapshot.steps : [];
     const maxStepNo = steps => steps.reduce((max, item) => Math.max(max, Number(item && item.stepNo) || 0), 0);

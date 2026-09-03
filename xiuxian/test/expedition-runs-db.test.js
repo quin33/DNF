@@ -80,6 +80,28 @@ test('beginning an expedition rolls back every charge when one member is invalid
   assert.equal(DB.getCharacter(userB, charB).data.stamina, 5);
 });
 
+test('legacy active expeditions receive the next log number before resume', () => {
+  const userId = Number(DB.createUser('log-number-backfill-user', 'hash', 'salt'));
+  const characterId = Number(DB.createCharacter(userId, '补号客', role('补号客')));
+  const input = {
+    runId: 'run-log-number-backfill',
+    roomId: 'R3B',
+    snapshot: { steps: [] },
+    members: [{ userId, characterId, memberName: '补号客' }],
+  };
+  const begun = DB.beginExpeditionRun(input);
+  DB.db.prepare("UPDATE expedition_runs SET snapshot='{}' WHERE run_id=?").run(input.runId);
+
+  const assigned = DB.ensureActiveExpeditionLogNumber(input.runId);
+  const second = DB.ensureActiveExpeditionLogNumber(input.runId);
+  const snapshot = DB.getExpeditionRun(input.runId).snapshot;
+
+  assert.ok(assigned > begun.logNumber);
+  assert.equal(second, assigned);
+  assert.equal(snapshot._lifecycle.pendingLogNumber, assigned);
+  DB.failExpeditionRun({ runId: input.runId, terminalStatus: 'failed', reason: 'test cleanup' });
+});
+
 test('retrying the same run id does not charge stamina twice', () => {
   const userId = Number(DB.createUser('retry-user', 'hash', 'salt'));
   const characterId = Number(DB.createCharacter(userId, '戊', role('戊')));

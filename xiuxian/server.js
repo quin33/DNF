@@ -3607,7 +3607,12 @@ function restorePersistedExpeditions() {
       (run.snapshot && run.snapshot._lifecycle && run.snapshot._lifecycle.pendingLogNumber)
       || (room.dg && room.dg.logNumber),
     );
-    if (Number.isSafeInteger(persistedLogNumber) && persistedLogNumber > 0) room.dg.logNumber = persistedLogNumber;
+    const restoredLogNumber = Number.isSafeInteger(persistedLogNumber) && persistedLogNumber > 0
+      ? persistedLogNumber
+      : DB.ensureActiveExpeditionLogNumber(run.runId);
+    if (Number.isSafeInteger(restoredLogNumber) && restoredLogNumber > 0) {
+      room.dg.logNumber = restoredLogNumber;
+    }
     if (run.status === 'settling') {
       room.status = 'waiting_ai';
       room.dg.status = 'waiting_ai';

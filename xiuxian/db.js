@@ -528,6 +528,48 @@ function pendingLogNumberFrom(snapshot) {
   return Number.isSafeInteger(value) && value > 0 ? value : null;
 }
 
+function ensureActiveExpeditionLogNumber(runId) {
+  const normalizedRunId = String(runId || '').trim();
+  if (!normalizedRunId) return null;
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const row = db.prepare(`
+      SELECT * FROM expedition_runs
+      WHERE run_id = ? AND status IN ('starting','running','waiting_ai','settling')
+    `).get(normalizedRunId);
+    if (!row) {
+      db.exec('ROLLBACK');
+      return null;
+    }
+    const current = expeditionRunData(row);
+    const existing = pendingLogNumberFrom(current.snapshot);
+    if (existing != null) {
+      db.exec('COMMIT');
+      return existing;
+    }
+
+    const pendingLogNumber = nextLogNumber();
+    const serializedSnapshot = JSON.stringify({
+      ...(current.snapshot || {}),
+      _lifecycle: {
+        ...((current.snapshot && current.snapshot._lifecycle) || {}),
+        pendingLogNumber,
+      },
+    });
+    db.prepare(`
+      UPDATE expedition_runs
+      SET snapshot = ?, updated_at = ?
+      WHERE run_id = ? AND status IN ('starting','running','waiting_ai','settling')
+    `).run(serializedSnapshot, Date.now(), normalizedRunId);
+    db.exec('COMMIT');
+    return pendingLogNumber;
+  } catch (error) {
+    try { db.exec('ROLLBACK'); } catch (_) {}
+    throw error;
+  }
+}
+
 function beginExpeditionRun({ runId, roomId, snapshot = {}, members = [], staminaCost = 10 }) {
   const normalizedRunId = String(runId || '').trim();
   const normalizedRoomId = String(roomId || '').trim();
@@ -1363,7 +1405,7 @@ module.exports = {
   createSession, sessionUserId, deleteSession,
   createAdminSession, adminSessionValid, deleteAdminSession,
   createCharacter, characterNameExists, createCharacterIdempotent, getCharacters, getCharacter, saveCharacter, saveCharacterIfCurrent,
-  beginExpeditionRun, checkpointExpeditionRun, setExpeditionRunState, failExpeditionRun, commitExpeditionSettlement, recoverInterruptedExpeditions, getExpeditionRun, getActiveExpeditionRuns,
+  beginExpeditionRun, checkpointExpeditionRun, setExpeditionRunState, failExpeditionRun, commitExpeditionSettlement, recoverInterruptedExpeditions, getExpeditionRun, getActiveExpeditionRuns, ensureActiveExpeditionLogNumber,
   searchPlayers, getCharacterAdmin, saveCharacterAdmin, saveCharacterAdminWithAudit, getAllCharacters,
   addLog, addSharedLog, getLogParticipants, getLogs, getAllLogs, getAllLogSummaries, getLogById, getPublicCharacters, getPublicCharacterById, getFollowedCharacterIds, setCharacterFollow, getPublicCharactersPage, deleteCharacter, nextLogSeq,
   addAdminAuditLog, getAdminAuditLogs,

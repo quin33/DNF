@@ -150,7 +150,7 @@ test('online client periodically reconciles active runs and forces a reconnect a
   assert.match(script, /hasActiveRun \? 5000 : 15000/);
   assert.match(script, /Date\.now\(\)\s*-\s*wsLastPongAt\s*>\s*75000/);
   assert.match(script, /visibilitychange/);
-  assert.match(script, /function onRunResumed[\s\S]{0,600}incomingMax\s*>=\s*localMax/);
+  assert.match(script, /function onRunResumed[\s\S]{0,900}incomingMax\s*>=\s*localMax/);
 });
 
 test('online client shows an immediate starting card while AI setup is pending', () => {
