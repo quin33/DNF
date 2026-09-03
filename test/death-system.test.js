@@ -26,6 +26,23 @@ test('applyStageEffects marks a member dead when hp reaches zero', () => {
   assert.equal(dg.deaths.length, 1, 'dead member should only be recorded once');
 });
 
+test('harmful outcomes fall back to engine damage when AI reports zero damage', () => {
+  const dg = {
+    damage: 0,
+    deaths: [],
+    memberGains: { u1: { damage: 0, fumbles: 0 } },
+    _curEnemy: null,
+    bossDrops: [],
+  };
+  const actor = { id: 'u1', name: '测试冒险家', hp: 100, max_hp: 100 };
+
+  applyStageEffects(dg, 'battle', actor, 0, 'bad', 0);
+
+  assert.ok(actor.hp < 100, 'battle damage should not be suppressed by AI damage=0');
+  assert.ok(dg.damage > 0);
+  assert.equal(dg.memberGains.u1.damage, dg.damage);
+});
+
 test('settlement permanently deletes dead characters and keeps death logs', () => {
   const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   const online = fs.readFileSync(path.join(ROOT, 'online.js'), 'utf8');

@@ -625,7 +625,7 @@ function applyDungeonSetup(base, setup) {
 function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
   const g = dg.memberGains[actor.id];
   const hurt = n => {
-    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) >= 0 ? Math.round(Number(aiDamage)) : n;
+    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) > 0 ? Math.round(Number(aiDamage)) : n;
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
     if (g) g.damage += dmg;

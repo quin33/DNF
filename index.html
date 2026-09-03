@@ -3558,8 +3558,8 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
 /* ---------- 阶段效果（记录每名成员的战损与收获） ---------- */
 function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage) {
   const g = dg.memberGains[actor.id];
-  const hurt = () => {
-    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) >= 0 ? Math.round(Number(aiDamage)) : 0;
+  const hurt = fallback => {
+    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) > 0 ? Math.round(Number(aiDamage)) : fallback;
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
     if (g) g.damage += dmg;
@@ -3570,18 +3570,23 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
     }
   };
   if (stageKey === 'battle') {
-    if (outcome === 'bad' || outcome === 'fumble' || (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('暴血丹')))) hurt();
+    if (outcome === 'bad') hurt(8 + Math.floor(Math.random() * 12));
+    if (outcome === 'fumble') hurt(20 + Math.floor(Math.random() * 20));
+    if (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('暴血丹'))) hurt(8);
   }
   if (stageKey === 'boss') {
     // 首领战：胜负皆重，胜利掉落首领专属战利品
     if (outcome === 'crit' || outcome === 'good') {
       const boss = dg._curEnemy;
       if (boss && boss.reward && !dg.bossDrops.some(r => r.name === boss.reward.name)) dg.bossDrops.push(boss.reward);
-      hurt();
-    } else if (outcome === 'mid' || outcome === 'bad' || outcome === 'fumble') hurt();
+      if (outcome === 'crit') hurt(4 + Math.floor(Math.random() * 8));
+      else hurt(10 + Math.floor(Math.random() * 12));
+    } else if (outcome === 'mid') hurt(18 + Math.floor(Math.random() * 12));
+    else if (outcome === 'bad') hurt(24 + Math.floor(Math.random() * 16));
+    else if (outcome === 'fumble') hurt(35 + Math.floor(Math.random() * 25));
   }
-  if (stageKey === 'explore' && outcome === 'fumble') hurt();
-  if (stageKey === 'loot' && outcome === 'fumble') hurt();
+  if (stageKey === 'explore' && outcome === 'fumble') hurt(12 + Math.floor(Math.random() * 12));
+  if (stageKey === 'loot' && outcome === 'fumble') hurt(6);
 }
 /* ---------- 重伤体系 ----------
    结算时玩家气血 <= 10% 才进入重伤候选，由 AI 低频判断是否授予。
