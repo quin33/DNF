@@ -1081,6 +1081,15 @@ function showForgeResultDialog(result) {
   box.innerHTML = `<div class="forge-result-dialog ${result.ok ? 'is-success' : 'is-failure'}"><div class="forge-result-head"><div class="forge-result-mark" aria-hidden="true">${result.ok ? '✦' : '×'}</div><div class="forge-result-heading"><span class="forge-result-kicker">炼器结算</span><h2>${title}</h2></div><span class="forge-result-kind">${esc(output.kind || '炼器')}</span></div><div class="forge-result-summary ${result.ok ? 'success' : 'failure'}"><span class="forge-result-summary-mark" aria-hidden="true">${result.ok ? '✓' : '!'}</span><span>${summary}</span></div><section class="forge-result-process"><div class="forge-result-label">炼器流程</div><p>${esc(result.process || '炼器操作流程未生成。')}</p></section><button class="btn forge-result-close" onclick="closeModal()">关闭</button></div>`;
   showModal();
 }
+function forgeErrorText(error) {
+  const msg = String(error && error.message || error || '').trim();
+  if (!msg) return 'AI 服务暂时不可用，请稍后重试';
+  if (msg.includes('AI 未配置')) return 'AI 未配置，请检查服务端配置';
+  if (msg.includes('AI 返回格式异常')) return 'AI 返回格式异常，请稍后重试';
+  if (msg.includes('AI 服务繁忙')) return 'AI 服务繁忙，请稍后重试';
+  if (msg.includes('AI 服务当前已停用')) return 'AI 服务当前已停用';
+  return msg;
+}
 async function doForge() {
   const role = D.my_adventurer;
   if (!role) return;
@@ -1092,22 +1101,25 @@ async function doForge() {
   if (resultEl) resultEl.innerHTML = '<div class="forge-ing">🔥 炉火正旺，器道宗师审视材料…</div>';
   let res = null;
   let onlineCommittedResult = null;
+  let serverCommitted = false;
+  let forgeFailureText = 'AI 服务暂时不可用，请稍后重试';
   try {
     const materials = forgeSel.map(x => ({ name: x.name, desc: x.desc, kind: x.kind, src: x.src, rarity: x.rarity || 'common' }));
     if (role._char_db_id && typeof window.forgeOnline === 'function') {
       onlineCommittedResult = await window.forgeOnline({ materials });
       res = onlineCommittedResult;
+      serverCommitted = !!onlineCommittedResult;
     } else {
       res = await aiForge(materials);
     }
   } catch (e) {
     res = null;
-    const msg = String(e && e.message || e || '');
-    toastMsg(msg.includes('AI 返回格式异常') ? 'AI 返回格式异常，请稍后重试' : (msg.includes('AI 未配置') ? 'AI 未配置，请检查服务端配置' : 'AI 服务暂时不可用，请稍后重试'));
+    forgeFailureText = forgeErrorText(e);
+    toastMsg(forgeFailureText);
   }
   if (!res) {
     if (go) { go.disabled = false; go.textContent = '🔥 选择材料并炼器'; }
-    if (resultEl) resultEl.innerHTML = '<div class="forge-fail">❌ 炼器坊灵火不稳，未能开炉。</div>';
+    if (resultEl) resultEl.innerHTML = `<div class="forge-fail">❌ ${esc(forgeFailureText)}</div>`;
     return;
   }
   if (res.ok && res.item) {
@@ -1124,6 +1136,7 @@ async function doForge() {
           materials: forgeSel.map(x => ({ name: x.name, src: x.src, rarity: x.rarity || 'common' })),
           item,
         });
+        serverCommitted = true;
         Object.assign(role, committed.character, { _char_db_id: role._char_db_id, _char_updated_at: committed.updated_at, is_mine: true });
       } catch (e) {
         toastMsg(e.message || '炼器结算失败，材料未消耗');
@@ -1144,7 +1157,9 @@ async function doForge() {
       }
     }
     setForgeCD();
-    if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
+    if (!serverCommitted) {
+      if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
+    }
     forgeSel = [];
     // 流水：同一次炼器的材料消耗与法器产出合并展示。
     addFeedItem('⚒️', '炼器坊', '锻造成功', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
@@ -1167,6 +1182,7 @@ async function doForge() {
     } else if (role._char_db_id && typeof window.forgeOnline === 'function') {
       try {
         const committed = await window.forgeOnline({ ok: false, process: res.process, reason: res.reason, materials: inputMats.map(x => ({ name: x.name, src: x.src })), item: { ...(res.item || { name: '未定型法器' }), success: false } });
+        serverCommitted = true;
         Object.assign(role, committed.character, { _char_db_id: role._char_db_id, _char_updated_at: committed.updated_at, is_mine: true });
         (committed.lost || []).forEach(name => lost.push(inputMats.find(x => x.name === name) || { name }));
         kept = inputMats.filter(x => !lost.some(y => y.name === x.name));
@@ -1176,7 +1192,9 @@ async function doForge() {
       forgeSel.forEach(x => { if (Math.random() < 0.5) { consumeForgeMat(role, x); lost.push(x); } else kept.push(x); });
     }
     setForgeCD();
-    if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
+    if (!serverCommitted) {
+      if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
+    }
     // 流水：失败损毁的材料
     if (lost.length) feedItems(lost, '炼器坊', '炼器失败损毁', '🔥', '-');
     addFeedItem('⚒️', '炼器坊', '炼器失败', `-${FORGE_STAMINA_COST} 精力`, '#c05a4e', {
@@ -4774,7 +4792,7 @@ function injuryTick() {
 }
 setInterval(injuryTick, 1000);
 </script>
-<script src="online.js?v=20260904-mailbox"></script>
+<script src="online.js?v=20260904-forge-retry"></script>
 <script src="site-nav.js"></script>
 </body>
 </html>

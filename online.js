@@ -104,6 +104,10 @@
     if (_saveTimer) clearTimeout(_saveTimer);
     _saveTimer = setTimeout(() => uploadRole(), 600);
   }
+  function isCharacterConflictMessage(error) {
+    const message = String(error && error.message || error || '');
+    return message.includes('角色数据已更新') || message.includes('Character data has changed');
+  }
   async function uploadRole() {
     const role = window.D && window.D.my_adventurer;
     if (!role || !role._char_db_id || !API.token) return;
@@ -111,25 +115,32 @@
       const saved = await api('/api/character/' + role._char_db_id, { method: 'POST', body: { character: role, updated_at: role._char_updated_at } });
       Object.assign(role, saved.character || {}, { _char_db_id: role._char_db_id, _char_updated_at: saved.updated_at, is_mine: true });
     } catch (e) {
-      if (e.message.includes('Character data has changed')) await refreshOnlineRoles();
+      if (isCharacterConflictMessage(e)) await refreshOnlineRoles();
     }
   }
 
   async function onlineCharacterAction(action, payload = {}) {
-    const role = window.D && window.D.my_adventurer;
-    if (!role || !role._char_db_id) throw new Error('角色尚未与服务器同步');
-    if (role.status === 'adventuring') throw new Error('角色正在探险');
-    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
-    const result = await api('/api/character/' + role._char_db_id + '/action', {
-      method: 'POST', body: { action, updated_at: role._char_updated_at, ...payload },
-    });
-    Object.assign(role, result.character || {}, { _char_db_id: role._char_db_id, _char_updated_at: result.updated_at, is_mine: true });
-    const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
-    if (match && match !== role) Object.assign(match, role);
-    if (window.renderMine) renderMine();
-    if (window.renderAdventurers) renderAdventurers();
-    if (window.renderParty) renderParty();
-    return result;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const role = window.D && window.D.my_adventurer;
+      if (!role || !role._char_db_id) throw new Error('角色尚未与服务器同步');
+      if (role.status === 'adventuring') throw new Error('角色正在探险');
+      if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+      try {
+        const result = await api('/api/character/' + role._char_db_id + '/action', {
+          method: 'POST', body: { action, updated_at: role._char_updated_at, ...payload },
+        });
+        Object.assign(role, result.character || {}, { _char_db_id: role._char_db_id, _char_updated_at: result.updated_at, is_mine: true });
+        const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
+        if (match && match !== role) Object.assign(match, role);
+        if (window.renderMine) renderMine();
+        if (window.renderAdventurers) renderAdventurers();
+        if (window.renderParty) renderParty();
+        return result;
+      } catch (error) {
+        if (attempt >= 1 || !isCharacterConflictMessage(error)) throw error;
+        await refreshOnlineRoles();
+      }
+    }
   }
 
   /* ============================================================
@@ -613,44 +624,66 @@
     debounceSaveRole();
   }
 
+  async function forgeWithConflictRetry(run) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const role = window.D && window.D.my_adventurer;
+      if (!role || !role._char_db_id) throw new Error('角色尚未与服务器同步');
+      if (role.status === 'insighting' || role.taixuInsight) throw new Error('角色正在觉醒祭坛顿悟');
+      try {
+        return await run(role);
+      } catch (error) {
+        const conflict = isCharacterConflictMessage(error);
+        if (!conflict || attempt >= 1) throw error;
+        await refreshOnlineRoles();
+      }
+    }
+  }
+
+  function cacheOnlineRole(role) {
+    try { localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(role)); } catch (_) {}
+  }
+
   window.forgeOnline = async function forgeOnline(payload) {
-    const role = window.D && window.D.my_adventurer;
-    if (!role || !role._char_db_id) throw new Error('角色尚未与服务器同步');
-    if (role.status === 'insighting' || role.taixuInsight) throw new Error('角色正在觉醒祭坛顿悟');
     if (!payload || !payload.item) {
       forgeInFlight = true;
       try {
-        const accepted = await api('/api/character/' + role._char_db_id + '/forge', {
-          method: 'POST',
-          body: { materials: payload && payload.materials || [], updated_at: role._char_updated_at },
-        });
-        if (!accepted.jobId) throw new Error('炼器任务创建失败');
-        for (let poll = 0; poll < 600; poll++) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const status = await api('/api/character/' + role._char_db_id + '/forge/' + encodeURIComponent(accepted.jobId));
-          if (status.status === 'completed') {
-            const merged = status.character || {};
-            Object.assign(role, merged, { _char_db_id: role._char_db_id, _char_updated_at: status.updated_at, is_mine: true });
-            const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
-            if (match && match !== role) Object.assign(match, role);
-            return status;
+        return await forgeWithConflictRetry(async role => {
+          const accepted = await api('/api/character/' + role._char_db_id + '/forge', {
+            method: 'POST',
+            body: { materials: payload && payload.materials || [], updated_at: role._char_updated_at },
+          });
+          if (!accepted.jobId) throw new Error('锻造任务创建失败');
+          for (let poll = 0; poll < 600; poll++) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const status = await api('/api/character/' + role._char_db_id + '/forge/' + encodeURIComponent(accepted.jobId));
+            if (status.status === 'completed') {
+              const merged = status.character || {};
+              Object.assign(role, merged, { _char_db_id: role._char_db_id, _char_updated_at: status.updated_at, is_mine: true });
+              const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
+              if (match && match !== role) Object.assign(match, role);
+              cacheOnlineRole(role);
+              return status;
+            }
+            if (status.status === 'failed') throw new Error(status.error || '锻造失败');
           }
-          if (status.status === 'failed') throw new Error(status.error || '炼器失败');
-        }
-        throw new Error('炼器等待超时，请稍后查看角色状态');
+          throw new Error('锻造等待超时，请稍后查看角色状态');
+        });
       } finally {
         forgeInFlight = false;
       }
     }
-    const result = await api('/api/character/' + role._char_db_id + '/forge', {
-      method: 'POST',
-      body: { ...payload, updated_at: role._char_updated_at },
+    return forgeWithConflictRetry(async role => {
+      const result = await api('/api/character/' + role._char_db_id + '/forge', {
+        method: 'POST',
+        body: { ...payload, updated_at: role._char_updated_at },
+      });
+      const merged = result.character || {};
+      Object.assign(role, merged, { _char_db_id: role._char_db_id, _char_updated_at: result.updated_at, is_mine: true });
+      const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
+      if (match && match !== role) Object.assign(match, role);
+      cacheOnlineRole(role);
+      return result;
     });
-    const merged = result.character || {};
-    Object.assign(role, merged, { _char_db_id: role._char_db_id, _char_updated_at: result.updated_at, is_mine: true });
-    const match = (window.D.adventurers || []).find(a => Number(a._char_db_id || a.id) === Number(role._char_db_id));
-    if (match && match !== role) Object.assign(match, role);
-    return result;
   };
 
   /* ============================================================
