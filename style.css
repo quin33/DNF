@@ -371,15 +371,22 @@ button { font-family: var(--font); }
   place-items: center;
   width: 20px;
   height: 20px;
+  flex: 0 0 20px;
+  box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--moon-blue) 46%, var(--color-border));
   border-radius: 50%;
   color: var(--moon-blue-dark);
   background: color-mix(in srgb, var(--moon-blue) 9%, var(--paper-raised));
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
+  padding: 4px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .tab-btn.active .moonlit-icon { color: var(--paper-raised); border-color: var(--copper); background: var(--copper); }
+.moonlit-icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.chat-title-bar .moonlit-icon { width: 18px; height: 18px; flex-basis: 18px; margin-right: 5px; vertical-align: -4px; }
 .tab-task-count {
   background: var(--color-primary);
   color: #fff;

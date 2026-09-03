@@ -141,15 +141,43 @@ root.innerHTML = `
     </div>
   </div>
 
+  <!-- 月光酒馆线性图标集：统一描边，避免使用文字缩写或 emoji 充当导航图标 -->
+  <svg class="moonlit-icon-sprite" aria-hidden="true" focusable="false">
+    <symbol id="moonlit-tavern" viewBox="0 0 24 24">
+      <path d="M5 5h10v3a5 5 0 0 1-10 0V5Z"></path><path d="M8 13v4M5 17h6M15 7h2a2 2 0 0 1 0 4h-2"></path>
+    </symbol>
+    <symbol id="moonlit-activity" viewBox="0 0 24 24">
+      <path d="M5 20V4"></path><path d="M5 5c3-2 5 2 8 0s5 2 6 0v8c-3 2-5-2-8 0s-5-2-6 0"></path>
+    </symbol>
+    <symbol id="moonlit-building" viewBox="0 0 24 24">
+      <path d="M4 20h16M6 20V6l6-3 6 3v14M9 9h1M14 9h1M9 13h1M14 13h1M10 20v-4h4v4"></path>
+    </symbol>
+    <symbol id="moonlit-mine" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="3"></circle><path d="M5 20c0-3 3-5 7-5s7 2 7 5"></path>
+    </symbol>
+    <symbol id="moonlit-adventurers" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8"></circle><path d="m15 9-2 4-4 2 2-4 4-2Z"></path>
+    </symbol>
+    <symbol id="moonlit-party" viewBox="0 0 24 24">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"></path><circle cx="9.5" cy="7" r="3"></circle><path d="M17 11a3 3 0 1 0-1-5.8M21 21v-2a4 4 0 0 0-3-3.87"></path>
+    </symbol>
+    <symbol id="moonlit-logs" viewBox="0 0 24 24">
+      <path d="M6 3h12v18H6a3 3 0 0 1 0-6h12"></path><path d="M9 7h6M9 11h6M9 15h4"></path>
+    </symbol>
+    <symbol id="moonlit-chat" viewBox="0 0 24 24">
+      <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.5 8.5 0 0 1-4-.9L4 20l1.9-3.3A7.1 7.1 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"></path><path d="M8 12h.01M12 12h.01M16 12h.01"></path>
+    </symbol>
+  </svg>
+
   <!-- 标签页 -->
   <nav class="tabs">
-    <button class="tab-btn active" data-tab="tavern"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">酒</span>酒馆</span></button>
-    <button class="tab-btn" data-tab="activity"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">赛</span>活动</span></button>
-    <button class="tab-btn" data-tab="building"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">建</span>建筑</span><span class="tab-task-count">${FEATURED_BUILDING_CODES.size}</span></button>
-    <button class="tab-btn" data-tab="mine"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">我</span>我的</span></button>
-    <button class="tab-btn" data-tab="adventurers"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">冒</span>冒险者</span></button>
-    <button class="tab-btn" data-tab="party"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">队</span>小队</span></button>
-    <button class="tab-btn" data-tab="logs"><span class="tab-btn-label"><span class="moonlit-icon" aria-hidden="true">志</span>探险日志</span></button>
+    <button class="tab-btn active" data-tab="tavern"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="tavern" aria-hidden="true" focusable="false"><use href="#moonlit-tavern"></use></svg>酒馆</span></button>
+    <button class="tab-btn" data-tab="activity"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="activity" aria-hidden="true" focusable="false"><use href="#moonlit-activity"></use></svg>活动</span></button>
+    <button class="tab-btn" data-tab="building"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="building" aria-hidden="true" focusable="false"><use href="#moonlit-building"></use></svg>建筑</span><span class="tab-task-count">${FEATURED_BUILDING_CODES.size}</span></button>
+    <button class="tab-btn" data-tab="mine"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="mine" aria-hidden="true" focusable="false"><use href="#moonlit-mine"></use></svg>我的</span></button>
+    <button class="tab-btn" data-tab="adventurers"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="adventurers" aria-hidden="true" focusable="false"><use href="#moonlit-adventurers"></use></svg>冒险者</span></button>
+    <button class="tab-btn" data-tab="party"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="party" aria-hidden="true" focusable="false"><use href="#moonlit-party"></use></svg>小队</span></button>
+    <button class="tab-btn" data-tab="logs"><span class="tab-btn-label"><svg class="moonlit-icon" data-icon="logs" aria-hidden="true" focusable="false"><use href="#moonlit-logs"></use></svg>探险日志</span></button>
   </nav>
 
   <section class="tab-content active" id="tab-tavern"></section>
@@ -253,7 +281,7 @@ function renderTavern() {
   });
   const chatCol = `
     <div class="chat-col">
-      <div class="chat-title-bar"><h3 class="col-title"><span class="moonlit-icon" aria-hidden="true">聊</span>酒馆闲聊</h3></div>
+      <div class="chat-title-bar"><h3 class="col-title"><svg class="moonlit-icon" data-icon="chat" aria-hidden="true" focusable="false"><use href="#moonlit-chat"></use></svg>酒馆闲聊</h3></div>
       <div class="chat-messages" id="chat-messages">
         ${D.chat.slice().reverse().map(m => `
           <div class="chat-msg">

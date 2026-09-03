@@ -57,6 +57,16 @@ test('primary navigation exposes moonlit icon hooks without emoji-only labels', 
   assert.doesNotMatch(html, /<button class="tab-btn active"[^>]*>🍺/);
 });
 
+test('primary navigation uses drawn SVG icons instead of text abbreviations', () => {
+  const html = readAsset('index.html');
+  const expectedIcons = ['tavern', 'activity', 'building', 'mine', 'adventurers', 'party', 'logs'];
+  expectedIcons.forEach(icon => {
+    assert.match(html, new RegExp(`class="moonlit-icon"[^>]*data-icon="${icon}"`));
+    assert.match(html, new RegExp(`class="moonlit-icon"[^>]*data-icon="${icon}"[\\s\\S]*?<use href="#moonlit-${icon}"`));
+  });
+  assert.doesNotMatch(html, /class="moonlit-icon"[^>]*>[^<]*(酒|赛|建|我|冒|队|志)[^<]*<\/span>/);
+});
+
 test('moonlit header and tabs use paper, copper, and wood visual hooks', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /\.advs1-header[\s\S]*var\(--paper-raised\)/);
