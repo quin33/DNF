@@ -621,11 +621,11 @@ function applyDungeonSetup(base, setup) {
   };
 }
 
-/* 单步效果应用：受伤/首领掉落/异常特质（服务端权威修改 party 成员状态） */
+/* 单步效果应用：AI 伤害/首领掉落/突破结果（服务端权威修改 party 成员状态） */
 function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
   const g = dg.memberGains[actor.id];
-  const hurt = n => {
-    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) > 0 ? Math.round(Number(aiDamage)) : n;
+  const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
     if (g) g.damage += dmg;
@@ -634,23 +634,11 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage) {
       dg.deaths = Array.isArray(dg.deaths) ? dg.deaths : [];
       dg.deaths.push(actor.name);
     }
-  };
-  if (stageKey === 'battle') {
-    if (outcome === 'bad') hurt(8 + Math.floor(Math.random() * 12));
-    if (outcome === 'fumble') hurt(20 + Math.floor(Math.random() * 20));
-    if (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('爆裂符'))) hurt(8);
   }
-  if (stageKey === 'boss') {
+  if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     const boss = dg._curEnemy;
-    if (outcome === 'crit' || outcome === 'good') {
-      if (boss && boss.reward && !dg.bossDrops.some(r => r.name === boss.reward.name)) dg.bossDrops.push(boss.reward);
-      if (outcome === 'crit') hurt(4 + Math.floor(Math.random() * 8)); else hurt(10 + Math.floor(Math.random() * 12));
-    } else if (outcome === 'mid') hurt(18 + Math.floor(Math.random() * 12));
-    else if (outcome === 'bad') hurt(24 + Math.floor(Math.random() * 16));
-    else hurt(35 + Math.floor(Math.random() * 25));
+    if (boss && boss.reward && !dg.bossDrops.some(r => r.name === boss.reward.name)) dg.bossDrops.push(boss.reward);
   }
-  if (stageKey === 'explore' && outcome === 'fumble') hurt(12 + Math.floor(Math.random() * 12));
-  if (stageKey === 'loot' && outcome === 'fumble') hurt(6);
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
 }
 

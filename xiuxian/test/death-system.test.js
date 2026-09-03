@@ -16,12 +16,32 @@ test('applyStageEffects marks a member dead when hp reaches zero', () => {
   };
   const actor = { id: 'u1', name: '测试修士', hp: 10, max_hp: 100 };
 
-  applyStageEffects(dg, 'battle', actor, 5, 'fumble');
+  applyStageEffects(dg, 'battle', actor, 5, 'fumble', 20);
   assert.equal(actor.hp, 0);
   assert.equal(actor.isDead, true);
   assert.deepEqual(dg.deaths, ['测试修士']);
 
-  applyStageEffects(dg, 'battle', actor, 5, 'bad');
+  applyStageEffects(dg, 'battle', actor, 5, 'bad', 20);
+
+test('AI damage is authoritative and positive damage applies regardless of outcome', () => {
+  const dg = {
+    damage: 0,
+    deaths: [],
+    memberGains: { u1: { damage: 0, fumbles: 0 } },
+    _curEnemy: null,
+    bossDrops: [],
+  };
+  const actor = { id: 'u1', name: '测试修士', hp: 100, max_hp: 100 };
+
+  applyStageEffects(dg, 'battle', actor, 0, 'bad', 0);
+  assert.equal(actor.hp, 100);
+  assert.equal(dg.damage, 0);
+
+  applyStageEffects(dg, 'battle', actor, 0, 'good', 7);
+  assert.equal(actor.hp, 93);
+  assert.equal(dg.damage, 7);
+  assert.equal(dg.memberGains.u1.damage, 7);
+});
   assert.equal(actor.hp, 0);
   assert.equal(dg.deaths.length, 1, 'dead member should only be recorded once');
 });

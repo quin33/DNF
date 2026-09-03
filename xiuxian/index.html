@@ -3547,11 +3547,11 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
   }
 }
 
-/* ---------- 阶段效果（记录每名成员的战损与收获） ---------- */
+/* ---------- 阶段效果（记录每名成员的 AI 战损与收获） ---------- */
 function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage) {
   const g = dg.memberGains[actor.id];
-  const hurt = () => {
-    const dmg = Number.isFinite(Number(aiDamage)) && Number(aiDamage) >= 0 ? Math.round(Number(aiDamage)) : 0;
+  const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
     if (g) g.damage += dmg;
@@ -3560,20 +3560,12 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
       dg.deaths = dg.deaths || [];
       dg.deaths.push(actor.name);
     }
-  };
-  if (stageKey === 'battle') {
-    if (outcome === 'bad' || outcome === 'fumble' || (outcome === 'crit' && (actor.equipment || []).find(i => i.name.includes('暴血丹')))) hurt();
   }
-  if (stageKey === 'boss') {
-    // 首领战：胜负皆重，胜利掉落首领专属战利品
-    if (outcome === 'crit' || outcome === 'good') {
-      const boss = dg._curEnemy;
-      if (boss && boss.reward && !dg.bossDrops.some(r => r.name === boss.reward.name)) dg.bossDrops.push(boss.reward);
-      hurt();
-    } else if (outcome === 'mid' || outcome === 'bad' || outcome === 'fumble') hurt();
+  if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
+    // 首领战：胜利掉落首领专属战利品，是否受伤完全由 AI damage 决定
+    const boss = dg._curEnemy;
+    if (boss && boss.reward && !dg.bossDrops.some(r => r.name === boss.reward.name)) dg.bossDrops.push(boss.reward);
   }
-  if (stageKey === 'explore' && outcome === 'fumble') hurt();
-  if (stageKey === 'loot' && outcome === 'fumble') hurt();
 }
 function addTrait(role, t) {
   if (!role.traits) role.traits = [];
