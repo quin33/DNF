@@ -8,11 +8,13 @@ const GE = require('../game-engine.js');
 const DB = require('../db.js');
 const { createRoomRunner } = require('../room-runner.js');
 
-test('preset companion library ships twelve complete cards matching the fixed NPC names', () => {
-  assert.equal(AI.DEFAULT_CARDS.length, 12);
+test('preset companion library ships twenty complete cards matching the fixed NPC names', () => {
+  assert.equal(AI.DEFAULT_CARDS.length, 20);
   assert.deepEqual(AI.NPC_NAME_POOL, [
-    '墨尘', '柳烟', '顾长风', '苏砚', '楚惊鸿', '姜雪',
-    '陆离', '晏无咎', '纪云深', '裴照', '萧瑟', '洛清欢',
+    '赛丽亚·克鲁敏', '林纳斯', '卡妮娜', '凯丽', '莎兰', '风振',
+    'G.S.D', '歌兰蒂斯', '阿尔伯特', '辛达', '罗莉安', '奥兰奶奶',
+    '阿甘左', '西岚', '布万加', '巴恩', '卢克西', '帕丽丝',
+    '沙影·贝利特', '尼尔巴斯·格拉西亚',
   ]);
   for (const card of AI.DEFAULT_CARDS) {
     assert.ok(card.key, 'card key is present');
@@ -33,9 +35,9 @@ test('preset companion library ships twelve complete cards matching the fixed NP
 });
 
 test('genNpc uses the preset card when supplied and falls back to random data otherwise', () => {
-  const card = AI.findCardByName('墨尘');
+  const card = AI.findCardByName('赛丽亚·克鲁敏');
   const npc = GE.genNpc(card.name, card);
-  assert.equal(npc.name, '墨尘');
+  assert.equal(npc.name, '赛丽亚·克鲁敏');
   assert.equal(npc.is_npc, true);
   assert.equal(npc.is_mine, false);
   assert.equal(npc.gender, card.gender);
@@ -62,34 +64,34 @@ test('server NPC members carry card hp into dungeon party so low damage does not
   };
   vm.createContext(npcContext);
   vm.runInContext(npcSource, npcContext);
-  const member = npcContext.makeNpcMember('墨尘');
-  assert.equal(member.hp, 160);
-  assert.equal(member.max_hp, 160);
+  const member = npcContext.makeNpcMember('阿甘左');
+  assert.equal(member.hp, 175);
+  assert.equal(member.max_hp, 175);
 
   const { buildDungeonParty } = createRoomRunner({ GE, GC: { ROOT_SKILLS: null } });
   const npcMember = buildDungeonParty({ party: [member] }, {})[0];
-  assert.equal(npcMember.hp, 160);
-  assert.equal(npcMember.max_hp, 160);
+  assert.equal(npcMember.hp, 175);
+  assert.equal(npcMember.max_hp, 175);
 
   const dg = { damage: 0, memberGains: { [npcMember.id]: { damage: 0 } }, party: [npcMember] };
   GE.applyStageEffects(dg, 'battle', npcMember, 0, 'bad', 10);
-  assert.equal(npcMember.hp, 150);
+  assert.equal(npcMember.hp, 165);
   assert.equal(npcMember.isDead, undefined);
 });
 
-test('db seeds the twelve companion cards and supports save/reset round trips', () => {
+test('db seeds the twenty companion cards and supports save/reset round trips', () => {
   const seeded = DB.listAiCompanionCards();
-  assert.equal(seeded.length, 12);
-  const card = DB.getAiCompanionCardByName('洛清欢');
+  assert.equal(seeded.length, 20);
+  const card = DB.getAiCompanionCardByName('赛丽亚·克鲁敏');
   assert.ok(card);
   assert.equal(card.data.bio.length > 0, true);
 
-  const saved = DB.saveAiCompanionCard('luo_qinghuan', { gold: 777, bio: '测试改写小传。' });
+  const saved = DB.saveAiCompanionCard('sairiya', { gold: 777, bio: '测试改写小传。' });
   assert.equal(saved.data.gold, 777);
   assert.equal(saved.is_default, false);
-  assert.equal(DB.getAiCompanionCardByName('洛清欢').data.gold, 777);
+  assert.equal(DB.getAiCompanionCardByName('赛丽亚·克鲁敏').data.gold, 777);
 
-  const reset = DB.resetAiCompanionCard('luo_qinghuan');
+  const reset = DB.resetAiCompanionCard('sairiya');
   assert.equal(reset.is_default, true);
-  assert.equal(reset.data.gold, AI.findCardByKey('luo_qinghuan').gold);
+  assert.equal(reset.data.gold, AI.findCardByKey('sairiya').gold);
 });

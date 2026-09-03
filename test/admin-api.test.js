@@ -895,12 +895,12 @@ test('admin can list, edit, and reset fixed AI companion cards', async () => {
   const listing = await adminRequest('GET', '/api/admin/ai-companions');
   assert.equal(listing.status, 200);
   assert.equal(Array.isArray(listing.body.cards), true);
-  assert.equal(listing.body.cards.length, 12);
-  const moChen = listing.body.cards.find(card => card.key === 'mo_chen');
-  assert.ok(moChen, 'default 墨尘 card must exist');
-  assert.equal(moChen.data.name, '墨尘');
-  assert.equal(typeof moChen.data.bio, 'string');
-  assert.ok(moChen.data.bio.length > 0);
+  assert.equal(listing.body.cards.length, 20);
+  const aganzuo = listing.body.cards.find(card => card.key === 'aganzuo');
+  assert.ok(aganzuo, 'default 阿甘左 card must exist');
+  assert.equal(aganzuo.data.name, '阿甘左');
+  assert.equal(typeof aganzuo.data.bio, 'string');
+  assert.ok(aganzuo.data.bio.length > 0);
 
   const denied = await request('GET', '/api/admin/ai-companions', { token: playerToken });
   assert.equal(denied.status, 401);
@@ -912,26 +912,26 @@ test('admin can list, edit, and reset fixed AI companion cards', async () => {
     'equipment', 'bag', 'skills', 'skillPool',
   ];
   const pick = (data, fields) => Object.fromEntries(fields.filter(field => data[field] !== undefined).map(field => [field, data[field]]));
-  const cardPayload = pick(moChen.data, companionFields);
-  const updated = await adminRequest('PUT', '/api/admin/ai-companions/mo_chen', {
+  const cardPayload = pick(aganzuo.data, companionFields);
+  const updated = await adminRequest('PUT', '/api/admin/ai-companions/aganzuo', {
     card: { ...cardPayload, gold: 12345, bio: '后台测试修改后的小传。' },
   });
   assert.equal(updated.status, 200);
   assert.equal(updated.body.card.data.gold, 12345);
   assert.equal(updated.body.card.data.bio, '后台测试修改后的小传。');
   assert.equal(updated.body.card.is_default, false);
-  assert.equal(DB.getAiCompanionCard('mo_chen').data.gold, 12345);
+  assert.equal(DB.getAiCompanionCard('aganzuo').data.gold, 12345);
 
-  const rejected = await adminRequest('PUT', '/api/admin/ai-companions/mo_chen', {
+  const rejected = await adminRequest('PUT', '/api/admin/ai-companions/aganzuo', {
     card: { ...updated.body.card.data, name: '不应改名' },
   });
   assert.equal(rejected.status, 400);
 
-  const reset = await adminRequest('POST', '/api/admin/ai-companions/mo_chen/reset');
+  const reset = await adminRequest('POST', '/api/admin/ai-companions/aganzuo/reset');
   assert.equal(reset.status, 200);
   assert.equal(reset.body.card.is_default, true);
-  assert.equal(reset.body.card.data.gold, moChen.data.gold);
-  assert.equal(DB.getAiCompanionCard('mo_chen').is_default, true);
+  assert.equal(reset.body.card.data.gold, aganzuo.data.gold);
+  assert.equal(DB.getAiCompanionCard('aganzuo').is_default, true);
 });
 
 test('admin logout invalidates the current session', async () => {

@@ -1842,8 +1842,8 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 - sourceStep：首次明确获得所在的段落编号；entityId：同一实体稳定且简短的标识；
 - sameAsStep：若本条只是后文再次提到此前已获得的同一实体，填写首次获得段落编号，此时不得当作新掉落；若是新的获得事件则填 null。
 严格只输出一个 JSON 数组，不要任何解释或标记；每个对象单独占一行，格式：
-[{"name":"锋刃短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":12,"entityId":"sword-1","sameAsStep":null},
-{"name":"精铁短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"墨尘","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
+[{"name":"锋刃短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"赛丽亚·克鲁敏","sourceStep":12,"entityId":"sword-1","sameAsStep":null},
+{"name":"精铁短剑","canonicalName":"精铁短剑","desc":"描述","qty":1,"rarity":"epic","owner":"赛丽亚·克鲁敏","sourceStep":18,"entityId":"sword-1","sameAsStep":12}]
 兼容要求：旧格式的 name/desc/qty/rarity 仍可使用。没有获得任何道具时输出 []。`;
 
 const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的战斗技能。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","desc":"技能描述"}]`;

@@ -184,12 +184,32 @@ migrateExpeditionRuns();
 
 function seedAiCompanionCards() {
   const now = Date.now();
+  const validKeys = new Set(AI_COMPANIONS.DEFAULT_CARDS.map(card => card.key));
+  const existing = db.prepare('SELECT key, is_default FROM ai_companion_cards').all()
+    .reduce((map, row) => map.set(row.key, !!row.is_default), new Map());
+
+  // 旧版虚构预设已从 ai-companions.js 移除，启动时同步清掉遗留行，
+  // 仅保留仍在当前默认名单中的名片，避免后台继续展示已废弃角色。
+  const removeStale = db.prepare('DELETE FROM ai_companion_cards WHERE key = ?');
+  for (const key of existing.keys()) {
+    if (!validKeys.has(key)) removeStale.run(key);
+  }
+
   const insert = db.prepare(`
     INSERT OR IGNORE INTO ai_companion_cards (key, name, data, is_default, updated_at, created_at)
     VALUES (?, ?, ?, 1, ?, ?)
   `);
+  const refreshDefault = db.prepare(`
+    UPDATE ai_companion_cards
+    SET name = ?, data = ?, is_default = 1, updated_at = ?
+    WHERE key = ? AND is_default = 1
+  `);
   for (const card of AI_COMPANIONS.DEFAULT_CARDS) {
-    insert.run(card.key, card.name, JSON.stringify(card), now, now);
+    if (existing.has(card.key)) {
+      if (existing.get(card.key)) refreshDefault.run(card.name, JSON.stringify(card), now, card.key);
+    } else {
+      insert.run(card.key, card.name, JSON.stringify(card), now, now);
+    }
   }
 }
 seedAiCompanionCards();
