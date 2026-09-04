@@ -38,9 +38,9 @@ test('negative combat outcomes receive a real damage floor instead of zero', () 
 
   applyStageEffects(dg, 'battle', actor, 0, 'bad', 0);
 
-  assert.equal(actor.hp, 90);
-  assert.equal(dg.damage, 10);
-  assert.equal(dg.memberGains.u1.damage, 10);
+  assert.equal(actor.hp, 96);
+  assert.equal(dg.damage, 4);
+  assert.equal(dg.memberGains.u1.damage, 4);
 });
 
 test('positive AI damage still applies and the floor never auto-kills', () => {
@@ -53,11 +53,11 @@ test('positive AI damage still applies and the floor never auto-kills', () => {
   };
   const actor = { id: 'u1', name: '测试冒险家', hp: 8, max_hp: 100, level: 1 };
 
-  applyStageEffects(dg, 'battle', actor, 0, 'good', 7);
+  applyStageEffects(dg, 'battle', actor, 0, 'mid', 7);
 
-  assert.equal(actor.hp, 1);
-  assert.equal(dg.damage, 7);
-  assert.equal(dg.memberGains.u1.damage, 7);
+  assert.equal(actor.hp, 4);
+  assert.equal(dg.damage, 4);
+  assert.equal(dg.memberGains.u1.damage, 4);
 
   const lowActor = { id: 'u2', name: '低血冒险家', hp: 10, max_hp: 100, level: 1 };
   applyStageEffects(dg, 'boss', lowActor, 0, 'fumble', 0);

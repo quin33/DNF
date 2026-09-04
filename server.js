@@ -659,13 +659,13 @@ const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险�
 5. **技能优先**：角色技能是叙事最高优先级——只要本步判定选定了技能（见【本步技能】），就必须围绕它的施展来写：**严格按照技能描述（desc）演绎其效果**（不得发明描述之外的机制）。判定成功则写得势如破竹，判定失败则如实写施展受挫、失手踉跄。未选中技能时，也可在合适时机自然带出角色的技能。
 6. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
 6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
-7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
-7b. **伤害尺度（按当前最大生命比例）**：damage 是本次主角实际扣掉的生命，必须与【队伍】中标注的生命上限相称，不得随手给 1~5 点。普通战斗一般取值：good 3~8%、mid 8~15%、bad 15~25%、fumble 25~40%；首领战在对应档位上再上浮约 20~50%；探索/搜刮只在明显遭遇陷阱或袭击时填伤害（bad 5~12%、fumble 12~20%）。隐藏副本、特殊异变或敌方等级明显更高时取高档；只有等级碾压、一击结束的场合才允许接近 0。普通战斗即使取胜也应付出代价、挂彩或承受真实损耗，不能连续多步全程无伤。damage 至少为整数，正文明确受伤时不得省略。
+7. 成败由服务端权威判定：若 payload 提供 actionCheck/outcome，AI 必须使用该 outcome；只有在未提供判定时，才依据剧情张力、敌人等级、角色状态与叙事因果自然决定成功或受挫。不要播报骰子或判定数字。
+7b. **伤害尺度（按当前最大生命比例）**：damage 是本次主角实际扣掉的生命，必须与 outcome 和【队伍】中标注的生命上限相称。good/crit 通常为 0；mid 最多 4%；bad 约 4%~12%；fumble 约 8%~20%；首领战可在 bad/fumble 档位上浮，但服务端会强制上限并只对明确的负面结果做低频保底。不要为好结果虚构受伤，也不要连续多步制造重复保底伤害。damage 至少为整数，正文明确受伤时不得省略。
 7c. **治疗尺度（按当前最大生命比例）**：heal 是成功使用生命药水或治疗技能后实际恢复的生命，必须与【队伍】中标注的生命上限相称，不得随手只回 1~5 点。普通生命药水/低阶治疗约恢复 10~25%，强力药剂或专精治疗约 25~50%，正文写明治疗生效且本步受创较重时取高档；若当前只差少量生命，可直接回满，但恢复量不得超过当前缺失的生命。heal 至少为整数，正文明确写了治疗生效时不得省略。角色携带恢复类消耗品时，本步若实际受伤、带伤作战、需要维持续战力或即将面对更大压力，应优先让该角色实际喝下一瓶并返回 success:true 的 itemUse；不要按固定低血百分比机械触发，也不要用绷带、布条或“硬撑”代替恢复药水生效。**heal>0 时必须同时填写 success:true 的 itemUse 或 skillUse，并在 healTarget 中写被治疗的队伍成员完整全名；治疗自己时写【本步主角】的完整全名。正文没写治疗生效时 heal 必须为 0。**
 7d. **消耗品使用优先级**：本步主角携带的消耗品（生命药水、魔力药剂、食物、爆裂符等）是进图前特意准备的补给，不是摆设。本步出现实际受创、魔力或状态吃紧、战局胶着、需要续战力，或存在明显适用的消耗品时，应优先让该角色在正文中实际使用并返回 success:true 的 itemUse；没有合适时机则由剧情自然判断暂不使用。只有正文明确写出服用、激发并成功生效时才填写 itemUse；恢复类药品按 7c 填写 heal。
 8. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
 9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主压制过强、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（按撤离失败收尾，回赫顿玛尔向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与撤离后的剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
-10. **转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职试炼**。**本阶段必须围绕该角色（主角）安排一场职业试炼**：可写公会考核、职业导师布置的任务、实战试炼、技能觉醒或信念考验（贴合其职业与技能路数），风险与收益并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业方向，晋升子职业，如「鬼剑士·剑魂」）；失败则受伤受创，等级仍留 Lv.10，回赫顿玛尔休整后可再次挑战。叙事要写出“试炼将至、尝试与成败”的过程。
+10. **转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职试炼**。**本阶段必须围绕该角色（主角）安排一场职业试炼**：可写公会考核、职业导师布置的任务、实战试炼、技能觉醒或信念考验（贴合其职业与技能路数），风险与收益并存——**试炼成败按服务端判定**：本步成功则转职成功（领悟职业方向，晋升子职业，如「鬼剑士·剑魂」）；失败则受伤受创，等级仍留 Lv.10，回赫顿玛尔休整后可再次挑战。叙事要写出“试炼将至、尝试与成败”的过程。
 
 阶段仅表示本步主要事件倾向和游戏机制上下文，不是必须照搬到正文的固定章节。探索、交战、发现、追逐、撤退与休整可以自然穿插，对话和线索揭示也可交错或在同一步中融合；以前文因果、当前事件和检定结果为准，避免为了凑阶段而重复或硬转场。没有首领或搜刮事件时，不要强行制造对应桥段。连续焦点第 1~3 步应保持同一角色的叙事焦点，除非事件因果确实要求切换；焦点窗口的最后一步通常是该角色的高光收束，务必写出"依据 → 行动 → 结果"，不要只让角色露脸。动态副本不预先分配探索、战斗、首领、搜刮或撤离回城步数，由你根据已经发生的剧情选择下一方向；正常叙事目标为 10~25 步。第 20 步起进入收束段：停止新增地点、线索、敌人、任务目标或支线，把已经出现的因果转化为解决、失败或撤退；不得为了补足角色高光、轮换焦点或展示更多能力而延长故事。25 步不是强制结束点，确有未决冲突时可以继续，但超过 25 步后的内容只能直接解决已有事项，不得再扩写世界或制造下一层谜团，并应在最多 3 步内完成或明确撤退。任务或遭遇尚未解决时不得跳到搜刮或收尾，首领只有在正文确实解决、击退或逃脱后才能标记为已解决。第 40 步是引擎硬上限，最后两步不得引入新的未闭合主线。**每步不超过 250 字，不设最低字数**——短促有力的句子、寥寥数语的转折同样自然，长度完全随叙事节奏起伏，切忌每段都凑成齐整的长段。你现在只负责其中一步。`;
 
@@ -737,7 +737,7 @@ function buildUserMessage(b) {
   if (b.allowedCharacters && b.allowedCharacters.length) lines.push(`【本步允许出场】${b.allowedCharacters.join('、')}`);
   if (b.forbiddenCharacters && b.forbiddenCharacters.length) lines.push(`【本步禁止主动出场】${b.forbiddenCharacters.join('、')}`);
   if (b.stage === 'breakthrough' || b.stageLabel === '晋级') lines.push('【突破试炼】本步为转职试炼（Lv.10 → 转职）：围绕主角安排转职关隘（技能觉醒/职业之魂考验等），成败按本步判定（success 见【检定】）自然收束。');
-  if (b.actor) lines.push(`【本步主角】${b.actor}${b.support ? '（与 ' + b.support + (b.support2 ? '、' + b.support2 : '') + ' 配合）' : ''}：本步成败、受伤与收获由你依据剧情直接判定，不要模拟骰子。`);
+  if (b.actor) lines.push(`【本步主角】${b.actor}${b.support ? '（与 ' + b.support + (b.support2 ? '、' + b.support2 : '') + ' 配合）' : ''}：${b.actionCheck ? '本步成败已由服务端判定，剧情必须与固定 outcome 一致' : '本步成败由你依据剧情直接判定'}。`);
   if (b.enemy) lines.push(`【当前敌人】${b.enemy.name}：${b.enemy.desc || ''}`);
   if (b.actor) {
     const actorInfo = (b.party || []).find(member => member.name === b.actor) || (b.party || [])[0];
@@ -745,11 +745,12 @@ function buildUserMessage(b) {
     if (skillList) lines.push(`【本步可用技能】${skillList}`);
   }
   if (b.skillUse) {
-    lines.push(`【本步技能】${b.skillUse.name}：是否使用及成败由你直接判定。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
+    lines.push(`【本步技能】${b.skillUse.name}：${b.actionCheck ? '使用成败跟随服务端判定' : '是否使用及成败由你直接判定'}。技能描述：${b.skillUse.desc || '无'}。若使用，本步必须围绕施展此技能展开，严格按描述演绎其效果。`);
   }
   if (b.itemUse) {
     lines.push(`【装备判定】${b.itemUse.name}（${b.itemUse.kind}）${b.itemUse.loaned ? `由${b.itemUse.ownerName || '原持有人'}明确借给${b.itemUse.userName || b.actor || '使用者'}` : `由${b.itemUse.ownerName || b.actor || '使用者'}本人持有`}：是否使用及成败由你直接判定，不使用或失败则正文如实写未能奏效。`);
   }
+  if (b.actionCheck) lines.push(`【服务端判定】骰子 ${b.actionCheck.roll} + 修正 ${b.actionCheck.mod} = ${b.actionCheck.total}；本步 outcome 必须固定为 ${b.actionCheck.outcome}，只能用剧情解释它，不得改写成败。`);
   if (b.context) lines.push(`【前文衔接】\n${b.context}`);
   if (b.stepNo === 1) lines.push('【开局】这是本次探险的第一步（进入地下城）：请交代这是公会派发的悬赏——由公会执事在任务板派单，结合副本背景说明任务目的（调查异动/寻回失物/清剿怪物/讨伐领主等），描写队伍受命出发，营造任务感。');
   if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（撤离回城）：请描写队伍**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），回顾得失，收束故事，留有余韵。');
@@ -3058,6 +3059,7 @@ async function dungeonStep(room) {
   else dg._curEnemy = null;
   let roll = 0, mod = 0, total = 0, attrKey = '', realmB = 0;
   const needsCheck = dynamic ? !['opening', 'closing', 'rest', 'retreat'].includes(stageKey) : plan.check;
+  const actionCheck = needsCheck ? GE.resolveActionCheck(dg, stageKey, actor) : null;
   const resolveAiItemUse = (dg, actor, entry) => {
     if (!entry || !entry.name) return null;
     const avail = (GE.availableItemsForActor(dg, actor) || []).find(item => item.name === entry.name);
@@ -3069,7 +3071,7 @@ async function dungeonStep(room) {
     if (!entry || !entry.name) return null;
     const skill = (actor.skills || []).find(s => s.name === entry.name);
     if (!skill) return null;
-    return { name: skill.name, elemMod: GE.elemMatchMod(actor, skill), success: entry.success === true };
+    return { name: skill.name, elemMod: GE.elemMatchMod(actor, skill), success: actionCheck ? actionCheck.total >= 11 : entry.success === true };
   };
   let dynamicFocusAdded = false;
   if (dynamic) {
@@ -3079,7 +3081,15 @@ async function dungeonStep(room) {
   }
   let payload, j, rawText = '', cleanText = '', outcome, stepRec, lootNames = [], violations = [];
   try {
-    payload = GE.aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, mod, total, null, null);
+    payload = GE.aiStoryPayload(
+      dg, stageKey, actor, support, support2,
+      actionCheck && actionCheck.attrKey,
+      actionCheck && actionCheck.roll,
+      actionCheck && actionCheck.mod,
+      actionCheck && actionCheck.total,
+      null, null,
+      actionCheck && actionCheck.outcome,
+    );
     for (let attempt = 0; attempt < 2; attempt++) {
       const feedback = [];
       if (attempt > 0 && violations.length) feedback.push(GE.itemGuardFeedback(violations));
@@ -3100,7 +3110,8 @@ async function dungeonStep(room) {
       if (!dg.gainedLoot) dg.gainedLoot = [];
       lootNames.forEach(n => { if (!dg.gainedLoot.some(x => x.name === n)) dg.gainedLoot.push(n); });
     }
-    const aiStep = GE.normalizeAiStepResult(j, { outcome: needsCheck ? 'mid' : 'good' });
+    const aiStep = GE.normalizeAiStepResult(j, { outcome: actionCheck ? actionCheck.outcome : (needsCheck ? 'mid' : 'good') });
+    if (actionCheck) aiStep.outcome = actionCheck.outcome;
     outcome = aiStep.outcome;
     const itemUse = resolveAiItemUse(dg, actor, aiStep.itemUse);
     const skillUse = resolveAiSkillUse(actor, aiStep.skillUse);
@@ -3117,8 +3128,8 @@ async function dungeonStep(room) {
       GE.consumeItemUse(dg, itemUse, { explicitUse: true, actor });
     }
     stepRec = {
-      stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
-      stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage, aiHeal: aiStep.heal,
+      stage: stageKey, actor: actor.name, attr: actionCheck ? actionCheck.attrKey : '', roll: actionCheck ? actionCheck.roll : 0, mod: actionCheck ? actionCheck.mod : 0, total: actionCheck ? actionCheck.total : 0, outcome, text: cleanText, rawText,
+      stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: actionCheck ? actionCheck.levelMod : 0, src: 'ai', aiDamage: aiStep.damage, aiHeal: aiStep.heal,
       healTargetName: healAllowed && healTarget ? healTarget.name : null,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
       skillUse: skillUse ? { name: skillUse.name, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,

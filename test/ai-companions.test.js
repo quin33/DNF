@@ -75,7 +75,7 @@ test('server NPC members carry card hp into dungeon party so low damage does not
 
   const dg = { damage: 0, memberGains: { [npcMember.id]: { damage: 0 } }, party: [npcMember] };
   GE.applyStageEffects(dg, 'battle', npcMember, 0, 'bad', 10);
-  assert.equal(npcMember.hp, 157);
+  assert.equal(npcMember.hp, 165);
   assert.equal(npcMember.isDead, undefined);
 });
 

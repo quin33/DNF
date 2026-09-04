@@ -174,11 +174,11 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
   assert.match(extract, /LootSettlement\.OPEN_DROP_RARITIES/);
 });
 
-test('server prompts tell the AI to decide outcomes instead of using dice', () => {
+test('server prompts use authoritative dice outcomes instead of AI-decided tiers', () => {
   const server = fs.readFileSync('server.js', 'utf8');
   assert.doesNotMatch(server, /D20/);
-  assert.match(server, /本步没有骰子/);
-  assert.match(server, /本步成败、受伤与收获由你依据剧情直接判定/);
+  assert.match(server, /【服务端判定】/);
+  assert.match(server, /本步 outcome 必须固定为/);
 });
 
 test('AI damage guidance carries HP context and a shared non-lethal floor', () => {

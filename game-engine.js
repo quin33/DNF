@@ -178,6 +178,71 @@ function enemyRealmVal(input) {
 }
 function actorRealmVal(actor) { const lv = Number(actor && actor.level); return Number.isFinite(lv) && lv > 0 ? lv : 1; }
 function realmDiffMod(actor, enemy) { if (!enemy) return 0; const ev = enemyRealmVal(enemy); if (!ev) return 0; return Math.max(-4, Math.min(4, actorRealmVal(actor) - ev)); }
+
+const ACTION_CHECK_STAGES = new Set(['battle', 'boss', 'encounter', 'explore', 'loot', 'breakthrough']);
+const RARITY_RANK = { common: 0, advanced: 1, rare: 2, artifact: 3, epic: 4, legendary: 5, mythic: 6 };
+const EQUIPMENT_STAGE_WEIGHT = {
+  battle: { weapon: 1, armor: 0.5, accessory: 0.5, tool: 0 },
+  boss: { weapon: 1, armor: 1, accessory: 0.5, tool: 0 },
+  encounter: { weapon: 1, armor: 0.5, accessory: 0.5, tool: 0 },
+  explore: { tool: 1, armor: 0.5, accessory: 0.5, weapon: 0 },
+  loot: { tool: 1, accessory: 1, armor: 0.5, weapon: 0 },
+  breakthrough: { accessory: 1, armor: 1, tool: 0.5, weapon: 0 },
+};
+
+function clampNumber(value, min, max) {
+  return Math.max(min, Math.min(max, Number(value) || 0));
+}
+
+function attributeModifier(actor, stageKey) {
+  const keys = STAGE_ATTR[stageKey] || ['luck'];
+  const values = keys.map(key => Number(actor && actor[key]) || 10);
+  const best = Math.max(...values);
+  return clampNumber(Math.floor((best - 10) / 2), -2, 5);
+}
+
+function equipmentModifier(actor, stageKey) {
+  const weights = EQUIPMENT_STAGE_WEIGHT[stageKey] || {};
+  const total = (actor && Array.isArray(actor.equipment) ? actor.equipment : []).reduce((sum, item) => {
+    if (!item) return sum;
+    const weight = Number(weights[item.kind] || 0);
+    if (!weight) return sum;
+    const rank = RARITY_RANK[LootSettlement.normalizeRarity(item.rarity)] || 0;
+    return sum + Math.floor((rank + 1) * weight);
+  }, 0);
+  return Math.min(6, total);
+}
+
+function skillModifier(actor) {
+  return Math.min(3, Array.isArray(actor && actor.skills) ? actor.skills.length : 0);
+}
+
+function outcomeForTotal(total) {
+  if (total >= 28) return 'crit';
+  if (total >= 20) return 'good';
+  if (total >= 11) return 'mid';
+  if (total >= 4) return 'bad';
+  return 'fumble';
+}
+
+function resolveActionCheck(dg, stageKey, actor) {
+  if (!ACTION_CHECK_STAGES.has(stageKey)) return null;
+  const keys = STAGE_ATTR[stageKey] || ['luck'];
+  const values = keys.map(key => ({ key, value: Number(actor && actor[key]) || 10 }));
+  values.sort((a, b) => b.value - a.value);
+  const attrKey = values[0].key;
+  const attrMod = attributeModifier(actor, stageKey);
+  const actorLevel = Math.max(1, Number(actor && actor.level) || 1);
+  const opponentLevel = Math.max(1, Number(dg && dg._curEnemy && dg._curEnemy.level)
+    || Number(dg && dg.dungeon && dg.dungeon.levelMax) || actorLevel);
+  const levelMod = clampNumber(actorLevel - opponentLevel, -5, 6);
+  const equipmentMod = equipmentModifier(actor, stageKey);
+  const skillMod = skillModifier(actor);
+  const roll = rollD20();
+  const mod = attrMod + levelMod + equipmentMod + skillMod;
+  const total = roll + mod;
+  return { roll, attrKey, attrMod, levelMod, equipmentMod, skillMod, mod, total, outcome: outcomeForTotal(total) };
+}
 function realmBonus(actor) { return Math.min(9, Math.floor(((actor.level || 1) - 1) / 2)); }
 function elemMatchMod(actor, sk) {
   // DNF60：技能无五行属性、角色无特质，元素契合恒为 0；保留签名以最小化调用处改动。
@@ -799,36 +864,57 @@ function applyDungeonSetup(base, setup) {
   };
 }
 
-/* AI 伤害保底：负面结果至少造成与最大生命成比例的真实损失，避免 AI 给 0~2 点挠痒伤害。 */
+/* 伤害控制：负面结果保留低频保底，同时限制 AI 单步扣血上限。 */
 const DAMAGE_FLOOR_PCT = {
-  battle: { mid: 0.05, bad: 0.10, fumble: 0.18 },
-  boss: { mid: 0.06, bad: 0.14, fumble: 0.22 },
-  encounter: { bad: 0.08, fumble: 0.16 },
-  explore: { bad: 0.06, fumble: 0.10 },
-  loot: { bad: 0.05, fumble: 0.09 },
-  retreat: { bad: 0.08, fumble: 0.16 },
-  breakthrough: { bad: 0.06, fumble: 0.12 },
+  battle: { bad: 0.04, fumble: 0.08 },
+  boss: { bad: 0.05, fumble: 0.10 },
+  encounter: { bad: 0.04, fumble: 0.08 },
+  explore: { bad: 0.03, fumble: 0.05 },
+  loot: { bad: 0.02, fumble: 0.04 },
+  retreat: { bad: 0.04, fumble: 0.08 },
+  breakthrough: { bad: 0.04, fumble: 0.06 },
 };
+const DAMAGE_CAP_PCT = { crit: 0, good: 0, mid: 0.04, bad: 0.12, fumble: 0.20 };
+const BOSS_DAMAGE_CAP_PCT = { crit: 0, good: 0, mid: 0.05, bad: 0.15, fumble: 0.25 };
+
+function damageFloorGuardKey(dg, stageKey) {
+  if (stageKey === 'battle' || stageKey === 'boss') {
+    return `${stageKey}:${String(dg && dg._curEnemy && dg._curEnemy.name) || 'unknown'}`;
+  }
+  return `${stageKey}:run`;
+}
+
 function resolveDamageFloor(dg, stageKey, actor, outcome) {
   if (!dg || !actor || actor.isDead) return 0;
+  dg._damageFloorGuard = dg._damageFloorGuard || new Set();
+  const key = damageFloorGuardKey(dg, stageKey);
+  if (dg._damageFloorGuard.has(key)) return 0;
   const base = (DAMAGE_FLOOR_PCT[stageKey] || {})[outcome] || 0;
   if (!base) return 0;
-  const actorLevel = Math.max(1, Number(actor.level || 1));
-  const enemyLevel = Math.max(1, Number(dg._curEnemy && dg._curEnemy.level) || actorLevel);
-  const levelDanger = Math.min(0.08, Math.max(0, enemyLevel - actorLevel) * 0.01);
-  const mapDanger = dg.dungeon && (dg.dungeon.isHidden || dg.dungeon.specialEvent) ? 0.02 : 0;
-  const maxHp = Math.max(1, Number(actor.max_hp || 100));
-  const floor = Math.round(maxHp * Math.min(0.35, base + levelDanger + mapDanger));
+  const mapDanger = dg.dungeon && (dg.dungeon.isHidden || dg.dungeon.specialEvent) ? 0.01 : 0;
+  const maxHp = Math.max(1, Number(actor.max_hp) || 100);
+  const bossMultiplier = stageKey === 'boss' ? 1.25 : 1;
+  const floor = Math.round(maxHp * Math.min(0.25, (base + mapDanger) * bossMultiplier));
+  if (floor <= 0) return 0;
+  dg._damageFloorGuard.add(key);
   const currentHp = Number.isFinite(Number(actor.hp)) ? Math.max(0, Number(actor.hp)) : maxHp;
-  const nonLethal = Math.max(0, currentHp - 1);
-  return Math.max(0, Math.min(floor, nonLethal));
+  return Math.max(0, Math.min(floor, Math.max(0, currentHp - 1)));
+}
+
+function clampOutcomeDamage(dg, stageKey, actor, outcome, aiDamage) {
+  if (!dg || !actor || actor.isDead) return 0;
+  const caps = stageKey === 'boss' ? BOSS_DAMAGE_CAP_PCT : DAMAGE_CAP_PCT;
+  const maxHp = Math.max(1, Number(actor.max_hp) || 100);
+  const cap = Math.round(maxHp * (caps[outcome] || 0));
+  const aiDmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const floor = resolveDamageFloor(dg, stageKey, actor, outcome);
+  return Math.max(Math.min(aiDmg, cap), floor);
 }
 
 /* 单步效果应用：AI 伤害/首领掉落/突破结果（服务端权威修改 party 成员状态） */
 function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal = 0, healAllowed = false, healTarget = actor) {
   const g = dg.memberGains[actor.id];
-  const aiDmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
-  const dmg = Math.max(aiDmg, resolveDamageFloor(dg, stageKey, actor, outcome));
+  const dmg = clampOutcomeDamage(dg, stageKey, actor, outcome, aiDamage);
   if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
@@ -1100,7 +1186,7 @@ function createDg(hostChar, opts = {}) {
 }
 
 /* AI 请求体构造（与单机 generateStep 载荷一致） */
-function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, mod, total, itemUse, skillUse) {
+function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, mod, total, itemUse, skillUse, outcome) {
   const focus = dg.flowMode === 'dynamic'
     ? ((dg.focusPlan || [])[dg.totalStep] || (dg.focusPlan || []).at(-1) || null)
     : (dg.focusPlan || [])[dg.totalStep] || null;
@@ -1118,9 +1204,18 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
     minSteps: Number(dg.minSteps == null ? 10 : dg.minSteps), preferredMaxSteps: Number(dg.preferredMaxSteps == null ? 25 : dg.preferredMaxSteps), maxSteps: Number(dg.maxSteps == null ? 40 : dg.maxSteps),
     lastDecision: dg.lastDecision || {}, nextHint: dg.nextHint || '',
     stage: stageKey, stageLabel: dg.flowMode === 'dynamic' ? (AI_PHASE_LABELS[stageKey] || stageKey) : ((dg.plan && dg.plan[dg.planIdx] || {}).label || stageKey),
-    roll: null, mod: null, total: null, actor: actor.name,
-    support: support ? support.name : null, support2: support2 ? support2.name : null, attr: '',
+    roll: roll == null ? null : Number(roll),
+    mod: mod == null ? null : Number(mod),
+    total: total == null ? null : Number(total),
+    actor: actor.name,
+    support: support ? support.name : null, support2: support2 ? support2.name : null, attr: attrKey || '',
     needsCheck: dg.flowMode === 'dynamic' ? !['opening', 'closing', 'rest', 'retreat'].includes(stageKey) : !!((dg.plan && dg.plan[dg.planIdx] || {}).check),
+    actionCheck: roll == null || mod == null || total == null ? null : {
+      roll: Number(roll),
+      mod: Number(mod),
+      total: Number(total),
+      outcome: outcome || null,
+    },
     focus: focus ? { actor: actor.name, step: focus.focusStep, size: focus.windowSize, highlight: !!focus.highlight, mode: focus.mode } : null,
     allowedCharacters, forbiddenCharacters,
     stepNo: dg.totalStep + 1, totalSteps: Number(dg.maxSteps == null ? ((dg.plan || []).reduce((a, p) => a + p.steps, 0) || 40) : dg.maxSteps),
@@ -1148,6 +1243,7 @@ module.exports = {
   rollD20, pick, pickSpecialEvent, itemBonus, realmBonus, realmDiffMod, elemMatchMod,
   dungeonLevelBand, clampDungeonLevel, dungeonBossLevels,
   rollEnemies, pickDungeon, buildPlan, buildNarrativeFocusPlan, dynamicNarrativeFocus, appendDynamicNarrativeFocus, itemUseCheck, recordItemLoan, recordItemLoansFromText, collectItemLoansFromText, itemUseExplicitInText, consumeItemUse, settleItemLoans, availableItemsForActor, skillUseCheck, parseLootMarkers, extractGold,
+  attributeModifier, equipmentModifier, skillModifier, resolveActionCheck,
   registerLootOwnership, validateStepItemUsage, itemGuardFeedback,
   applyStageEffects, resolveDamageFloor, genNpc, createDg, aiStoryPayload, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,
   applyLevelGrowth, applyExperience, parseLearnedSkills, applyLearnedSkills,
