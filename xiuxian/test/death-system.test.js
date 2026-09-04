@@ -26,24 +26,42 @@ test('applyStageEffects marks a member dead when hp reaches zero', () => {
   assert.equal(dg.deaths.length, 1, 'dead member should only be recorded once');
 });
 
-test('AI damage is authoritative and positive damage applies regardless of outcome', () => {
+test('negative combat outcomes receive a real damage floor instead of zero', () => {
   const dg = {
     damage: 0,
     deaths: [],
     memberGains: { u1: { damage: 0, fumbles: 0 } },
-    _curEnemy: null,
+    _curEnemy: { realm: '练气一层' },
     bossDrops: [],
   };
-  const actor = { id: 'u1', name: '测试修士', hp: 100, max_hp: 100 };
+  const actor = { id: 'u1', name: '测试修士', hp: 100, max_hp: 100, level: 1 };
 
   applyStageEffects(dg, 'battle', actor, 0, 'bad', 0);
-  assert.equal(actor.hp, 100);
-  assert.equal(dg.damage, 0);
+
+  assert.equal(actor.hp, 90);
+  assert.equal(dg.damage, 10);
+  assert.equal(dg.memberGains.u1.damage, 10);
+});
+
+test('positive AI damage still applies and the floor never auto-kills', () => {
+  const dg = {
+    damage: 0,
+    deaths: [],
+    memberGains: { u1: { damage: 0, fumbles: 0 }, u2: { damage: 0, fumbles: 0 } },
+    _curEnemy: { realm: '练气三层' },
+    bossDrops: [],
+  };
+  const actor = { id: 'u1', name: '测试修士', hp: 100, max_hp: 100, level: 1 };
 
   applyStageEffects(dg, 'battle', actor, 0, 'good', 7);
   assert.equal(actor.hp, 93);
   assert.equal(dg.damage, 7);
   assert.equal(dg.memberGains.u1.damage, 7);
+
+  const lowActor = { id: 'u2', name: '低血修士', hp: 10, max_hp: 100, level: 1 };
+  applyStageEffects(dg, 'boss', lowActor, 0, 'fumble', 0);
+  assert.equal(lowActor.hp, 1);
+  assert.equal(lowActor.isDead, undefined);
 });
 
 test('successful AI healing restores HP without exceeding max HP', () => {

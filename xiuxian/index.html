@@ -1585,6 +1585,7 @@ function createRole() {
     skillPool: [],          // 功法库（已学未装备，可随时装卸）
     equipment: [],           // 随身法宝（最多 5 件）
     bag: [...charSel.items].map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind }; }),  // 储物袋（100 格）
+    consumableSlots: [],     // 消耗品栏（2 格，仅引用储物袋中的消耗品）
     latest_score: 0, praise_count: 0, is_followed: false,
   };
   localStorage.setItem('xiuxian_role', JSON.stringify(role));
@@ -1627,6 +1628,7 @@ function showDeathDialog(roleName, dungeonName, logId, deathSummary = '') {
   showModal();
 }
 window.showDeathDialog = showDeathDialog;
+const CONSUMABLE_SLOT_LIMIT = 2;
 function loadRole() {
   try {
     const r = JSON.parse(localStorage.getItem('xiuxian_role') || 'null');
@@ -1639,6 +1641,8 @@ function loadRole() {
       // 兼容旧存档：补充储物袋/功法字段
       if (!Array.isArray(r.bag)) r.bag = [];
       if (!Array.isArray(r.equipment)) r.equipment = [];
+      if (!Array.isArray(r.consumableSlots)) r.consumableSlots = [];
+      normalizeConsumableSlots(r, true);
       if (!Array.isArray(r.skills)) {
         const rootKey = Object.keys(ROOT_KEYS).find(k => (r.traits || []).includes(ROOT_KEYS[k].label)) || 'jin';
         r.skills = ROOT_SKILLS[rootKey].map(s => ({ ...s }));
@@ -1689,6 +1693,79 @@ loadFeed();  // 载入最近动态（道具/灵石流水）
 /* ---------- 储物袋 / 随身法宝 ---------- */
 function saveRole() {
   if (D.my_adventurer) localStorage.setItem('xiuxian_role', JSON.stringify(D.my_adventurer));
+}
+function itemIsConsumable(item) {
+  if (!item) return false;
+  if (item.consumable === true) return true;
+  return ['pill', 'talisman', 'consumable'].includes(String(item.kind || '').toLowerCase());
+}
+function normalizeConsumableSlots(role, pruneMissing = false) {
+  if (!role || typeof role !== 'object') return false;
+  if (!Array.isArray(role.consumableSlots)) role.consumableSlots = [];
+  const seen = new Set();
+  role.consumableSlots = role.consumableSlots
+    .filter(entry => {
+      if (!entry || !entry.name || !itemIsConsumable(entry)) return false;
+      const key = String(entry.name || '').trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, CONSUMABLE_SLOT_LIMIT)
+    .map(entry => ({
+      name: String(entry.name || '').slice(0, 24),
+      desc: String(entry.desc || '').slice(0, 200),
+      kind: entry.kind || 'consumable',
+      rarity: entry.rarity || 'common',
+      qty: 1,
+    }));
+  if (pruneMissing) {
+    role.consumableSlots = role.consumableSlots.filter(entry => {
+      const list = [...(role.bag || []), ...(role.equipment || [])];
+      return list.some(item => item && String(item.name || '') === String(entry.name)
+        && Number(item.qty == null ? 1 : item.qty) > 0);
+    });
+  }
+  return role.consumableSlots.length <= CONSUMABLE_SLOT_LIMIT;
+}
+function equipConsumableFromBag(bagIdx) {   // 储物袋 -> 消耗品栏（快捷引用，本体仍在储物袋）
+  const role = D.my_adventurer;
+  if (!role) return;
+  if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+    window.onlineCharacterAction('consumable_slot_equip', { index: bagIdx }).then(() => refreshAdvSec('combat')).catch(e => toastMsg(e.message || '放入失败'));
+    return;
+  }
+  const it = (role.bag || [])[bagIdx];
+  if (!it) return;
+  if (!itemIsConsumable(it)) { toastMsg('只能放入消耗品'); return; }
+  normalizeConsumableSlots(role);
+  if ((role.consumableSlots || []).some(slot => slot && String(slot.name || '').trim().toLowerCase() === String(it.name || '').trim().toLowerCase())) {
+    toastMsg('该消耗品已在消耗品栏中');
+    return;
+  }
+  if (role.consumableSlots.length >= CONSUMABLE_SLOT_LIMIT) { toastMsg('消耗品栏已满（2/2），请先卸下一个'); return; }
+  role.consumableSlots.push({
+    name: String(it.name || '').slice(0, 24),
+    desc: String(it.desc || '').slice(0, 200),
+    kind: it.kind || 'consumable',
+    rarity: it.rarity || 'common',
+    qty: 1,
+  });
+  saveRole();
+  refreshAdvSec('combat');
+  toastMsg('🧪 已放入消耗品栏');
+}
+function unequipConsumableSlot(slotIdx) {   // 消耗品栏 -> 清除快捷引用（道具留在储物袋）
+  const role = D.my_adventurer;
+  if (!role) return;
+  if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+    window.onlineCharacterAction('consumable_slot_unequip', { slot: slotIdx }).then(() => refreshAdvSec('combat')).catch(e => toastMsg(e.message || '卸下失败'));
+    return;
+  }
+  if (!Array.isArray(role.consumableSlots) || !role.consumableSlots[slotIdx]) return;
+  role.consumableSlots.splice(slotIdx, 1);
+  saveRole();
+  refreshAdvSec('combat');
 }
 function bagAdd(role, item) {
   if (!Array.isArray(role.bag)) role.bag = [];
@@ -2617,11 +2694,12 @@ function memberStatusPanelHTML(s, logId) {
         <div class="member-status-card ${m.is_mine ? 'mine' : ''}">
           <div class="msc-head">
             <span class="msc-name">${esc(m.name)}</span>
+            ${m.levelUp ? '<span class="level-up-badge">修为提升</span>' : ''}
             <span class="msc-fate ${m.fate === '健康' ? 'ok' : (m.fate === '阵亡' ? 'dead' : 'hurt')}">${esc(m.fate)}</span>
             <span class="msc-score">${m.score}</span>
           </div>
           <div class="msc-line">
-            ${m.damage ? `<span class="msc-dmg">💔 气血-${m.damage}</span>` : ''}
+            ${settlementHpSpan(m)}
             ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 灵石</span>` : ''}
             ${(m.statBuffs || []).map(b => `<span class="msc-buff">${esc(b)}</span>`).join('')}
           </div>
@@ -3027,6 +3105,7 @@ function genNpc(name) {
       max_stamina: preset.max_stamina != null ? preset.max_stamina : 100,
       hpTs: now,
       staminaTs: now,
+      consumableSlots: [],
     };
   }
   const rand = () => 1 + Math.floor(Math.random() * 20);
@@ -3039,7 +3118,7 @@ function genNpc(name) {
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 0, character_class: '练气' + (1 + Math.floor(Math.random() * 10)) + '层', personality: PERS_LIST[Math.floor(Math.random() * PERS_LIST.length)],
     traits: [ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, '初入仙途'],
-    equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i),
+    equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i), consumableSlots: [],
     latest_score: 0, praise_count: 0, is_followed: false,
   };
 }
@@ -3165,6 +3244,13 @@ async function startDungeon(role, npcs, choice) {
   const dg = { id: dungeonSeq++, logNumber: nextLogId(), dungeon, party, plan: buildPlan(isHidden, enemies.length, specialEvent, breakthrough), planIdx: 0, stepIdx: 0, totalStep: 0, steps: [], damage: 0, deaths: [], status: 'running', startedAt: Date.now(), timer: null, memberGains: {}, bossDrops: [], _curEnemy: null };
   dg.focusPlan = buildNarrativeFocusPlan(dg);
   dg.party.forEach(m => { dg.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 }; });
+  dg.entryHp = {};
+  dg.party.forEach(m => {
+    dg.entryHp[m.id || m.uid] = {
+      hp: Math.max(0, Number(m.hp) || 0),
+      max_hp: Math.max(1, Number(m.max_hp) || 100),
+    };
+  });
   role.stamina = Math.max(0, (role.stamina || 0) - 10);  // 进入副本消耗 10 精力
   role.hpTs = Date.now();  // 进入副本重置气血计时（探险中不回复，从结算时刻重新起算）
   role.status = 'adventuring';
@@ -3187,11 +3273,56 @@ function scheduleTick(dg) {  dg.timer = setTimeout(async () => {
   }, 3500);
 }
 const AI_STEP_OUTCOMES = ['crit', 'good', 'mid', 'bad', 'fumble'];
+const RECOVERY_EFFECT_RE = /(?:治疗|治愈|疗愈|愈合|疗伤|回春|回血|续命|包扎|止血|恢复(?:了)?(?:生命|气血|伤口|伤势|体力|气力|元气)|伤(?:口|势)(?:渐渐|慢慢|迅速|很快|正在|终于|肉眼可见)[^。！？\n]{0,10}(?:愈合|好转|复原|收拢))/;
+const RECOVERY_FAIL_RE = /(?:未能|没能|无法|没有生效|未生效|未曾|并未|不曾|失败|无效|作罢)/;
+function recoverySentenceInText(text) {
+  const body = String(text || '').replace(/【[^】]*】/g, '');
+  const sentence = String(body).split(/[。！？；\n]+/).find(part => RECOVERY_EFFECT_RE.test(part));
+  return sentence && !RECOVERY_FAIL_RE.test(sentence) ? sentence : '';
+}
+function resolveHealTargetFromText(dg, actor, text) {
+  const actorName = actor && String(actor.name || '').trim();
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const healSentence = recoverySentenceInText(text);
+  if (!healSentence) return actor || null;
+  const others = party.filter(member => member && member !== actor && member.name && healSentence.includes(member.name));
+  if (!others.length) return actor || null;
+  const markerHits = ['为', '给', '帮', '替', '救', '喂', '护住', '包扎', '治疗', '治愈', '拉住', '扶起'];
+  for (const member of others) {
+    const at = healSentence.indexOf(member.name);
+    const before = healSentence.slice(Math.max(0, at - 16), at);
+    if (markerHits.some(mark => before.includes(mark))) return member;
+  }
+  if (!actorName || !healSentence.includes(actorName)) return others[0];
+  const selfWound = /(?:自己|自身|她|他)(?:的)?(?:伤口|焦皮|灼伤|烧伤|伤势|手臂|手臂伤)/.test(healSentence);
+  if (!selfWound) {
+    const actorAt = healSentence.indexOf(actorName);
+    const after = others.find(member => healSentence.indexOf(member.name) > actorAt);
+    if (after) return after;
+  }
+  return actor;
+}
+function resolveHealInfo(dg, actor, text, healTargetHint, options) {
+  const hintName = healTargetHint && typeof healTargetHint === 'object'
+    ? String(healTargetHint.name || '').trim()
+    : String(healTargetHint || '').trim();
+  const explicitUse = !!(options && options.explicitUse);
+  const textHeal = !!recoverySentenceInText(text);
+  const allowed = explicitUse || textHeal;
+  if (!allowed) return { allowed: false, target: actor || null };
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const hintTarget = party.find(member => member && member.name && member.name === hintName) || null;
+  const target = hintTarget || resolveHealTargetFromText(dg, actor, String(text || ''));
+  return { allowed: true, target: target || actor || null };
+}
 function normalizeAiStepResult(raw, fallbackOutcome) {
   const input = raw && typeof raw === 'object' ? raw : {};
   const outcome = AI_STEP_OUTCOMES.includes(input.outcome) ? input.outcome : fallbackOutcome;
   const damage = Number.isFinite(Number(input.damage)) ? Math.max(0, Math.round(Number(input.damage))) : 0;
   const heal = Number.isFinite(Number(input.heal)) ? Math.max(0, Math.round(Number(input.heal))) : 0;
+  const healTarget = input.healTarget && typeof input.healTarget === 'object'
+    ? String(input.healTarget.name || '').trim().slice(0, 30)
+    : String(input.healTarget || '').trim().slice(0, 30) || null;
   const itemUse = input.itemUse && input.itemUse.name
     ? { name: String(input.itemUse.name).trim().slice(0, 20), success: input.itemUse.success === true }
     : null;
@@ -3207,7 +3338,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
       rarity: ['common', 'rare', 'epic', 'legendary'].includes(entry && entry.rarity) ? entry.rarity : null,
     };
   }).filter(Boolean);
-  return { outcome, damage, heal, itemUse, skillUse, loot };
+  return { outcome, damage, heal, healTarget, itemUse, skillUse, loot };
 }
 /* AI 返回的装备/丹药使用：只从本步主角自己的随身法宝与储物袋里解析 */
 function resolveAiItemUse(dg, actor, entry) {
@@ -3254,6 +3385,24 @@ function collectClientOwnedItems(dg) {
     });
   });
   return out;
+}
+function clientConsumableSlots(member) {
+  if (!member) return [];
+  const inventory = [...(member.bag || []), ...(member.equipment || [])];
+  return (member.consumableSlots || []).map(slot => {
+    if (!slot || !slot.name || !itemIsConsumable(slot)) return null;
+    const source = inventory.find(item => item && String(item.name || '') === String(slot.name));
+    if (!source || Number(source.qty == null ? 1 : source.qty) <= 0) return null;
+    return {
+      name: String(source.name || '').slice(0, 24),
+      desc: String(source.desc || slot.desc || '').slice(0, 200),
+      kind: source.kind || slot.kind || 'consumable',
+      rarity: source.rarity || slot.rarity || 'common',
+      qty: Math.max(1, Number(source.qty == null ? 1 : source.qty) || 1),
+      ownerId: member.id,
+      ownerName: member.name || '',
+    };
+  }).filter(Boolean).slice(0, 2);
 }
 function availableItemsForActor(dg, actor) {
   return collectClientOwnedItems(dg).filter(i => i.ownerId === actor.id || i.loaned);
@@ -3303,15 +3452,19 @@ async function dungeonTick(dg) {
   const cleanText = text.replace(/【获得：[^】]*】/g, '').trim();
   // 消耗品（丹药/符箓）：AI 判定成功且本步使用 → 记录待结算扣除
   const itemExplicit = itemUse && itemUse.success && itemUseExplicitInText(cleanText, itemUse.item, actor);
-  const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
-  if (itemExplicit && (itemUse.item.kind === 'pill' || itemUse.item.kind === 'talisman')) {
+  const healItemAllowed = itemExplicit && itemIsConsumable(itemUse.item);
+  const healSkillAllowed = !!(skillUse && skillUse.success);
+  const healInfo = resolveHealInfo(dg, actor, cleanText, gs.healTarget || '', { explicitUse: healItemAllowed || healSkillAllowed });
+  const healAllowed = healInfo.allowed;
+  const healTarget = healAllowed ? (healInfo.target || actor) : actor;
+  if (itemExplicit && itemIsConsumable(itemUse.item)) {
     if (!dg.consumed) dg.consumed = [];
     dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common' });
   }
   // 突破试炼：本步判定成功（good/crit）→ 突破功成标记，结算时晋级筑基前期
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, aiHeal: gs.heal || 0, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier || '黄阶', elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
-  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs.heal, healAllowed);
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, aiHeal: gs.heal || 0, healTargetName: healAllowed && healTarget ? healTarget.name : null, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier || '黄阶', elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs.heal, healAllowed, healTarget);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
   if (support && cleanText.includes(support.name)) { const sg = dg.memberGains[support.id]; if (sg) sg.acts++; }
@@ -3681,11 +3834,13 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
         totalSteps: dg.plan.reduce((a, p) => a + p.steps, 0),
         enemy: dg._curEnemy ? { name: dg._curEnemy.name, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
         itemUse: null,
+        consumableSlots: clientConsumableSlots(actor),
         availableItems: availableItemsForActor(dg, actor),
         ownedItems: collectClientOwnedItems(dg),
         skillUse: null,
         party: dg.party.map(m => ({
           name: m.name, gender: m.gender || '男', realm: m.character_class || '', root: (m.traits && m.traits[0]) || '',
+          hp: Math.max(0, Number(m.hp) || 0), max_hp: Math.max(1, Number(m.max_hp) || 100),
           personality: m.personality || '', traits: m.traits || [],
           skills: (m.skills || []).map(s => ({ name: s.name, type: s.type || '', tier: skillTier(s), desc: s.desc || '' })),
           equipment: (m.equipment || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
@@ -3698,7 +3853,7 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
     const j = await r.json();
     if (j && j.text) {
       const step = normalizeAiStepResult(j, (dg.plan[dg.planIdx] || {}).check ? 'mid' : 'good');
-      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, heal: step.heal, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
+      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, heal: step.heal, healTarget: step.healTarget, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
     }
     throw new Error('服务器返回异常：' + (j.error || 'AI 返回空内容'));
   } catch (e) {
@@ -3710,10 +3865,36 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
   }
 }
 
+/* ---------- AI 伤害保底：与联机 xiuxian/game-engine.js 的 resolveDamageFloor 保持一致 ---------- */
+const DAMAGE_FLOOR_PCT = {
+  battle: { mid: 0.05, bad: 0.10, fumble: 0.18 },
+  boss: { mid: 0.06, bad: 0.14, fumble: 0.22 },
+  encounter: { bad: 0.08, fumble: 0.16 },
+  explore: { bad: 0.06, fumble: 0.10 },
+  loot: { bad: 0.05, fumble: 0.09 },
+  retreat: { bad: 0.08, fumble: 0.16 },
+  breakthrough: { bad: 0.06, fumble: 0.12 },
+};
+function resolveDamageFloor(dg, stageKey, actor, outcome) {
+  if (!dg || !actor || actor.isDead) return 0;
+  const base = (DAMAGE_FLOOR_PCT[stageKey] || {})[outcome] || 0;
+  if (!base) return 0;
+  const actorVal = actorRealmVal(actor);
+  const enemyVal = enemyRealmVal(dg._curEnemy && dg._curEnemy.realm);
+  const realmDanger = enemyVal > actorVal ? Math.min(0.08, (enemyVal - actorVal) * 0.01) : 0;
+  const mapDanger = dg.dungeon && (dg.dungeon.isHidden || dg.dungeon.specialEvent) ? 0.02 : 0;
+  const maxHp = Math.max(1, Number(actor.max_hp || 100));
+  const floor = Math.round(maxHp * Math.min(0.35, base + realmDanger + mapDanger));
+  const currentHp = Number.isFinite(Number(actor.hp)) ? Math.max(0, Number(actor.hp)) : maxHp;
+  const nonLethal = Math.max(0, currentHp - 1);
+  return Math.max(0, Math.min(floor, nonLethal));
+}
+
 /* ---------- 阶段效果（记录每名成员的 AI 战损与收获） ---------- */
-function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage, aiHeal = 0, healAllowed = false) {
+function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage, aiHeal = 0, healAllowed = false, healTarget = actor) {
   const g = dg.memberGains[actor.id];
-  const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const aiDmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const dmg = Math.max(aiDmg, resolveDamageFloor(dg, stageKey, actor, outcome));
   if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
@@ -3725,13 +3906,16 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
     }
   }
   const heal = Number.isFinite(Number(aiHeal)) ? Math.max(0, Math.round(Number(aiHeal))) : 0;
-  if (healAllowed && heal > 0 && actor.hp > 0 && !actor.isDead) {
-    const beforeHp = Math.max(0, Number(actor.hp) || 0);
-    const maxHp = Math.max(0, Number(actor.max_hp) || 100);
+  const target = healTarget || actor;
+  const targetGKey = target.uid || target.id || target.charId || target.name;
+  const tg = targetGKey ? dg.memberGains[targetGKey] : null;
+  if (healAllowed && heal > 0 && target && Number(target.hp || 0) > 0 && !target.isDead) {
+    const beforeHp = Math.max(0, Number(target.hp) || 0);
+    const maxHp = Math.max(0, Number(target.max_hp) || 100);
     const actualHeal = Math.max(0, Math.min(maxHp, beforeHp + heal) - beforeHp);
-    actor.hp = beforeHp + actualHeal;
+    target.hp = beforeHp + actualHeal;
     dg.healing = (dg.healing || 0) + actualHeal;
-    if (g) g.healing = (g.healing || 0) + actualHeal;
+    if (tg) tg.healing = (tg.healing || 0) + actualHeal;
   }
   if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     // 首领战：胜利掉落首领专属战利品，是否受伤完全由 AI damage 决定
@@ -4155,6 +4339,7 @@ async function settleDungeon(dg) {
       }
     }
   });
+  if (consumed.length) normalizeConsumableSlots(role, true);
   const levelUp = [];
   applyLocalExperience(role, expFinal).forEach(level => {
     role.character_class = realmForLevel(level);
@@ -4201,6 +4386,8 @@ async function settleDungeon(dg) {
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [String(entry.name || '').trim(), String(entry.reason || '').trim().slice(0, 100)]));
   const members = dg.party.map(m => {
     const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], traits: [], crits: 0, fumbles: 0 };
+    const entry = (dg.entryHp || {})[m.id || m.uid];
+    const hpEntry = entry && Number.isFinite(Number(entry.hp)) ? Number(entry.hp) : null;
     const avgR = g.rolls.length ? g.rolls.reduce((a, b) => a + b, 0) / g.rolls.length : 10;
     const score = Math.max(5, Math.min(9.5, +(5 + avgR * 0.16 + g.crits * 0.3 - g.fumbles * 0.5).toFixed(1)));
         // 灵石：统计整篇剧情的明确获得数量后由全队平分；没有明确获得时为 0。
@@ -4224,7 +4411,7 @@ async function settleDungeon(dg) {
     }
     // 点赞数：初始为历史累积（5~150）
     const praise = 5 + Math.floor(Math.random() * 146);
-    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, newTraits: memberNewTraits, praise };
+    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, newTraits: memberNewTraits, praise, hpDelta: Number.isFinite(hpEntry) ? Math.max(0, Number(m.hp) || 0) - hpEntry : null, levelUp: !!m.is_mine && levelUp.length > 0 };
   });
   saveRole();
   const log = {
@@ -4299,12 +4486,29 @@ function showSettlementById(id) {
   const log = (D.logs || []).find(l => logKey(l) === String(id));
   if (log) showSettlement(log);
 }
+function settlementHpView(m) {
+  const delta = Number(m && m.hpDelta);
+  if (Number.isFinite(delta)) {
+    if (delta === 0) return { text: '', cls: '' };
+    return delta > 0 ? { text: '+' + delta, cls: 'heal' } : { text: String(delta), cls: 'dmg' };
+  }
+  const damage = Number(m && m.damage || 0);
+  return damage > 0 ? { text: '-' + damage, cls: 'dmg' } : { text: '', cls: '' };
+}
+function settlementHpSpan(m) {
+  const hp = settlementHpView(m);
+  if (!hp.text) return '';
+  const icon = hp.text[0] === '-' ? '💔 气血' : '💚 气血+';
+  const amount = hp.text.slice(1);
+  return `<span class="settlement-hp ${hp.cls}">${icon}${amount}</span>`;
+}
 function showSettlement(log) {
   const box = $('#modal-box');
   box.classList.remove('log-modal');
   const s = log.settlement;
   const snap = log.dg_snapshot || { icon: '⚔️', name: log.dungeon_name, desc: '', steps: [], party: [] };
   const my = s.members.find(m => m.is_mine);
+  const myHp = settlementHpView(my);
   const ok = log.status === 'completed';
   box.innerHTML = `
     <button class="modal-close" onclick="closeModal()">✕</button>
@@ -4320,7 +4524,7 @@ function showSettlement(log) {
     <div class="st2-stats">
       <div class="st2-stat"><div class="st2-v gold">+${s.exp}</div><div class="st2-k">获得经验</div></div>
       <div class="st2-stat"><div class="st2-v gold">+${my ? my.gold : 0}</div><div class="st2-k">灵石</div></div>
-      <div class="st2-stat"><div class="st2-v red">-${s.damage}</div><div class="st2-k">战损气血</div></div>
+      <div class="st2-stat"><div class="st2-v ${myHp.cls || 'red'}">${myHp.text || '0'}</div><div class="st2-k">气血变化</div></div>
       <div class="st2-stat"><div class="st2-v">${my ? my.score : '-'}</div><div class="st2-k">我的评分</div></div>
       <div class="st2-stat"><div class="st2-v">${s.members.length}</div><div class="st2-k">队伍人数</div></div>
     </div>
@@ -4336,7 +4540,7 @@ function showSettlement(log) {
           <div class="st2-my-v">${s.traits.length ? s.traits.map(t => `<span class="st2-trait">${esc(t)}</span>`).join('') : '<span class="st2-none">无</span>'}</div>
         </div>
         ${s.consumed && s.consumed.length ? `<div class="st2-my-box">
-          <div class="st2-my-k">剧情消耗（已扣除）</div>
+          <div class="st2-my-k">消耗品已消耗（已从背包扣除）</div>
           <div class="st2-my-v">${s.consumed.map(n => `<span class="st2-item" style="color:${itemColor(n)}">${esc(n.name || n)} ×1</span>`).join('')}</div>
         </div>` : ''}
       </div>
@@ -4348,12 +4552,13 @@ function showSettlement(log) {
           <div class="st2-member ${m.is_mine ? 'mine' : ''}">
             <div class="st2m-left">
               <span class="st2m-name">${esc(m.name)}</span>
+              ${m.levelUp ? '<span class="level-up-badge">修为提升</span>' : ''}
               <span class="st2m-fate ${m.fate === '健康' ? 'ok' : (m.fate === '阵亡' ? 'dead' : 'hurt')}">${esc(m.fate)}</span>
             </div>
             <div class="st2m-mid">
               <span class="st2m-score">${m.score}</span>
               <span class="st2m-gold">+${m.gold} 灵石</span>
-              ${m.damage ? `<span class="st2m-dmg">-${m.damage}</span>` : ''}
+              ${settlementHpSpan(m)}
               ${(m.statBuffs || []).map(b => `<span class="st2m-buff">${esc(b)}</span>`).join('')}
             </div>
             ${m.loot.length ? `<div class="st2m-loot">${m.loot.map(x => `<span style="color:${itemColor(x)}">${esc(x.name)}</span><em>${RARITY_NAME[x.rarity] || x.rarity}</em>`).join('　')}</div>` : ''}
@@ -4619,7 +4824,21 @@ function advTabProfile(adv) {
 function advTabCombat(adv) {
   // —— 随身法宝：纵向卡片，名称 + 稀有度 + 描述 + 卸下 ——
   const eq = (adv.equipment || []);
-  let html = `<div class="ad-sec-title">随身法宝（${eq.length} / 5）</div>`;
+  let html = '';
+  if (adv.is_mine) {
+    const slots = (adv.consumableSlots || []).slice(0, 2);
+    html += `<div class="ad-sec-title">消耗品栏（${slots.length} / 2）</div>
+    <div class="consumable-slot-grid">
+      ${[0, 1].map(i => {
+        const slot = slots[i];
+        const inv = slot ? [...(adv.bag || []), ...(adv.equipment || [])].find(item => item && String(item.name || '') === String(slot.name)) : null;
+        const view = slot && inv ? { ...slot, qty: Number(inv.qty == null ? 1 : inv.qty) || 1 } : null;
+        return itemCardHTML(view || { name: '空槽位', desc: '', rarity: 'common' },
+          view && adv.is_mine ? `<button class="btn btn-sm" onclick="unequipConsumableSlot(${i})">卸下</button>` : '');
+      }).join('')}
+    </div>`;
+  }
+  html += `<div class="ad-sec-title">随身法宝（${eq.length} / 5）</div>`;
   html += eq.length ? `<div class="skill-pool-list">
     ${eq.map((e, i) => itemCardHTML(e, adv.is_mine ? `<button class="btn btn-sm" onclick="unequipToBag(${i})">卸下</button>` : '')).join('')}
   </div>` : '<div class="ad-empty">暂无随身法宝</div>';
@@ -4649,8 +4868,19 @@ function advTabCombat(adv) {
         <option value="name" ${advBagSort === 'name' ? 'selected' : ''}>按名称</option>
       </select>
     </div>`;
+    const slotNameKeys = new Set((adv.consumableSlots || [])
+      .map(s => String(s && s.name || '').trim().toLowerCase())
+      .filter(Boolean));
     html += bagList.length ? `<div class="skill-pool-list">
-      ${bagList.map(({ it, idx }) => itemCardHTML(it, adv.is_mine ? `<button class="btn btn-sm" onclick="equipFromBag(${idx})">装备</button>` : '')).join('')}
+      ${bagList.map(({ it, idx }) => {
+        const consumable = itemIsConsumable(it);
+        const alreadyInSlots = consumable && slotNameKeys.has(String(it.name || '').trim().toLowerCase());
+        const actionDisabled = alreadyInSlots || (consumable && (adv.consumableSlots || []).length >= 2);
+        const actions = consumable
+          ? `<button class="btn btn-sm" onclick="equipConsumableFromBag(${idx})" ${actionDisabled ? 'disabled' : ''}>${alreadyInSlots ? '已在栏中' : '放入消耗品'}</button>`
+          : `<button class="btn btn-sm" onclick="equipFromBag(${idx})">装备</button>`;
+        return itemCardHTML(it, adv.is_mine ? actions : '');
+      }).join('')}
     </div>
     ${list.length > 5 ? `<div class="list-expand-row"><button class="btn btn-sm" onclick="toggleAdvBagExpand()">${advBagExpanded ? '收起' : `展开全部（${list.length}）`}</button></div>` : ''}` : '<div class="ad-empty">储物袋空空如也</div>';
   }

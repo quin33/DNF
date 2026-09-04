@@ -80,7 +80,7 @@ test('admin character lookup includes the owning username', () => {
 
   assert.equal(character.username, username);
   assert.equal(character.id, characterId);
-  assert.deepEqual(character.data, characterData);
+  assert.deepEqual(character.data, { ...characterData, consumableSlots: [] });
 });
 
 test('admin save updates a matching version and rejects an outdated version', () => {

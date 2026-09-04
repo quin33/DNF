@@ -1691,6 +1691,25 @@ button { font-family: var(--font); }
 .st2m-score { font-size: 14px; font-weight: 800; color: #f0883e; font-variant-numeric: tabular-nums; }
 .st2m-gold { font-size: 12.5px; color: #ffc107; font-weight: 700; }
 .st2m-dmg { font-size: 12px; color: var(--color-danger); font-weight: 700; }
+.st2-v.heal { color: var(--color-success); }
+.st2-v.dmg { color: var(--color-danger); }
+.settlement-hp { font-size: 12px; font-weight: 700; }
+.settlement-hp.heal { color: var(--color-success); }
+.settlement-hp.dmg { color: var(--color-danger); }
+.level-up-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  line-height: 1;
+  font-weight: 900;
+  color: #3b2500;
+  background: #ffd166;
+  border: 1px solid #d9a311;
+  border-radius: 999px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  vertical-align: 1px;
+  letter-spacing: 0;
+}
 .st2m-buff {
   font-size: 12.5px;
   font-weight: 700;
@@ -2062,6 +2081,9 @@ button { font-family: var(--font); }
 .skill-desc { font-size: 11px; color: var(--color-text-secondary); line-height: 1.45; }
 .adv-detail-body .skill-name,
 .adv-detail-body .sc-name { font-weight: 700; }
+.consumable-slot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0 2px; }
+.consumable-slot-grid .skill-pool-item { min-width: 0; }
+.consumable-slot-grid .skill-pool-item .spi-head .skill-tier { margin-left: auto; }
 .skill-pool-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
 .skill-pool-item {
   border: 1px dashed var(--color-border);

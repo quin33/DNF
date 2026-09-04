@@ -450,6 +450,7 @@ test('admin can search players and read a character with its owner and version',
     ...originalCharacter,
     bag: originalCharacter.bag.map(item => ({ ...item, rarity: 'common' })),
     equipment: originalCharacter.equipment.map(item => ({ ...item, rarity: 'common' })),
+    consumableSlots: [],
   });
 
   const missing = await adminRequest('GET', '/api/admin/characters/999999999');

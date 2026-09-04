@@ -1,6 +1,6 @@
 /* ============================================================
-   深渊酒馆 S1 · 独立网页样式
-   复刻自 stock.xxapi.icu 深渊酒馆（AdventurerS1View）真实主题
+   月光酒馆 S1 · 独立网页样式
+   复刻自 stock.xxapi.icu 月光酒馆（AdventurerS1View）真实主题
    ============================================================ */
 
 :root {
@@ -24,7 +24,7 @@
   --color-shadow: #00000066;
   color-scheme: dark;
 
-  /* 深渊酒馆主题色 */
+  /* 月光酒馆主题色 */
   --outpost-brass: #5d87b3;
   --amber: #e6a817;
   --wood: #805a3b;
@@ -186,7 +186,7 @@ button { font-family: var(--font); }
   box-shadow: 0 0 28px rgba(0, 0, 0, 0.16);
 }
 
-/* ============ 深渊酒馆页头 ============ */
+/* ============ 月光酒馆页头 ============ */
 .advs1 {
   box-sizing: border-box;
   width: 100%;
@@ -763,6 +763,12 @@ button { font-family: var(--font); }
 .tavern-hall-heading { justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; display: flex; }
 .tavern-hall-heading .col-title { align-items: center; gap: 8px; margin-bottom: 0; display: flex; }
 .tavern-hall-heading .col-title::before { content: "◆"; color: var(--copper); font-size: 11px; }
+.tavern-hall-subtitle {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 400;
+  white-space: nowrap;
+}
 
 .hall-bar {
   background: var(--paper-muted);
@@ -774,10 +780,12 @@ button { font-family: var(--font); }
 .hall-bar .bar-name { font-size: 13px; font-weight: 700; color: var(--wood-bright); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .hall-bar .bar-name::before { content: "◈"; color: var(--copper); }
 
-.bar-stools, .table-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; display: grid; }
+.bar-stools, .table-seats { gap: 8px; display: grid; }
+.bar-stools { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.table-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .table-seats { padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--wood) 24%, transparent); }
 
-.hall-tables { grid-template-columns: 1fr; gap: 12px; display: grid; }
+.hall-tables { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; display: grid; }
 .hall-table {
   background: var(--paper-raised);
   border: 1px solid color-mix(in srgb, var(--wood) 38%, var(--color-border));
@@ -786,14 +794,31 @@ button { font-family: var(--font); }
   padding: 11px;
   position: relative;
 }
+.table-head { justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 7px; display: flex; }
 .table-name {
   color: var(--wood);
   font-size: 12px;
   font-weight: 700;
-  margin-bottom: 8px;
+  min-width: 0;
   letter-spacing: .04em;
 }
 .table-name::before { content: "◆ "; color: var(--copper); }
+.table-capacity {
+  color: var(--color-text-secondary);
+  background: color-mix(in srgb, var(--copper) 9%, var(--paper-raised));
+  border: 1px solid color-mix(in srgb, var(--copper) 35%, var(--color-border));
+  border-radius: 999px;
+  flex: none;
+  padding: 1px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.table-note {
+  color: var(--color-text-secondary);
+  margin: 0 0 9px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
 
 .hall-hint {
   color: var(--color-text-secondary);
@@ -831,10 +856,32 @@ button { font-family: var(--font); }
 .seat-vacant:hover { border-color: var(--copper); color: var(--color-text); transform: translateY(-2px); }
 .seat-clickable { cursor: pointer; transition: transform .15s, border-color .15s, background .15s, box-shadow .15s; }
 .seat-clickable:hover { border-color: var(--moon-blue); background: color-mix(in srgb, var(--moon-blue) 7%, var(--paper-raised)); transform: translateY(-2px); box-shadow: 0 7px 16px color-mix(in srgb, var(--wood) 15%, transparent); }
+.seat-vacant.seat-clickable:hover { border-color: var(--copper); background: color-mix(in srgb, var(--copper) 8%, var(--paper-muted)); }
 .seat-mine {
   border-color: color-mix(in srgb, var(--copper) 65%, var(--color-border));
   background: color-mix(in srgb, var(--copper) 8%, var(--paper-raised));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--copper) 22%, transparent), 0 5px 13px color-mix(in srgb, var(--wood) 13%, transparent);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .15s, box-shadow .15s;
+}
+.seat-mine:hover {
+  border-color: var(--copper);
+  background: color-mix(in srgb, var(--copper) 14%, var(--paper-raised));
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--copper) 35%, transparent), 0 7px 15px color-mix(in srgb, var(--wood) 18%, transparent);
+}
+.seat-other { cursor: default; }
+.seat-meta {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.2;
+}
+.seat-mine-mark {
+  color: var(--copper);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 700;
+}
 }
 .seat-empty-icon { opacity: .72; filter: saturate(.78); font-size: 20px; line-height: 1; }
 .seat-empty-label { font-size: 11px; }
@@ -1614,6 +1661,9 @@ button { font-family: var(--font); }
 }
 .ad-sec-title { font-size: 12.5px; font-weight: 700; color: var(--color-text-secondary); margin: 2px 0 6px; letter-spacing: .04em; }
 .ad-empty { color: var(--color-text-secondary); font-size: 12.5px; padding: 14px 0; text-align: center; }
+.consumable-slot-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 8px 0 2px; }
+.consumable-slot-grid .skill-pool-item { min-width: 0; }
+.consumable-slot-grid .skill-pool-item .spi-head .skill-tier { margin-left: auto; }
 .bag-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
 .bag-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .bchip {
@@ -1919,6 +1969,25 @@ button { font-family: var(--font); }
 .st2m-score { font-size: 14px; font-weight: 800; color: #f0883e; font-variant-numeric: tabular-nums; }
 .st2m-gold { font-size: 12.5px; color: #ffc107; font-weight: 700; }
 .st2m-dmg { font-size: 12px; color: var(--color-danger); font-weight: 700; }
+.st2-v.heal { color: var(--color-success); }
+.st2-v.dmg { color: var(--color-danger); }
+.settlement-hp { font-size: 12px; font-weight: 700; }
+.settlement-hp.heal { color: var(--color-success); }
+.settlement-hp.dmg { color: var(--color-danger); }
+.level-up-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  line-height: 1;
+  font-weight: 900;
+  color: #3b2500;
+  background: #ffd166;
+  border: 1px solid #d9a311;
+  border-radius: 999px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  vertical-align: 1px;
+  letter-spacing: 0;
+}
 .st2m-buff {
   font-size: 12.5px;
   font-weight: 700;
@@ -2067,6 +2136,16 @@ button { font-family: var(--font); }
 .li-stock { font-size: 11.5px; color: var(--color-text-secondary); }
 .li-foot .btn { margin-left: auto; }
 .li-foot .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ============ 卡妮娜的杂货铺 ============ */
+.grocery-group-title {
+  margin: 4px 0 -2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: 0;
+}
+.grocery-group-title:not(:first-child) { margin-top: 12px; }
 
 /* ============ 公会邮箱 ============ */
 .mailbox-summary {
@@ -2883,12 +2962,76 @@ button { font-family: var(--font); }
   border-radius: 10px;
   padding: 9px 11px;
   cursor: pointer;
+  display: block;
+  text-align: left;
+  width: 100%;
   transition: border-color .15s, transform .1s;
 }
 .drink-item:hover { border-color: var(--color-primary); transform: translateY(-2px); }
+.drink-item .d-head { justify-content: flex-start; align-items: center; gap: 7px; display: flex; }
+.drink-item .d-icon { flex: none; font-size: 16px; line-height: 1; }
 .drink-item .d-name { font-size: 12.5px; font-weight: 600; }
-.drink-item .d-price { color: var(--color-primary); font-size: 11.5px; }
+.drink-item .d-price { color: var(--color-primary); font-size: 11px; margin-left: auto; white-space: nowrap; }
 .drink-item .d-desc { color: var(--color-text-secondary); font-size: 11px; line-height: 1.4; margin-top: 3px; }
+.drink-item.ordered {
+  border-color: color-mix(in srgb, var(--success) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--success) 9%, var(--color-bg));
+  cursor: default;
+}
+.drink-item.ordered .d-price { color: var(--success); }
+.drink-item.locked {
+  cursor: not-allowed;
+  opacity: .58;
+}
+.drink-item.ordered:hover, .drink-item.locked:hover { transform: none; }
+
+.modal-box.tavern-menu-box { max-width: 760px; }
+.tavern-order-summary {
+  align-items: center;
+  gap: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--copper) 38%, var(--color-border));
+  background: color-mix(in srgb, var(--copper) 7%, var(--color-bg));
+  border-radius: 10px;
+  margin: 2px 0 12px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  display: flex;
+  flex-wrap: wrap;
+}
+.tavern-order-summary strong { color: var(--color-text); }
+.tavern-current-row {
+  color: var(--color-text-secondary);
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tavern-current-tag {
+  color: var(--color-text);
+  border: 1px solid color-mix(in srgb, var(--success) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--success) 8%, var(--color-bg));
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+}
+.tavern-menu-group { margin: 10px 0 14px; }
+.tavern-menu-label {
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid color-mix(in srgb, var(--wood) 28%, var(--color-border));
+  margin-bottom: 8px;
+  padding-bottom: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+.tavern-order-foot {
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--wood) 28%, var(--color-border));
+  margin-top: 4px;
+  padding-top: 12px;
+  display: flex;
+}
 
 /* 分页 */
 .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 16px; }
@@ -3000,7 +3143,7 @@ button { font-family: var(--font); }
   .advs1-beacon { display: none; }
   .chat-col { width: 100%; }
   .hall-tables { grid-template-columns: 1fr; }
-  .bar-stools, .table-seats { grid-template-columns: 1fr; }
+  .table-seats { grid-template-columns: 1fr; }
   .tavern-layout { flex-direction: column; }
 }
 
@@ -3494,4 +3637,508 @@ button { font-family: var(--font); }
   }
   .site-nav-title { display: none; }
   .site-nav a { min-width: 0; padding: 6px 12px; }
+}
+
+/* ============ 角色卡 v2 · 冒险家出战档案 ============ */
+.role-grid, .adv-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  display: grid;
+}
+
+.role-card {
+  --class-accent: #31485c;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 38%, var(--color-border));
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--class-accent) 13%, transparent), transparent 42%),
+    linear-gradient(155deg, color-mix(in srgb, var(--class-accent) 5%, var(--paper-raised)), var(--paper-raised) 58%);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--wood) 10%, transparent);
+  cursor: pointer;
+  isolation: isolate;
+  overflow: hidden;
+  transition: border-color 160ms, transform 160ms, box-shadow 160ms;
+}
+.role-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--class-accent);
+  opacity: .9;
+}
+.role-card:hover,
+.role-card:focus-visible {
+  border-color: color-mix(in srgb, var(--class-accent) 72%, var(--color-border));
+  outline: none;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--wood) 16%, transparent);
+}
+.role-card:focus-visible {
+  box-shadow: 0 0 0 2px var(--class-accent), 0 8px 20px color-mix(in srgb, var(--wood) 14%, transparent);
+}
+.role-card.mine {
+  border-color: color-mix(in srgb, var(--class-accent) 70%, var(--color-border));
+}
+.role-card.dead {
+  opacity: .78;
+  filter: grayscale(.35);
+}
+.role-card.dead .role-status {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--paper-raised));
+}
+.role-card.dead .role-status::before { background: var(--color-danger); }
+.role-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.role-card--slayer { --class-accent: #b23a48; }
+.role-card--fighter { --class-accent: #b36a2a; }
+.role-card--gunner { --class-accent: #356d94; }
+.role-card--mage { --class-accent: #7553a8; }
+.role-card--priest { --class-accent: #3f7b68; }
+.role-card.title-frame--fate { --class-accent: #a88024; }
+.role-card.title-frame--developer { --class-accent: #2f6a91; }
+.role-card.title-frame--fate_companion { --class-accent: #3f7b68; }
+
+.role-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.role-id {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  padding-top: 1px;
+}
+.role-name {
+  color: var(--color-text);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.role-class {
+  color: var(--class-accent);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.role-level {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 38px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 42%, var(--color-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--class-accent) 8%, var(--paper-raised));
+}
+.role-level b {
+  color: var(--color-text);
+  font-family: var(--font-numeric);
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.role-level i {
+  color: var(--class-accent);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin-top: 3px;
+}
+.role-status {
+  --status-color: #6f7780;
+  flex: 0 0 auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--status-color) 48%, var(--color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-color) 10%, var(--paper-raised));
+  color: var(--color-text);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.role-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--status-color);
+  flex: none;
+}
+.role-status--in_party { --status-color: #2f6a91; }
+.role-status--adventuring { --status-color: #b45309; }
+.role-status--in_tavern, .role-status--in_tavern_activity { --status-color: #7c4dce; }
+.role-status--working { --status-color: #3f7b68; }
+.role-status--treating { --status-color: #2e7f6f; }
+.role-status--dead { --status-color: #a94b4b; }
+.role-status--cultivating { --status-color: #3f7b68; }
+.role-status--breaking_through { --status-color: #a88024; }
+.role-status--insighting { --status-color: #7553a8; }
+[data-theme="dark"] .role-status--in_party { --status-color: #79b8ff; }
+[data-theme="dark"] .role-status--adventuring { --status-color: #f5a524; }
+[data-theme="dark"] .role-status--in_tavern, [data-theme="dark"] .role-status--in_tavern_activity { --status-color: #c084fc; }
+[data-theme="dark"] .role-status--working { --status-color: #58c77b; }
+[data-theme="dark"] .role-status--treating { --status-color: #62d2b4; }
+[data-theme="dark"] .role-status--dead { --status-color: #ff6b63; }
+[data-theme="dark"] .role-status--cultivating { --status-color: #58c77b; }
+[data-theme="dark"] .role-status--breaking_through { --status-color: #e4b85c; }
+[data-theme="dark"] .role-status--insighting { --status-color: #c084fc; }
+
+.role-gauges {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.role-gauges--dossier {
+  margin-bottom: 14px;
+}
+.role-gauge {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.role-gauge-label {
+  color: var(--ink-muted, var(--color-text-secondary));
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.role-gauge-track {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 11%, transparent);
+  overflow: hidden;
+}
+.role-gauge-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--gauge-color, var(--class-accent));
+  transition: width 240ms;
+}
+.role-gauge--hp .role-gauge-fill { --gauge-color: linear-gradient(90deg, #b83950, #df665d); background: var(--gauge-color); }
+.role-gauge--stamina .role-gauge-fill { --gauge-color: linear-gradient(90deg, #477fae, #59a6a5); background: var(--gauge-color); }
+.role-gauge--exp .role-gauge-fill { --gauge-color: linear-gradient(90deg, var(--class-accent), color-mix(in srgb, var(--class-accent) 70%, #e4b85c)); background: var(--gauge-color); }
+.role-gauge-value {
+  min-width: 58px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-numeric);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.role-injury {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-danger) 9%, var(--paper-raised));
+  color: var(--color-danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+.role-injury-mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  flex: none;
+}
+
+.role-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 22%, var(--color-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--class-accent) 5%, var(--paper-raised));
+}
+.role-stat {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.role-stat em {
+  color: var(--ink-muted, var(--color-text-secondary));
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+.role-stat b {
+  color: var(--color-text);
+  font-family: var(--font-numeric);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.role-stat--gold b { color: var(--copper, #b98545); }
+
+.role-gear {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: start;
+}
+.role-gear-label {
+  color: var(--ink-muted, var(--color-text-secondary));
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 20px;
+}
+.role-gear-list {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.role-item {
+  --item-color: #6f7780;
+  min-width: 0;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid color-mix(in srgb, var(--item-color) 45%, var(--color-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--item-color) 8%, var(--paper-raised));
+  color: var(--item-color);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+.role-item-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.role-item-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.role-item em {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  opacity: .8;
+}
+.role-item[data-rarity="advanced"] { --item-color: #245f9b; }
+.role-item[data-rarity="rare"] { --item-color: #6d3fa1; }
+.role-item[data-rarity="artifact"] { --item-color: #b23675; }
+.role-item[data-rarity="epic"] { --item-color: #7c5a00; }
+.role-item[data-rarity="legendary"] { --item-color: #b45309; }
+.role-item[data-rarity="mythic"] { --item-color: #a82a83; }
+[data-theme="dark"] .role-item[data-rarity="advanced"] { --item-color: #5aa9e6; }
+[data-theme="dark"] .role-item[data-rarity="rare"] { --item-color: #b36bdb; }
+[data-theme="dark"] .role-item[data-rarity="artifact"] { --item-color: #ff8ac8; }
+[data-theme="dark"] .role-item[data-rarity="epic"] { --item-color: #ffd84d; }
+[data-theme="dark"] .role-item[data-rarity="legendary"] { --item-color: #ff8a3d; }
+[data-theme="dark"] .role-item[data-rarity="mythic"] { --item-color: #ff4fd8; }
+.role-gear-empty,
+.role-gear-more {
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  font-weight: 600;
+  opacity: .72;
+}
+
+.role-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px dashed color-mix(in srgb, var(--class-accent) 20%, var(--color-border));
+}
+.role-tags,
+.role-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.role-actions { margin-left: auto; }
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 36%, var(--color-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--class-accent) 7%, var(--paper-raised));
+  color: var(--ink-muted, var(--color-text-secondary));
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.role-chip--mine {
+  color: #fff;
+  background: var(--class-accent);
+  border-color: var(--class-accent);
+}
+.role-chip--score { color: #b45309; border-color: #b45309; background: color-mix(in srgb, #f59e0b 12%, var(--paper-raised)); }
+.role-chip--praise { color: #a88024; border-color: #a88024; background: color-mix(in srgb, #ffc107 10%, var(--paper-raised)); }
+.role-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 38%, var(--color-border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--class-accent) 8%, var(--paper-muted));
+  color: color-mix(in srgb, var(--class-accent) 70%, var(--color-text));
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 140ms, background 140ms, color 140ms;
+}
+.role-btn .role-icon { width: 14px; height: 14px; }
+.role-btn:hover {
+  border-color: var(--class-accent);
+  background: color-mix(in srgb, var(--class-accent) 14%, var(--paper-muted));
+  color: var(--color-text);
+}
+.role-btn--follow.active {
+  color: #a88024;
+  border-color: #a88024;
+  background: color-mix(in srgb, #ffc107 12%, var(--paper-raised));
+}
+
+.role-detail-head {
+  --class-accent: #31485c;
+  padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--class-accent) 26%, var(--color-border));
+}
+.role-detail-head .adh-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.role-detail-head .adh-id {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.role-detail-head .adh-name {
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.role-detail-head .adh-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+.role-detail-head .role-class {
+  font-size: 12px;
+}
+.role-detail-head .adh-lv {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--class-accent) 42%, var(--color-border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--class-accent) 8%, var(--paper-raised));
+  color: var(--class-accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+.role-detail-head .adh-state {
+  align-self: flex-start;
+  margin-top: 2px;
+  color: var(--ink-muted, var(--color-text-secondary));
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.role-detail-head .adv-log-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.role-detail-head .adv-log-btn .role-icon {
+  width: 15px;
+  height: 15px;
+}
+
+@media (max-width: 640px) {
+  .role-head { flex-wrap: wrap; }
+  .role-level { order: 2; }
+  .role-status { order: 3; }
+  .role-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .role-stat { justify-content: flex-start; }
+  .role-stat--gold { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-card,
+  .role-card::before,
+  .role-gauge-fill {
+    transition: none;
+  }
+  .role-card:hover,
+  .role-card:focus-visible {
+    transform: none;
+  }
 }

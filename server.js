@@ -270,14 +270,14 @@ function requireAiAccess(req, res) {
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'equipment', 'bag', 'skills', 'skillPool',
+  'equipment', 'bag', 'skills', 'skillPool', 'consumableSlots',
 ]);
 const ADMIN_NUMERIC_FIELDS = new Set([
   'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
 ]);
 const ADMIN_TEXT_FIELDS = new Set(['name', 'character_class']);
-const ADMIN_ARRAY_FIELDS = new Set(['equipment', 'bag', 'skills', 'skillPool']);
+const ADMIN_ARRAY_FIELDS = new Set(['equipment', 'bag', 'skills', 'skillPool', 'consumableSlots']);
 const ADMIN_TEXT_MAX_LENGTH = 1000;
 const ADMIN_IDENTITY_MAX_LENGTH = 100;
 const ADMIN_ARRAY_MAX_ITEMS = 100;
@@ -311,9 +311,42 @@ const SERVER_LIBRARY_BOOKS = new Map([
   ['zixiao', { name: '浮空弹', elem: '无', price: 420, stock: 6, desc: '一发挑射把敌人抬离地面，为后续连击留出空档。' }],
   ['yujian', { name: '加特林扫射', elem: '无', price: 450, stock: 5, desc: '架起重型枪械一顿扫射，弹雨压得敌人抬不起头。' }],
 ]);
+const SERVER_TAVERN_MENU = new Map([
+  ['pale_ale', { name: '清冽麦酒', price: 2 }],
+  ['dark_ale', { name: '烈性黑啤', price: 5 }],
+  ['holy_sparkling', { name: '圣光气泡水', price: 8 }],
+  ['goblin_wine', { name: '哥布林果酿', price: 14 }],
+  ['moonlight_brandy', { name: '月光白兰地', price: 26 }],
+  ['dragon_breath', { name: '龙息火酒', price: 60 }],
+  ['frost_brew', { name: '霜语冰酿', price: 120 }],
+  ['abyss_brew', { name: '无底渊酿', price: 240 }],
+  ['seria_bread', { name: '赛丽亚的烤面包', price: 4 }],
+  ['loaran_boar', { name: '洛兰野猪肉排', price: 12 }],
+  ['dark_city_soup', { name: '暗黑城蘑菇浓汤', price: 14 }],
+  ['ghost_skewer', { name: '幽灵猎人烤串', price: 16 }],
+  ['sky_tower_pie', { name: '天空之城云莓派', price: 22 }],
+  ['hendon_beef', { name: '赫顿玛尔牛扒饭', price: 24 }],
+  ['mechanic_combo', { name: '机械师能量套餐', price: 36 }],
+  ['guild_feast', { name: '公会勇士盛宴', price: 60 }],
+]);
+const SERVER_GROCERY_ITEMS = new Map([
+  ['hp_potion', { name: '生命药水', kind: 'pill', rarity: 'common', price: 10, desc: '冒险家最常备的红色恢复药剂，喝下后能快速愈合轻度伤口。' }],
+  ['mp_potion', { name: '魔力药剂', kind: 'pill', rarity: 'common', price: 12, desc: '清凉的蓝色药剂，恢复施法消耗的精神与魔力。' }],
+  ['antidote', { name: '解毒剂', kind: 'pill', rarity: 'common', price: 15, desc: '入口微苦的解毒药剂，可驱散地下城常见毒素。' }],
+  ['strong_hp', { name: '强效生命药水', kind: 'pill', rarity: 'advanced', price: 42, desc: '药力更足的高级恢复药剂，重伤时也能明显回上一口气。' }],
+  ['strong_mp', { name: '强效魔力药剂', kind: 'pill', rarity: 'advanced', price: 45, desc: '经过精炼的深蓝药水，一口气补足大半消耗的魔力。' }],
+  ['iron_sword', { name: '精铁长剑', kind: 'weapon', rarity: 'common', price: 50, desc: '铁匠铺成批锻造的制式长剑，刃口可靠，适合初入地下城的冒险家。' }],
+  ['oak_staff', { name: '学徒橡木法杖', kind: 'weapon', rarity: 'common', price: 48, desc: '老练法师学徒常用的橡木杖，杖头嵌着一枚普通蓝晶石。' }],
+  ['leather_armor', { name: '耐磨皮甲', kind: 'armor', rarity: 'common', price: 40, desc: '经过油鞣处理的皮甲，轻便耐磨，能挡住小型魔物的撕咬。' }],
+  ['ring_armor', { name: '铁环甲', kind: 'armor', rarity: 'common', price: 55, desc: '以铁环层层缀成的旧式护甲，防护扎实但偏沉。' }],
+  ['steel_sword', { name: '高级精钢阔剑', kind: 'weapon', rarity: 'advanced', price: 150, desc: '用精钢反复锻打的阔剑，剑脊厚重，劈砍魔物皮甲毫不含糊。' }],
+  ['mithril_staff', { name: '高级秘银短杖', kind: 'weapon', rarity: 'advanced', price: 160, desc: '掺入秘银细丝炼制的短杖，导魔顺畅，杖身泛着清冷银光。' }],
+  ['hard_leather', { name: '高级硬化皮甲', kind: 'armor', rarity: 'advanced', price: 135, desc: '以硬化兽皮与钢片缝制的高级护甲，兼顾灵活与防护。' }],
+  ['fine_chain', { name: '高级精炼链甲', kind: 'armor', rarity: 'advanced', price: 180, desc: '精工打造的链甲，铁环细密坚韧，是重装冒险家的可靠选择。' }],
+]);
 const serverLibraryStock = new Map([...SERVER_LIBRARY_BOOKS].map(([code, book]) => [code, book.stock]));
 
-/* DNF60 转职：Lv10 突破门 → 转职，职业固定、子职业由玩家在转职时选择。 */
+/* DNF60 转职：Lv10 后不再锁级；子职业由后续转职试炼流程写入。 */
 const SUBCLASS_BY_CLASS = {
   '鬼剑士': ['剑魂', '狂战士', '鬼泣', '阿修罗'],
   '格斗家': ['气功师', '散打', '街霸', '柔道家'],
@@ -325,11 +358,77 @@ const SUBCLASS_BY_CLASS = {
 const CULTIVATION_HALF_HOUR_MS = 30 * 60 * 1000;
 const CULTIVATION_HOUR_MS = 60 * 60 * 1000;
 const BREAKTHROUGH_DURATION_MS = 2 * CULTIVATION_HOUR_MS;
+const SERIA_INN_MINUTE_MS = 60 * 1000;
+const SERIA_INN_COST_PER_MINUTE = 10;
+const SERIA_INN_HEAL_PERCENT_PER_MINUTE = 0.02;
 
-/* 职业固定、不随等级改写；Lv10 突破门 = 转职（见 settleCultivation 与转职接口）。 */
+/* 职业固定、不随等级改写；Lv10 不再锁级，旧转职接口仍可写入子职业。 */
 function applyCultivationExp(role, amount) {
   const levels = GE.applyExperience(role, amount);
   return levels;
+}
+
+/* 赛利亚旅馆：入住后按真实分钟补结算。每分钟恢复 2% 最大生命并扣 10 金币；回满或金币不足以支付下一分钟时自动结束。 */
+function settleSeriaInnTreatment(role, now = Date.now()) {
+  if (!role) return { changed: false, event: null };
+  const state = role.seriaInn;
+  if (!state) {
+    if (role.status === 'treating') {
+      role.status = 'resting';
+      return { changed: true, event: null };
+    }
+    return { changed: false, event: null };
+  }
+  if (role.status !== 'treating') {
+    delete role.seriaInn;
+    role.status = 'resting';
+    return { changed: true, event: null };
+  }
+  const last = Number(state.lastTickAt || state.startedAt);
+  if (!Number.isFinite(last) || last > now) {
+    delete role.seriaInn;
+    role.status = 'resting';
+    return { changed: true, event: null };
+  }
+  const maxHp = Math.max(1, Number(role.max_hp || 100));
+  const hpBefore = Math.min(maxHp, Math.max(0, Number(role.hp || 0)));
+  const goldBefore = Math.max(0, Number(role.gold || 0));
+  const elapsedMinutes = Math.floor((now - last) / SERIA_INN_MINUTE_MS);
+  if (elapsedMinutes <= 0) return { changed: false, event: null };
+  const healPerMinute = Math.max(1, Math.round(maxHp * SERIA_INN_HEAL_PERCENT_PER_MINUTE));
+  const healMinutesNeeded = Math.ceil(Math.max(0, maxHp - hpBefore) / healPerMinute);
+  const payableMinutes = Math.floor(goldBefore / SERIA_INN_COST_PER_MINUTE);
+  const settledMinutes = Math.min(elapsedMinutes, payableMinutes, healMinutesNeeded);
+  let changed = false;
+  if (settledMinutes > 0) {
+    role.hp = Math.min(maxHp, hpBefore + settledMinutes * healPerMinute);
+    role.gold = goldBefore - settledMinutes * SERIA_INN_COST_PER_MINUTE;
+    state.lastTickAt = last + settledMinutes * SERIA_INN_MINUTE_MS;
+    state.minutes = Number(state.minutes || 0) + settledMinutes;
+    role.hpTs = now;
+    changed = true;
+  }
+  const hpGain = Number(role.hp || 0) - hpBefore;
+  const goldCost = goldBefore - Number(role.gold || 0);
+  if (Number(role.hp || 0) >= maxHp || settledMinutes >= healMinutesNeeded) {
+    delete role.seriaInn;
+    role.status = 'resting';
+    role.hpTs = now;
+    return { changed: true, event: { type: 'seria_inn_completed', minutes: settledMinutes, hpGain, goldCost } };
+  }
+  if (Number(role.gold || 0) < SERIA_INN_COST_PER_MINUTE) {
+    delete role.seriaInn;
+    role.status = 'resting';
+    role.hpTs = now;
+    return { changed: true, event: { type: 'seria_inn_stopped_insufficient_gold', minutes: settledMinutes, hpGain, goldCost } };
+  }
+  if (payableMinutes < elapsedMinutes || payableMinutes < settledMinutes) {
+    delete role.seriaInn;
+    role.status = 'resting';
+    role.hpTs = now;
+    return { changed: true, event: { type: 'seria_inn_stopped_insufficient_gold', minutes: settledMinutes, hpGain, goldCost } };
+  }
+  return { changed, event: null };
 }
 
 function settleCultivation(role, now = Date.now(), randomFn = Math.random) {
@@ -374,6 +473,7 @@ function settleCultivation(role, now = Date.now(), randomFn = Math.random) {
 function cultivationStartBlocked(role) {
   if (role.cultivation) return '角色正在修炼';
   if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
+  if (role.status === 'treating' || role.seriaInn) return '角色正在赛利亚旅馆治疗';
   if (['in_party', 'adventuring'].includes(role.status)) return '角色当前无法修炼';
   return '';
 }
@@ -382,14 +482,16 @@ function characterBusyReason(role) {
   if (!role) return '';
   if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
   if (role.status === 'adventuring') return '角色正在地下城探险';
+  if (role.status === 'treating' || role.seriaInn) return '角色正在赛利亚旅馆治疗';
   if (role.cultivation) return '角色正在修炼';
   if (role.status === 'in_party') return '角色正在队伍中';
   return '';
 }
 
-// 装备与技能调整只在实际探险期间锁定；修炼、顿悟、组队等待等状态仍可整理战备。
+// 装备与技能调整只在实际探险与旅馆治疗期间锁定；修炼、顿悟、组队等待等状态仍可整理战备。
 function equipmentActionBusyReason(role) {
   if (role && role.status === 'adventuring') return '角色正在地下城探险';
+  if (role && (role.status === 'treating' || role.seriaInn)) return '角色正在赛利亚旅馆治疗';
   return '';
 }
 
@@ -558,6 +660,9 @@ const SYSTEM_PROMPT = `你是《地下城与勇士·60级经典版》的冒险�
 6. **结合副本背景**：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**等级（【此间生灵】/【深处首领】中已标注，如 Lv.3、Lv.11 领主）要在战斗描写中自然体现**——等级高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、消耗品、材料、杂物、技能书等皆可，只要与副本故事设定自洽即可（例如格兰之森可出哥布林木棒与牛头兵麻布，天空之城可出龙鳞与塔岩碎片），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得金币时在正文写明具体数量（如"得了三十金币"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或"无"）。
 6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出"借给/递给/交给/暂借"的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
 7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人等级、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
+7b. **伤害尺度（按当前最大生命比例）**：damage 是本次主角实际扣掉的生命，必须与【队伍】中标注的生命上限相称，不得随手给 1~5 点。普通战斗一般取值：good 3~8%、mid 8~15%、bad 15~25%、fumble 25~40%；首领战在对应档位上再上浮约 20~50%；探索/搜刮只在明显遭遇陷阱或袭击时填伤害（bad 5~12%、fumble 12~20%）。隐藏副本、特殊异变或敌方等级明显更高时取高档；只有等级碾压、一击结束的场合才允许接近 0。普通战斗即使取胜也应付出代价、挂彩或承受真实损耗，不能连续多步全程无伤。damage 至少为整数，正文明确受伤时不得省略。
+7c. **治疗尺度（按当前最大生命比例）**：heal 是成功使用生命药水或治疗技能后实际恢复的生命，必须与【队伍】中标注的生命上限相称，不得随手只回 1~5 点。普通生命药水/低阶治疗约恢复 10~25%，强力药剂或专精治疗约 25~50%，正文写明治疗生效且本步受创较重时取高档；若当前只差少量生命，可直接回满，但恢复量不得超过当前缺失的生命。heal 至少为整数，正文明确写了治疗生效时不得省略。角色携带恢复类消耗品时，本步若实际受伤、带伤作战、需要维持续战力或即将面对更大压力，应优先让该角色实际喝下一瓶并返回 success:true 的 itemUse；不要按固定低血百分比机械触发，也不要用绷带、布条或“硬撑”代替恢复药水生效。**heal>0 时必须同时填写 success:true 的 itemUse 或 skillUse，并在 healTarget 中写被治疗的队伍成员完整全名；治疗自己时写【本步主角】的完整全名。正文没写治疗生效时 heal 必须为 0。**
+7d. **消耗品使用优先级**：本步主角携带的消耗品（生命药水、魔力药剂、食物、爆裂符等）是进图前特意准备的补给，不是摆设。本步出现实际受创、魔力或状态吃紧、战局胶着、需要续战力，或存在明显适用的消耗品时，应优先让该角色在正文中实际使用并返回 success:true 的 itemUse；没有合适时机则由剧情自然判断暂不使用。只有正文明确写出服用、激发并成功生效时才填写 itemUse；恢复类药品按 7c 填写 heal。
 8. **公会任务设定**：本次探险是冒险家公会派发的悬赏——开局阶段必须尽早交代任务由来：由公会执事在任务板派单，结合副本背景说明任务目的（如调查异动、寻回失物、清剿怪物、讨伐领主等），队伍受命出发；收尾阶段必须描写**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），收束故事。
 9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、领主压制过强、身负重伤等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、等级被碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（按撤离失败收尾，回赫顿玛尔向公会复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与撤离后的剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
 10. **转职试炼（Lv.10 → 转职）**：当【当前进度】为「晋级」阶段（见【突破试炼】标注），说明队伍中冒险家已至 Lv.10（经验圆满），正面临**转职试炼**。**本阶段必须围绕该角色（主角）安排一场职业试炼**：可写公会考核、职业导师布置的任务、实战试炼、技能觉醒或信念考验（贴合其职业与技能路数），风险与收益并存——**试炼成败由你直接决定**：本步成功则转职成功（领悟职业方向，晋升子职业，如「鬼剑士·剑魂」）；失败则受伤受创，等级仍留 Lv.10，回赫顿玛尔休整后可再次挑战。叙事要写出“试炼将至、尝试与成败”的过程。
@@ -581,10 +686,32 @@ function buildUserMessage(b) {
   (b.party || []).forEach(m => {
     const sk = (m.skills || []).map(s => `${s.name}（${s.desc || '无描述'}）`).join('、') || '无';
     const items = (m.items || []).map(i => `${i.name}（${i.kind || '杂物'}：${i.desc || '无描述'}，持有人：${i.ownerName || m.name || '未知'}）`).join('，') || '无';
-    lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·性格${m.personality}）｜技能：${sk}｜携带：${items}`);
+    lines.push(`· ${m.name}（${m.gender || '男'}·Lv.${m.level || 1}·${m.realm || '职业不明'}·生命 ${Math.max(0, Number(m.hp) || 0)}/${Math.max(1, Number(m.max_hp) || 100)}·性格${m.personality}）｜技能：${sk}｜携带：${items}`);
   });
   if (Array.isArray(b.ownedItems) && b.ownedItems.length) {
     lines.push(`【物品归属】${b.ownedItems.map(item => `${item.name}（${item.ownerName || '未知'}持有）`).join('；')}`);
+  }
+  const recoveryItems = Array.isArray(b.recoveryConsumables)
+    ? b.recoveryConsumables
+    : (b.availableItems || []).filter(item => (
+      typeof GE === 'object' && GE && typeof GE.isRecoveryConsumable === 'function'
+        ? GE.isRecoveryConsumable(item)
+        : /(生命|气血|伤口|疗伤|治疗|治愈|愈合|回血|恢复(?:生命|气血))/.test(`${String(item && item.name || '')} ${String(item && item.desc || '')}`)
+    ));
+  const slotConsumables = (Array.isArray(b.consumableSlots) ? b.consumableSlots : [])
+    .filter(slot => slot && String(slot.name || '').trim())
+    .slice(0, 2);
+  if (slotConsumables.length) {
+    lines.push(`【本步消耗品·优先关注】本步主角的消耗品栏：${slotConsumables.map(item => `${item.name}（${item.desc || '无描述'}，库存 ${item.qty || 1}）`).join('；')}。这些是进副本前特意装填的补给，本步实际受伤、魔力或状态吃紧、战局胶着或需要续战力时，优先让角色在正文中实际使用并返回 success:true 的 itemUse；没有合适时机则不强制使用，也不按固定低血百分比机械喝药。`);
+  }
+  if (recoveryItems.length) {
+    const actorState = (b.party || []).find(member => member && member.name === b.actor) || null;
+    const hpNow = actorState ? Math.max(0, Number(actorState.hp) || 0) : null;
+    const hpMax = actorState ? Math.max(1, Number(actorState.max_hp) || 100) : null;
+    const stateText = hpNow == null
+      ? '当前生命以【队伍】标注为准'
+      : `当前生命 ${hpNow}/${hpMax}，仅作状态参考；若本步实际受伤、带伤作战或即将面对更强压力，优先让主角喝下恢复用品；没有合适时机则本步可暂不使用，不按固定低血阈值机械触发。`;
+    lines.push(`【本步恢复用品】本步主角可自行使用：${recoveryItems.map(item => `${item.name}（${item.desc || '无描述'}，库存 ${item.qty || 1}）`).join('；')}。${stateText}。若选择使用，正文必须先写实际服用动作并让效果生效，同时返回 success:true 的 itemUse，heal 按正文与当前缺失生命填写且 >0，healTarget 写被治疗角色完整全名；不得只写“撕布条缠伤口”或空有恢复描述却没有 itemUse/heal。`);
   }
   if (dynamic) {
     const quest = b.quest || {};
@@ -628,14 +755,14 @@ function buildUserMessage(b) {
   if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（撤离回城）：请描写队伍**回到赫顿玛尔向公会复命、领取任务报酬**（写明报酬金币数量），回顾得失，收束故事，留有余韵。');
   if (dynamic) {
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"heal":0,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
-    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"heal":0,"healTarget":null,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
+    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况；heal>0 时必须填写 success:true 的 itemUse/skillUse 与 healTarget（被治疗的队伍成员完整全名，治疗自己写主角名）。否则 heal 填 0，且最终生命不会超过上限。');
     lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），heal 是本步实际恢复的生命（无则为 0）；damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；只有成功使用恢复类药品或成功施展治疗技能，且正文明确写出实际生效时，heal 才能为正整数，否则必须为 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
   } else {
     if (Array.isArray(b.availableItems) && b.availableItems.length) lines.push(`【本步可用道具】${b.availableItems.map(i => `${i.name}（${i.userName || b.actor || '当前角色'}使用，原持有人：${i.ownerName || i.userName || b.actor || '当前角色'}${i.loaned ? '，已明确借出' : '，自有'}）`).join('；')}`);
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"heal":0,"itemUse":null,"skillUse":null,"loot":[]}');
-    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"heal":0,"healTarget":null,"itemUse":null,"skillUse":null,"loot":[]}');
+    lines.push('heal 仅用于成功使用恢复类药品或成功施展治疗技能且正文明确生效的情况；heal>0 时必须填写 success:true 的 itemUse/skillUse 与 healTarget（被治疗的队伍成员完整全名，治疗自己写主角名）。否则 heal 填 0，且最终生命不会超过上限。');
     lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的生命（无则为 0），heal 是本步实际恢复的生命（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；只有成功使用恢复类药品或成功施展治疗技能，且正文明确写出实际生效时，heal 才能为正整数，否则必须为 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
   }
   return lines.join('\n');
@@ -1390,6 +1517,7 @@ async function handleAuthAPI(req, res, urlPath) {
     const characterId = Number(playerCharacterMatch[1]);
     const existing = DB.getCharacter(u.id, characterId);
     if (!existing) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settleSeriaInnTreatment(existing.data);
     const busy = characterBusyReason(existing.data);
     if (busy) { sendJSON(res, 409, { error: busy, code: 'character_busy' }); return true; }
     const deleted = DB.deleteCharacter(characterId);
@@ -1410,10 +1538,11 @@ async function handleAuthAPI(req, res, urlPath) {
     }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    const innSettlement = settleSeriaInnTreatment(character.data);
     settlePassiveRecovery(character.data);
     const settled = settleCultivation(character.data);
     let expected = character.updated_at;
-    if (settled.changed) {
+    if (innSettlement.changed || settled.changed) {
       const saved = DB.saveCharacterIfCurrent(u.id, charId, expected, character.data, character.data.name);
       if (!saved) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
       expected = saved.updated_at;
@@ -1503,6 +1632,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!goal || goal.length > 100) { sendJSON(res, 400, { error: '期望目标需为 1 至 100 字' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settleSeriaInnTreatment(character.data);
     settlePassiveRecovery(character.data);
     if (character.updated_at !== body.updated_at) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
     const role = character.data;
@@ -1561,6 +1691,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!itemInput) {
       const character = DB.getCharacter(u.id, charId);
       if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+      settleSeriaInnTreatment(character.data);
       settlePassiveRecovery(character.data);
       if (character.updated_at !== body.updated_at) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
       const busy = characterBusyReason(character.data);
@@ -1574,6 +1705,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!itemInput || !String(itemInput.name || '').trim()) { sendJSON(res, 400, { error: '缺少锻造产物' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settleSeriaInnTreatment(character.data);
     settlePassiveRecovery(character.data);
     if (character.updated_at !== body.updated_at) { sendJSON(res, 409, { error: '角色数据已更新，请重试' }); return true; }
     const busy = characterBusyReason(character.data);
@@ -1680,6 +1812,7 @@ async function handleAuthAPI(req, res, urlPath) {
     if (!mailId) { sendJSON(res, 400, { error: '缺少邮件编号' }); return true; }
     const character = DB.getCharacter(u.id, charId);
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settleSeriaInnTreatment(character.data);
     settlePassiveRecovery(character.data);
     const busy = characterBusyReason(character.data);
     if (busy) { sendJSON(res, 400, { error: busy, code: 'character_busy' }); return true; }
@@ -1709,17 +1842,21 @@ async function handleAuthAPI(req, res, urlPath) {
     const current = DB.getCharacter(u.id, charId);
     if (!current) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
     if (current.updated_at !== body.updated_at) { sendJSON(res, 409, { error: '角色数据已更新，请重试', code: 'character_conflict' }); return true; }
+      const innSettlement = settleSeriaInnTreatment(current.data);
       settlePassiveRecovery(current.data);
       const action = String(body.action || '');
       const role = current.data;
-    const busy = ['inventory_equip', 'inventory_unequip', 'skill_equip', 'skill_unequip'].includes(action)
+    const busy = action === 'inn_exit' ? '' : (['inventory_equip', 'inventory_unequip', 'consumable_slot_equip', 'consumable_slot_unequip', 'skill_equip', 'skill_unequip'].includes(action)
       ? equipmentActionBusyReason(role)
-      : characterBusyReason(role);
+      : characterBusyReason(role));
     if (busy) { sendJSON(res, 400, { error: busy, code: 'character_busy' }); return true; }
     role.bag = Array.isArray(role.bag) ? role.bag : [];
     role.equipment = Array.isArray(role.equipment) ? role.equipment : [];
+    if (typeof GE.normalizeConsumableSlots === 'function') GE.normalizeConsumableSlots(role);
+    else role.consumableSlots = Array.isArray(role.consumableSlots) ? role.consumableSlots.filter(slot => slot && slot.name) : [];
     role.skills = Array.isArray(role.skills) ? role.skills : [];
     role.skillPool = Array.isArray(role.skillPool) ? role.skillPool : [];
+    let innExitEvent = null;
     if (action === 'inventory_equip' || action === 'inventory_unequip') {
       const from = action === 'inventory_equip' ? role.bag : role.equipment;
       const to = action === 'inventory_equip' ? role.equipment : role.bag;
@@ -1728,6 +1865,28 @@ async function handleAuthAPI(req, res, urlPath) {
       if (!Number.isSafeInteger(index) || index < 0 || index >= from.length) { sendJSON(res, 400, { error: '物品位置无效' }); return true; }
       if (to.length >= max) { sendJSON(res, 400, { error: action === 'inventory_equip' ? '随身装备已满' : '背包已满' }); return true; }
       to.push(from.splice(index, 1)[0]);
+    } else if (action === 'consumable_slot_equip' || action === 'consumable_slot_unequip') {
+      if (role.consumableSlots.length >= 2 && action === 'consumable_slot_equip') { sendJSON(res, 400, { error: '消耗品栏已满（2/2），请先卸下一个' }); return true; }
+      if (action === 'consumable_slot_equip') {
+        const index = Number(body.index);
+        const it = role.bag && role.bag[index];
+        if (!Number.isSafeInteger(index) || index < 0 || !it) { sendJSON(res, 400, { error: '物品位置无效' }); return true; }
+        if (!GE.itemIsConsumable(it)) { sendJSON(res, 400, { error: '只能放入消耗品' }); return true; }
+        if ((role.consumableSlots || []).some(slot => slot && String(slot.name || '').trim().toLowerCase() === String(it.name || '').trim().toLowerCase())) {
+          sendJSON(res, 400, { error: '该消耗品已在消耗品栏中' }); return true;
+        }
+        role.consumableSlots.push({
+          name: String(it.name || '').slice(0, 24),
+          desc: String(it.desc || '').slice(0, 200),
+          kind: it.kind || 'consumable',
+          rarity: it.rarity || 'common',
+          qty: 1,
+        });
+      } else {
+        const slot = Number(body.slot);
+        if (!Number.isSafeInteger(slot) || slot < 0 || slot >= 2 || !role.consumableSlots[slot]) { sendJSON(res, 400, { error: '消耗品栏位无效' }); return true; }
+        role.consumableSlots.splice(slot, 1);
+      }
     } else if (action === 'skill_equip' || action === 'skill_unequip') {
       const from = action === 'skill_equip' ? role.skillPool : role.skills;
       const to = action === 'skill_equip' ? role.skills : role.skillPool;
@@ -1747,13 +1906,71 @@ async function handleAuthAPI(req, res, urlPath) {
       role.gold = Number(role.gold || 0) - book.price;
       (role.skills.length < 5 ? role.skills : role.skillPool).push(skill);
       serverLibraryStock.set(code, stock - 1);
+    } else if (action === 'grocery_buy') {
+      const code = String(body.code || '');
+      const product = SERVER_GROCERY_ITEMS.get(code);
+      if (!product) { sendJSON(res, 400, { error: '商品不存在' }); return true; }
+      if (Number(role.gold || 0) < Number(product.price || 0)) { sendJSON(res, 400, { error: '金币不足' }); return true; }
+      const name = String(product.name || '').trim().slice(0, 24);
+      const existing = role.bag.find(entry => entry && String(entry.name || '') === name);
+      if (!existing && role.bag.length >= 100) { sendJSON(res, 400, { error: '背包已满，无法收纳商品' }); return true; }
+      role.gold = Number(role.gold || 0) - Number(product.price || 0);
+      if (existing) {
+        existing.qty = (existing.qty || 1) + 1;
+        existing.desc = String(product.desc || '').slice(0, 200);
+        existing.kind = product.kind;
+        existing.rarity = product.rarity || 'common';
+      } else {
+        role.bag.push({
+          name,
+          desc: String(product.desc || '').slice(0, 200),
+          kind: product.kind,
+          qty: 1,
+          rarity: product.rarity || 'common',
+        });
+      }
+    } else if (action === 'tavern_order') {
+      const item = SERVER_TAVERN_MENU.get(String(body.code || ''));
+      if (!item) { sendJSON(res, 400, { error: '餐点不存在' }); return true; }
+      if (Number(role.gold || 0) < Number(item.price || 0)) { sendJSON(res, 400, { error: '金币不足' }); return true; }
+      role.gold = Number(role.gold || 0) - Number(item.price || 0);
+    } else if (action === 'inn_start') {
+      const maxHp = Math.max(1, Number(role.max_hp || 100));
+      if (Number(role.hp || 0) >= maxHp) { sendJSON(res, 400, { error: '生命已满，无需治疗' }); return true; }
+      if (Number(role.gold || 0) < SERIA_INN_COST_PER_MINUTE) { sendJSON(res, 400, { error: '金币不足，至少需要 10 金币' }); return true; }
+      const now = Date.now();
+      role.status = 'treating';
+      role.hpTs = now;
+      role.seriaInn = {
+        startedAt: now,
+        lastTickAt: now,
+        healPerMinute: Math.max(1, Math.round(maxHp * SERIA_INN_HEAL_PERCENT_PER_MINUTE)),
+        minutes: 0,
+      };
+    } else if (action === 'inn_exit') {
+      if (!role.seriaInn && role.status !== 'treating') {
+        if (innSettlement && innSettlement.event) innExitEvent = innSettlement.event;
+        else { sendJSON(res, 400, { error: '当前未在赛利亚旅馆治疗' }); return true; }
+      } else {
+        const hpBefore = Number(role.hp || 0);
+        const goldBefore = Number(role.gold || 0);
+        const settled = settleSeriaInnTreatment(role);
+        const minutes = role.seriaInn ? Number(role.seriaInn.minutes || 0) : 0;
+        const hpGain = Number(role.hp || 0) - hpBefore;
+        const goldCost = goldBefore - Number(role.gold || 0);
+        if (role.seriaInn) delete role.seriaInn;
+        role.status = 'resting';
+        role.hpTs = Date.now();
+        innExitEvent = { type: (settled && settled.event && settled.event.type) || 'seria_inn_exited', minutes, hpGain, goldCost };
+      }
     } else {
       sendJSON(res, 400, { error: '未知角色操作' }); return true;
     }
     const saved = DB.saveCharacterIfCurrent(u.id, charId, current.updated_at, role, role.name);
     if (!saved) { sendJSON(res, 409, { error: '角色数据已更新，请重试', code: 'character_conflict' }); return true; }
     notifyCharacterUpdated(u.id, charId, saved.updated_at);
-    sendJSON(res, 200, { ok: true, action, character: role, updated_at: saved.updated_at });
+    const event = action === 'inn_start' ? { type: 'seria_inn_started' } : innExitEvent;
+    sendJSON(res, 200, event ? { ok: true, action, character: role, updated_at: saved.updated_at, event } : { ok: true, action, character: role, updated_at: saved.updated_at });
     return true;
   }
   const charMatch = urlPath.match(/^\/api\/character\/(\d+)$/);
@@ -1765,6 +1982,7 @@ async function handleAuthAPI(req, res, urlPath) {
       const c = DB.getCharacter(u.id, charId);
       if (!c) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
       // 读取接口只计算当前展示状态，不在后台刷新时写库或推进版本号。
+      settleSeriaInnTreatment(c.data);
       settlePassiveRecovery(c.data);
       const settled = settleCultivation(c.data);
       const running = findRunningRoomMember(u.id, charId);
@@ -1775,6 +1993,7 @@ async function handleAuthAPI(req, res, urlPath) {
         c.data.max_hp = running.max_hp || c.data.max_hp;
         c.data.equipment = running.equipment || c.data.equipment;
         c.data.bag = running.bag || c.data.bag;
+        c.data.consumableSlots = running.consumableSlots || c.data.consumableSlots || [];
         c.data.skills = running.skills || c.data.skills;
       }
       sendJSON(res, 200, { id: c.id, character: c.data, updated_at: c.updated_at });
@@ -1792,9 +2011,10 @@ async function handleAuthAPI(req, res, urlPath) {
       if (body.updated_at !== current.updated_at) {
         sendJSON(res, 409, { error: 'Character data has changed; synchronizing', code: 'character_conflict' }); return true;
       }
+      settleSeriaInnTreatment(current.data);
+      settlePassiveRecovery(current.data);
       const busy = characterBusyReason(current.data);
       if (busy) { sendJSON(res, 409, { error: busy, code: 'character_busy' }); return true; }
-      settlePassiveRecovery(current.data);
       for (const field of AUTHORITATIVE_CHARACTER_FIELDS) {
         // 修炼页面会提交其本地计时快照，服务端随后在读取时结算；仅允许该专用同步场景。
         if (field === 'exp' && current.data.cultivation && data.cultivation) continue;
@@ -1916,11 +2136,11 @@ const EXTRACT_LOOT_PROMPT = `你是《地下城与勇士》的结算师。只根
 
 const LEARNED_SKILL_PROMPT = `你是《地下城与勇士》的导师大厅执事。根据探险日志，提取队员在本局中**明确新领悟、学会或获得传承而掌握**的战斗技能。不要把原本已经会、仅仅施展、只是提及、获得技能书但未领悟的技能算入。技能必须归属给队伍中的真实成员。每项给出 2~20 字技能名与 10~120 字描述。没有则输出 []。严格只输出 JSON 数组，不要解释：[{"member":"角色完整姓名","name":"技能名","desc":"技能描述"}]`;
 
-/* AI 开本判定：由 AI 决定隐藏副本/特殊事件/突破试炼与敌人数量、等级；隐藏与特殊事件各有概率兜底，且可同时触发 */
+/* AI 开本判定：由 AI 决定隐藏副本/特殊事件与敌人数量、等级；转职试炼不再由副本自动生成 */
 const SETUP_PROMPT = `你是《地下城与勇士》的开局推演师。根据副本背景、队伍等级与角色状态，决定本次探险的局势：
 1. hidden：约一成概率触发隐藏地下城（首领盘踞、名称改变、凶险加倍）；不要默认 false。
 2. specialEvent：约一成概率触发特殊异变（整体难度与奖励上调）；若氛围合适就触发，不必刻意回避；隐藏地下城同样可能出现特殊异变。
-3. breakthrough：仅当队伍中有 Lv.10 圆满的角色时可为 true，否则必须 false。
+3. breakthrough：必须固定 false。角色达到 Lv.10 后照常结算经验升级，副本不再自动生成转职试炼。
 4. enemies：从给定【此间生灵】中自行选择本局将遭遇的敌人，普通 0~3 种、特殊事件 0~4 种；必须使用给定名称，不得自造；为每种敌人指定本副本【等级区间】内的等级（"Lv.N"），普通与特殊事件都不得低于下限或高于上限；特殊事件应尽量取区间偏高位。
 严格只输出一个 JSON 对象，不要任何解释或标记：
 {"hidden":false,"specialEvent":false,"breakthrough":false,"enemies":[{"name":"敌人名","level":3}]}`;
@@ -1958,7 +2178,7 @@ function normalizeAiSetup(parsed, payload = {}) {
   return {
     isHidden: parsed.hidden === true || Math.random() < HIDDEN_CHANCE,
     specialEvent,
-    breakthrough: parsed.breakthrough === true && payload.breakthroughEligible !== false,
+    breakthrough: false,
     enemies: enemies.slice(0, specialEvent ? 4 : 3),
   };
 }
@@ -1976,12 +2196,11 @@ async function aiDecideSetup(payload = {}) {
     levelMax: band[1],
     level_desc: bandLabel,
     role: payload.role || {},
-    breakthroughEligible: !!(payload.role && GE.canBreakthrough && GE.canBreakthrough(payload.role)),
   };
   let lastError = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const raw = await callLLM('副本：' + body.dungeon + '\n【等级区间】' + (body.level_desc || 'Lv.1-19') + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.level != null ? 'Lv.' + b.level : '等级不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（Lv.' + (body.role.level || 1) + '·' + (body.role.character_class || '职业不明') + (body.role.classTitle ? '·' + body.role.classTitle : '') + '）\n' + (body.breakthroughEligible ? '【突破】该角色已至 Lv.10 圆满，可触发转职试炼。' : ''), SETUP_PROMPT, 1200);
+      const raw = await callLLM('副本：' + body.dungeon + '\n【等级区间】' + (body.level_desc || 'Lv.1-19') + '\n【此间生灵】' + body.enemies.map(e => e.name + '：' + e.desc).join('；') + '\n【深处首领】' + body.bosses.map(b => b.name + '（' + (b.level != null ? 'Lv.' + b.level : '等级不明') + '）').join('；') + '\n【角色】' + (body.role.name || '') + '（Lv.' + (body.role.level || 1) + '·' + (body.role.character_class || '职业不明') + (body.role.classTitle ? '·' + body.role.classTitle : '') + '）', SETUP_PROMPT, 1200);
       return normalizeAiSetup(parseSetupJson(raw), body);
     } catch (e) {
       lastError = e;
@@ -2108,10 +2327,11 @@ const server = http.createServer(async (req, res) => {
     if (!u) { sendJSON(res, 401, { error: '未登录' }); return true; }
     const character = DB.getPublicCharacterById(Number(publicCharacterMatch[1]));
     if (!character) { sendJSON(res, 404, { error: '角色不存在' }); return true; }
+    settleSeriaInnTreatment(character);
     settlePassiveRecovery(character);
     const followed = DB.getFollowedCharacterIds(u.id).includes(character.id);
     const running = findRunningRoomMember(null, character.id);
-    const liveCharacter = !running ? { ...character, is_followed: followed } : { ...character, is_followed: followed, status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, skills: running.skills || character.skills };
+    const liveCharacter = !running ? { ...character, is_followed: followed } : { ...character, is_followed: followed, status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, consumableSlots: running.consumableSlots || character.consumableSlots || [], skills: running.skills || character.skills };
     sendJSON(res, 200, { character: liveCharacter });
     return true;
   }
@@ -2133,10 +2353,11 @@ const server = http.createServer(async (req, res) => {
       followedCharacterIds,
     });
     const characters = pageResult.characters.map(character => {
+      settleSeriaInnTreatment(character);
       settlePassiveRecovery(character);
       const running = findRunningRoomMember(null, character.id);
       if (!running) return { ...character, is_followed: followedCharacterSet.has(character.id) };
-      return { ...character, is_followed: followedCharacterSet.has(character.id), status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, skills: running.skills || character.skills };
+      return { ...character, is_followed: followedCharacterSet.has(character.id), status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, consumableSlots: running.consumableSlots || character.consumableSlots || [], skills: running.skills || character.skills };
     });
     sendJSON(res, 200, { ...pageResult, characters });
     return true;
@@ -2219,7 +2440,7 @@ const server = http.createServer(async (req, res) => {
         if (!violations.length) {
           sendJSON(res, 200, {
             text: generated.text, outcome: generated.outcome, damage: generated.damage, heal: generated.heal,
-            itemUse: generated.itemUse, skillUse: generated.skillUse, loot: generated.loot,
+            healTarget: generated.healTarget, itemUse: generated.itemUse, skillUse: generated.skillUse, loot: generated.loot,
             structured: generated.structured,
           });
           return;
@@ -2860,7 +3081,9 @@ async function dungeonStep(room) {
   try {
     payload = GE.aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, mod, total, null, null);
     for (let attempt = 0; attempt < 2; attempt++) {
-      j = await callAIStory(payload, attempt > 0 ? GE.itemGuardFeedback(violations) : '');
+      const feedback = [];
+      if (attempt > 0 && violations.length) feedback.push(GE.itemGuardFeedback(violations));
+      j = await callAIStory(payload, feedback.filter(Boolean).join('\n\n'));
       const text = j && j.text ? String(j.text) : '';
       if (!text) throw new Error('AI 返回空内容');
       rawText = String(text).trim();
@@ -2882,8 +3105,12 @@ async function dungeonStep(room) {
     const itemUse = resolveAiItemUse(dg, actor, aiStep.itemUse);
     const skillUse = resolveAiSkillUse(actor, aiStep.skillUse);
     const itemExplicit = itemUse && itemUse.success && GE.itemUseExplicitInText(cleanText, itemUse.item, actor);
-    const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
-    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed);
+    const healItemAllowed = itemExplicit && typeof GE.itemIsConsumable === 'function' && GE.itemIsConsumable(itemUse.item);
+    const healSkillAllowed = !!(skillUse && skillUse.success);
+    const healInfo = GE.resolveHealInfo(dg, actor, cleanText, j && (j.healTarget || j.target), { explicitUse: healItemAllowed || healSkillAllowed });
+    const healAllowed = healInfo.allowed;
+    const healTarget = healAllowed ? (healInfo.target || actor) : actor;
+    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed, healTarget);
     if (typeof GE.recordItemLoansFromText === 'function') GE.recordItemLoansFromText(dg, cleanText);
     if (itemExplicit && typeof GE.consumeItemUse === 'function') {
       GE.consumeItemUse(dg, itemUse, { explicitUse: true, actor });
@@ -2891,6 +3118,7 @@ async function dungeonStep(room) {
     stepRec = {
       stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
       stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage, aiHeal: aiStep.heal,
+      healTargetName: healAllowed && healTarget ? healTarget.name : null,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
       skillUse: skillUse ? { name: skillUse.name, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
     };
@@ -2943,7 +3171,7 @@ async function dungeonStep(room) {
 function parseAiStoryResponse(content, fallback = {}) {
   const raw = String(content || '').trim();
   const fallbackOutcome = fallback.needsCheck === false ? 'good' : 'mid';
-  const defaultStep = { outcome: fallbackOutcome, damage: 0, heal: 0, itemUse: null, skillUse: null, loot: [] };
+  const defaultStep = { outcome: fallbackOutcome, damage: 0, heal: 0, healTarget: null, itemUse: null, skillUse: null, loot: [] };
   let parsed = null;
   try { parsed = JSON.parse(raw); } catch {
     const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -2953,7 +3181,11 @@ function parseAiStoryResponse(content, fallback = {}) {
   const text = String(parsed.text || parsed.content || '').trim() || raw;
   const decision = GE.normalizeAiDecision(parsed, fallback);
   const aiStep = GE.normalizeAiStepResult(parsed, { outcome: fallbackOutcome });
-  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, heal: aiStep.heal, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
+  const healHint = parsed && (parsed.healTarget || parsed.target);
+  const healTarget = healHint && typeof healHint === 'object'
+    ? String(healHint.name || '').trim().slice(0, 30)
+    : String(healHint || '').trim().slice(0, 30) || null;
+  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, heal: aiStep.heal, healTarget, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
 }
 async function callAIStory(payload, extraInstruction = '') {
   if (process.env.ROOM_FAST === '1') {
@@ -2970,6 +3202,7 @@ async function callAIStory(payload, extraInstruction = '') {
       structured: true,
       outcome: 'good',
       damage: 0,
+      healTarget: null,
       itemUse: null,
       skillUse: null,
       loot: [],
@@ -3013,10 +3246,10 @@ async function callAIStory(payload, extraInstruction = '') {
         const lastDot = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('！'), cut.lastIndexOf('？'), cut.lastIndexOf('…'));
         return {
           text: lastDot > 100 ? cut.slice(0, lastDot + 1) : cut, decision: parsed.decision, structured: parsed.structured,
-          outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
+          outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, healTarget: parsed.healTarget, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
         };
       }
-      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
+      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, healTarget: parsed.healTarget, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
     } catch (e) {
       lastError = e;
       if (attempt === 0) {
@@ -3227,10 +3460,13 @@ async function settleRoom(room) {
   for (const m of dg.party) {
     const g = dg.memberGains[m.uid || m.id] || { damage: 0, crits: 0, fumbles: 0 };
     const hpNow = m.hp || 0;
+    const entryInfo = (dg.entryHp || {})[m.uid || m.id];
+    const hpEntry = entryInfo && Number.isFinite(Number(entryInfo.hp)) ? Number(entryInfo.hp) : null;
     const spiritStoneShare = spiritStoneShares[m.uid || m.id] || 0;
     const memberRes = {
       uid: m.uid || null, charId: m.charId || null,
       name: m.name, isNpc: !!m.isNpc, isMine: !m.isNpc, loot: [], lootItems: [], exp: 0, hpFinal: hpNow,
+      hpDelta: Number.isFinite(hpEntry) ? Math.max(0, Number(hpNow) || 0) - hpEntry : null, levelUp: false,
       fate: (hpNow <= 0 || m.isDead) ? '阵亡' : (hpNow <= (m.max_hp || 100) * 0.35 ? '受伤' : '健康'),
       score: 5, damage: g.damage || 0, gold: spiritStoneShare, newTraits: [], newSkills: [], praise: 0,
     };
@@ -3270,6 +3506,7 @@ async function settleRoom(room) {
         leveledUp = true;
       }
     }
+    memberRes.levelUp = leveledUp;
     const assignedLoot = lootByMember[m.uid || m.id] || [];
     const myLoot = assignedLoot;
     myLoot.forEach(it => {
@@ -3296,12 +3533,19 @@ async function settleRoom(room) {
     // 结算后气血并入真实结算值（服务端权威，m.hp 为冒险中扣血后的值）
     if (!leveledUp) role.max_hp = m.max_hp || role.max_hp || 100;
     role.hp = leveledUp ? role.max_hp : Math.min(m.hp > 0 ? m.hp : 1, role.max_hp);
+    if (typeof GE.normalizeConsumableSlots === 'function') GE.normalizeConsumableSlots(role);
+    const keptSlotNames = new Set([...(role.bag || []), ...(role.equipment || [])]
+      .filter(entry => entry && Number(entry.qty == null ? 1 : entry.qty) > 0)
+      .map(entry => String(entry.name || '')));
+    role.consumableSlots = (role.consumableSlots || []).filter(slot => slot && slot.name && keptSlotNames.has(String(slot.name)));
+    memberRes.hpFinal = Math.max(0, Number(role.hp) || 0);
+    if (Number.isFinite(hpEntry)) memberRes.hpDelta = memberRes.hpFinal - hpEntry;
     characterWrites.push({ userId: m.uid, characterId: m.charId, name: role.name, data: role });
     settledPlayers.push({ uid: m.uid, memberRes, goldGain, damage: g.damage });
     results.push(memberRes);
   }
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [entry.name, entry.reason]));
-  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, loot: r.lootItems, statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
+  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, hpDelta: r.hpDelta != null ? r.hpDelta : null, levelUp: !!r.levelUp, loot: r.lootItems, statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
   const anyDeath = results.some(r => r.fate === '阵亡');
   const participants = settledPlayers.map(settled => ({ userId: settled.uid, characterId: dg.party.find(m => m.uid === settled.uid)?.charId, memberName: settled.memberRes.name, personalData: { exp: settled.memberRes.exp, gold: settled.goldGain, items: settled.memberRes.lootItems, damage: settled.damage } }));
   const log = {
@@ -3438,7 +3682,9 @@ function recoverAllPassiveStats() {
         notifyCharacterDeleted(character.user_id, character.id);
         continue;
       }
-      if (settlePassiveRecovery(character.data, now)) {
+      const innSettlement = settleSeriaInnTreatment(character.data, now);
+      const passiveChanged = settlePassiveRecovery(character.data, now);
+      if (innSettlement.changed || passiveChanged) {
         DB.saveCharacter(character.user_id, character.id, character.data, character.data.name);
       }
     } catch (error) {
@@ -3502,12 +3748,13 @@ async function handleWS(ws, req, msg) {
       if (!u || !msg.charId) { send({ type: 'error', error: '请先登录并选择角色' }); return; }
       const c = DB.getCharacter(u.id, Number(msg.charId));
       if (!c) { send({ type: 'error', error: '角色不存在' }); return; }
+      const innSettlement = settleSeriaInnTreatment(c.data);
       settlePassiveRecovery(c.data);
       const settlement = settleCultivation(c.data);
-      if (settlement.changed) DB.saveCharacter(u.id, c.id, c.data, c.data.name);
+      if (innSettlement.changed || settlement.changed) DB.saveCharacter(u.id, c.id, c.data, c.data.name);
       const busy = characterBusyReason(c.data);
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (c.data.cultivation) { send({ type: 'error', error: '修炼期间不可匹配探险' }); return; }
+      if (c.data.cultivation || c.data.seriaInn) { send({ type: 'error', error: '治疗或修炼期间不可匹配探险' }); return; }
       if (MATCH_QUEUE.some(m => m.uid === u.id)) { send({ type: 'error', error: '已在匹配队列中' }); return; }
       if (roomForUser(u.id)) { send({ type: 'error', error: '已在公开队伍中' }); return; }
       ws._uid = u.id;
@@ -3536,9 +3783,10 @@ async function handleWS(ws, req, msg) {
       const user = authenticatedSocketUser(ws, msg.token);
       const character = user && DB.getCharacter(user.id, Number(msg.charId));
       if (character) {
+        const innSettlement = settleSeriaInnTreatment(character.data);
         settlePassiveRecovery(character.data);
         const settlement = settleCultivation(character.data);
-        if (settlement.changed) DB.saveCharacter(user.id, character.id, character.data, character.data.name);
+        if (innSettlement.changed || settlement.changed) DB.saveCharacter(user.id, character.id, character.data, character.data.name);
       }
       const busy = character && characterBusyReason(character.data);
       if (!character || roomForMember(ws) || roomForUser(user.id) || MATCH_QUEUE.some(entry => entry.uid === user.id)) {
@@ -3546,7 +3794,7 @@ async function handleWS(ws, req, msg) {
         return;
       }
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (character.data.cultivation) { send({ type: 'error', error: '修炼期间不可创建队伍' }); return; }
+      if (character.data.cultivation || character.data.seriaInn) { send({ type: 'error', error: '治疗或修炼期间不可创建队伍' }); return; }
       if (!validDungeonName(msg.dungeon)) { send({ type: 'error', error: '地图不存在' }); return; }
       const description = String(msg.description || '').trim();
       if (description.length > 100) { send({ type: 'error', error: '小队描述不能超过 100 字' }); return; }
@@ -3572,9 +3820,10 @@ async function handleWS(ws, req, msg) {
       const room = ROOMS.get(String(msg.roomId || ''));
       const character = user && DB.getCharacter(user.id, Number(msg.charId));
       if (character) {
+        const innSettlement = settleSeriaInnTreatment(character.data);
         settlePassiveRecovery(character.data);
         const settlement = settleCultivation(character.data);
-        if (settlement.changed) DB.saveCharacter(user.id, character.id, character.data, character.data.name);
+        if (innSettlement.changed || settlement.changed) DB.saveCharacter(user.id, character.id, character.data, character.data.name);
       }
       const busy = character && characterBusyReason(character.data);
       if (!user || !character || !room || room.status !== 'waiting' || roomForMember(ws) || roomForUser(user.id)
@@ -3584,7 +3833,7 @@ async function handleWS(ws, req, msg) {
         return;
       }
       if (busy) { send({ type: 'error', error: busy }); return; }
-      if (character.data.cultivation) { send({ type: 'error', error: '修炼期间不可加入队伍' }); return; }
+      if (character.data.cultivation || character.data.seriaInn) { send({ type: 'error', error: '治疗或修炼期间不可加入队伍' }); return; }
       addMember(room, memberFromCharacter(user.id, character, ws));
       ws._roomId = room.id;
       send({ type: 'room_state', room: roomStatePublic(room) });

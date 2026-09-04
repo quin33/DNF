@@ -321,6 +321,50 @@ function itemIsConsumable(item) {
   if (item.consumable === true) return true;
   return ['pill', 'talisman', 'consumable'].includes(String(item.kind || '').toLowerCase());
 }
+function normalizeConsumableSlots(role, limit = 2) {
+  if (!role || typeof role !== 'object') return false;
+  if (!Array.isArray(role.consumableSlots)) {
+    role.consumableSlots = [];
+    return true;
+  }
+  const before = role.consumableSlots.length;
+  const seen = new Set();
+  role.consumableSlots = role.consumableSlots
+    .filter(entry => {
+      if (!entry || !String(entry.name || '').trim() || !itemIsConsumable(entry)) return false;
+      const key = String(entry.name || '').trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, Math.max(0, Number(limit) || 2))
+    .map(entry => ({
+      name: String(entry.name || '').trim().slice(0, 24),
+      desc: String(entry.desc || '').slice(0, 200),
+      kind: entry.kind || 'consumable',
+      rarity: entry.rarity || 'common',
+      qty: 1,
+    }));
+  return role.consumableSlots.length !== before || !Array.isArray(role.consumableSlots);
+}
+function consumableSlotPayload(member) {
+  if (!member) return [];
+  const inventory = [...(member.bag || []), ...(member.equipment || [])];
+  return (member.consumableSlots || []).map(slot => {
+    if (!slot || !slot.name || !itemIsConsumable(slot)) return null;
+    const source = inventory.find(item => item && String(item.name || '') === String(slot.name));
+    if (!source || Number(source.qty == null ? (source.count == null ? 1 : source.count) : source.qty) <= 0) return null;
+    return {
+      name: String(source.name || '').slice(0, 24),
+      desc: String(source.desc || slot.desc || '').slice(0, 200),
+      kind: source.kind || slot.kind || 'consumable',
+      rarity: source.rarity || slot.rarity || 'common',
+      qty: Math.max(1, Number(source.qty == null ? (source.count == null ? 1 : source.count) : source.qty) || 1),
+      ownerId: memberIdentity(member),
+      ownerName: member.name || '',
+    };
+  }).filter(Boolean).slice(0, 2);
+}
 function findMemberItem(member, item, preferredSrc) {
   if (!member || !item) return null;
   const lists = preferredSrc === 'bag' ? [['bag', member.bag || []], ['equipment', member.equipment || []]]
@@ -399,7 +443,7 @@ function itemUseExplicitInText(text, item, actor) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const sentence = body.split(/[。！？\\n]/).find(part => part.includes(name)) || body;
   if (/(?:未能|没能|无法|没有|未曾|并未|不曾|未成功|失败|未激发|未使用)/.test(sentence)) return false;
-  const action = '(?:服下|吞下|饮下|服用|使用|激发|催动|掷出|祭出|引爆|捏碎|燃起|贴上|吞服)';
+  const action = '(?:服下|吞下|饮下|服用|使用|激发|催动|掷出|祭出|引爆|捏碎|燃起|贴上|吞服|喝下|喝掉|咽下|灌下|喝了一口|灌了一口|仰头喝下|仰头灌下|一饮而尽|饮尽|喝光|一口喝光)';
   return new RegExp(`${action}\\s*[^。！？\\n]{0,24}${escapedName}`).test(sentence)
     || new RegExp(`${escapedName}[^。！？\\n]{0,24}${action}`).test(sentence);
 }
@@ -565,6 +609,14 @@ function availableItemsForActor(dg, actor) {
   });
   return out;
 }
+function isRecoveryConsumable(item) {
+  if (!item || !itemIsConsumable(item)) return false;
+  const text = `${String(item.name || '')} ${String(item.desc || '')}`;
+  return /(生命|气血|伤口|疗伤|治疗|治愈|愈合|回血|恢复(?:生命|气血))/.test(text);
+}
+function recoveryConsumablesForActor(dg, actor) {
+  return (availableItemsForActor(dg, actor) || []).filter(isRecoveryConsumable);
+}
 /* 物品判定（探索/搜刮步按概率尝试；默认仅行动角色自有物品，明确借出例外） */
 function itemUseCheck(dg, stageKey, actor) {
   if (stageKey === 'explore' && Math.random() > 0.4) return null;
@@ -654,6 +706,53 @@ function normalizeAiStepResult(raw, fallback = {}) {
   return { outcome, damage, heal, itemUse, skillUse, loot };
 }
 
+/* 回血校验：正文明确写了治疗/恢复动作时才允许回血，并尽量解析被治疗者。 */
+const RECOVERY_EFFECT_RE = /(?:治疗|治愈|疗愈|愈合|疗伤|回春|回血|续命|包扎|止血|恢复(?:了)?(?:生命|气血|伤口|伤势|体力|气力|元气)|伤(?:口|势)(?:渐渐|慢慢|迅速|很快|正在|终于|肉眼可见)[^。！？\n]{0,10}(?:愈合|好转|复原|收拢))/;
+const RECOVERY_FAIL_RE = /(?:未能|没能|无法|没有生效|未生效|未曾|并未|不曾|失败|无效|作罢)/;
+
+function recoverySentenceInText(text) {
+  const body = String(text || '').replace(/【[^】]*】/g, '');
+  const sentence = String(body).split(/[。！？；\n]+/).find(part => RECOVERY_EFFECT_RE.test(part));
+  return sentence && !RECOVERY_FAIL_RE.test(sentence) ? sentence : '';
+}
+
+function resolveHealTargetFromText(dg, actor, text) {
+  const actorName = actor && String(actor.name || '').trim();
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const healSentence = recoverySentenceInText(text);
+  if (!healSentence) return actor || null;
+  const others = party.filter(member => member && member !== actor && member.name && healSentence.includes(member.name));
+  if (!others.length) return actor || null;
+  const markerHits = ['为', '给', '帮', '替', '救', '喂', '护住', '包扎', '治疗', '治愈', '拉住', '扶起'];
+  for (const member of others) {
+    const at = healSentence.indexOf(member.name);
+    const before = healSentence.slice(Math.max(0, at - 16), at);
+    if (markerHits.some(mark => before.includes(mark))) return member;
+  }
+  if (!actorName || !healSentence.includes(actorName)) return others[0];
+  const selfWound = /(?:自己|自身|她|他)(?:的)?(?:伤口|焦皮|灼伤|烧伤|伤势|手臂|手臂伤)/.test(healSentence);
+  if (!selfWound) {
+    const actorAt = healSentence.indexOf(actorName);
+    const after = others.find(member => healSentence.indexOf(member.name) > actorAt);
+    if (after) return after;
+  }
+  return actor;
+}
+
+function resolveHealInfo(dg, actor, text, healTargetHint, options = {}) {
+  const hintName = healTargetHint && typeof healTargetHint === 'object'
+    ? String(healTargetHint.name || '').trim()
+    : String(healTargetHint || '').trim();
+  const explicitUse = !!(options && options.explicitUse);
+  const textHeal = !!recoverySentenceInText(text);
+  const allowed = explicitUse || textHeal;
+  if (!allowed) return { allowed: false, target: actor || null };
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const hintTarget = party.find(member => member && member.name && member.name === hintName) || null;
+  const target = hintTarget || resolveHealTargetFromText(dg, actor, String(text || ''));
+  return { allowed: true, target: target || actor || null };
+}
+
 /* AI 掉落登记：合并数量与稀有度，并把道具名登记给获得它的角色。 */
 function recordAiLoot(dg, actor, entries) {
   const names = [];
@@ -673,7 +772,8 @@ function recordAiLoot(dg, actor, entries) {
   return names;
 }
 
-/* AI 开本参数落库：隐藏/特殊事件/突破由 AI 决定，敌人名称限定在副本池内。 */
+/* AI 开本参数落库：隐藏/特殊事件由 AI 决定，敌人名称限定在副本池内；
+   转职试炼不再由副本自动生成。 */
 function applyDungeonSetup(base, setup) {
   const s = setup || {};
   const isHidden = s.isHidden === true;
@@ -699,10 +799,36 @@ function applyDungeonSetup(base, setup) {
   };
 }
 
+/* AI 伤害保底：负面结果至少造成与最大生命成比例的真实损失，避免 AI 给 0~2 点挠痒伤害。 */
+const DAMAGE_FLOOR_PCT = {
+  battle: { mid: 0.05, bad: 0.10, fumble: 0.18 },
+  boss: { mid: 0.06, bad: 0.14, fumble: 0.22 },
+  encounter: { bad: 0.08, fumble: 0.16 },
+  explore: { bad: 0.06, fumble: 0.10 },
+  loot: { bad: 0.05, fumble: 0.09 },
+  retreat: { bad: 0.08, fumble: 0.16 },
+  breakthrough: { bad: 0.06, fumble: 0.12 },
+};
+function resolveDamageFloor(dg, stageKey, actor, outcome) {
+  if (!dg || !actor || actor.isDead) return 0;
+  const base = (DAMAGE_FLOOR_PCT[stageKey] || {})[outcome] || 0;
+  if (!base) return 0;
+  const actorLevel = Math.max(1, Number(actor.level || 1));
+  const enemyLevel = Math.max(1, Number(dg._curEnemy && dg._curEnemy.level) || actorLevel);
+  const levelDanger = Math.min(0.08, Math.max(0, enemyLevel - actorLevel) * 0.01);
+  const mapDanger = dg.dungeon && (dg.dungeon.isHidden || dg.dungeon.specialEvent) ? 0.02 : 0;
+  const maxHp = Math.max(1, Number(actor.max_hp || 100));
+  const floor = Math.round(maxHp * Math.min(0.35, base + levelDanger + mapDanger));
+  const currentHp = Number.isFinite(Number(actor.hp)) ? Math.max(0, Number(actor.hp)) : maxHp;
+  const nonLethal = Math.max(0, currentHp - 1);
+  return Math.max(0, Math.min(floor, nonLethal));
+}
+
 /* 单步效果应用：AI 伤害/首领掉落/突破结果（服务端权威修改 party 成员状态） */
-function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal = 0, healAllowed = false) {
+function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal = 0, healAllowed = false, healTarget = actor) {
   const g = dg.memberGains[actor.id];
-  const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const aiDmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const dmg = Math.max(aiDmg, resolveDamageFloor(dg, stageKey, actor, outcome));
   if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
@@ -714,13 +840,16 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal
     }
   }
   const heal = Number.isFinite(Number(aiHeal)) ? Math.max(0, Math.round(Number(aiHeal))) : 0;
-  if (healAllowed && heal > 0 && actor.hp > 0 && !actor.isDead) {
-    const beforeHp = Math.max(0, Number(actor.hp) || 0);
-    const maxHp = Math.max(0, Number(actor.max_hp) || 100);
+  const target = healTarget || actor;
+  const targetGKey = target.uid || target.id || target.charId || target.name;
+  const tg = targetGKey ? dg.memberGains[targetGKey] : null;
+  if (healAllowed && heal > 0 && target && Number(target.hp || 0) > 0 && !target.isDead) {
+    const beforeHp = Math.max(0, Number(target.hp) || 0);
+    const maxHp = Math.max(0, Number(target.max_hp) || 100);
     const actualHeal = Math.max(0, Math.min(maxHp, beforeHp + heal) - beforeHp);
-    actor.hp = beforeHp + actualHeal;
+    target.hp = beforeHp + actualHeal;
     dg.healing = (dg.healing || 0) + actualHeal;
-    if (g) g.healing = (g.healing || 0) + actualHeal;
+    if (tg) tg.healing = (tg.healing || 0) + actualHeal;
   }
   if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     const boss = dg._curEnemy;
@@ -731,7 +860,7 @@ function applyStageEffects(dg, stageKey, actor, total, outcome, aiDamage, aiHeal
 
 function regenerateHp(role, now = Date.now()) {
   if (!role) return false;
-  if (role.status === 'adventuring') { role.hpTs = now; return false; }
+  if (role.status === 'adventuring' || role.status === 'treating' || role.seriaInn) { role.hpTs = now; return false; }
   const ts = Number.isFinite(Number(role.hpTs)) ? Number(role.hpTs) : now;
   const max = Number(role.max_hp || 100);
   if (ts > now) { role.hpTs = now; return false; }
@@ -789,8 +918,6 @@ function applyExperience(role, amount, options = {}) {
   const levels = [];
   while (true) {
     const level = Number(role.level || 1);
-    // Lv.10 的 1000 经验是转职门槛，不是经验上限；允许探险继续积累经验。
-    if (level === 10) break;
     if (level >= 14) { role.exp = 2800; break; }
     const threshold = level < 10 ? level * 100 : level * 200;
     if (role.exp < threshold) break;
@@ -927,6 +1054,7 @@ function genNpc(name, card) {
       max_stamina: Number.isFinite(Number(card.max_stamina)) ? Number(card.max_stamina) : 100,
       hpTs: now,
       staminaTs: now,
+      consumableSlots: [],
     };
   }
   const rand = () => 1 + Math.floor(Math.random() * 20);
@@ -936,7 +1064,7 @@ function genNpc(name, card) {
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 0, character_class: pick(Object.values(GC.ROOT_KEYS)).label,
-    personality: pick(GC.PERS_LIST), equipment: [], bag: [], skills: [],
+    personality: pick(GC.PERS_LIST), equipment: [], bag: [], skills: [], consumableSlots: [],
     exp: 0, status: 'idle',
   };
 }
@@ -948,7 +1076,7 @@ function createDg(hostChar, opts = {}) {
   const dungeon = opts.setup ? applyDungeonSetup(base, opts.setup) : (() => {
     const isHidden = Math.random() < 0.1;
     const specialEvent = Math.random() < 0.1;
-    const breakthrough = canBreakthrough(hostChar) && Math.random() < 0.1;
+    const breakthrough = false; // 副本不再自动安排转职试炼；Lv.10 经验照常在结算中升级
     const enemies = rollEnemies(base, specialEvent);
     const bossLevels = dungeonBossLevels(base);
     const bosses = (base.bosses || []).map((b, i) => ({ ...b, level: bossLevels[Math.min(i, bossLevels.length - 1)] }));
@@ -998,13 +1126,17 @@ function aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, m
     stepNo: dg.totalStep + 1, totalSteps: Number(dg.maxSteps == null ? ((dg.plan || []).reduce((a, p) => a + p.steps, 0) || 40) : dg.maxSteps),
     enemy: dg._curEnemy ? { name: dg._curEnemy.name, level: dg._curEnemy.level || null, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
     itemUse: null,
+    consumableSlots: consumableSlotPayload(actor),
     availableItems: availableItemsForActor(dg, actor),
+    recoveryConsumables: recoveryConsumablesForActor(dg, actor),
     ownedItems: collectOwnedItems(dg),
     skillUse: null,
     party: dg.party.map(m => ({
       name: m.name, gender: m.gender || '男', realm: m.character_class || '', level: Number(m.level) || 1,
+      hp: Math.max(0, Number(m.hp) || 0), max_hp: Math.max(1, Number(m.max_hp) || 100),
       personality: m.personality || '',
       skills: (m.skills || []).map(s => ({ name: s.name, desc: s.desc || '' })),
+      consumableSlots: consumableSlotPayload(m),
       items: [...(m.equipment || []), ...(m.bag || [])].map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: memberIdentity(m), ownerName: m.name || '' })),
     })),
     context: dg.steps.slice(-5).map(s => s.text).join('\n'),
@@ -1017,9 +1149,10 @@ module.exports = {
   dungeonLevelBand, clampDungeonLevel, dungeonBossLevels,
   rollEnemies, pickDungeon, buildPlan, buildNarrativeFocusPlan, dynamicNarrativeFocus, appendDynamicNarrativeFocus, itemUseCheck, recordItemLoan, recordItemLoansFromText, collectItemLoansFromText, itemUseExplicitInText, consumeItemUse, settleItemLoans, availableItemsForActor, skillUseCheck, parseLootMarkers, extractGold,
   registerLootOwnership, validateStepItemUsage, itemGuardFeedback,
-  applyStageEffects, genNpc, createDg, aiStoryPayload, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,
+  applyStageEffects, resolveDamageFloor, genNpc, createDg, aiStoryPayload, regenerateHp, regenerateStamina, assignLoot, hasDuplicateCharacterName, experienceNeeded, canBreakthrough,
   applyLevelGrowth, applyExperience, parseLearnedSkills, applyLearnedSkills,
   normalizeInjuryGrant, clearExpiredInjury,
   normalizeAiDecision, canEnterClosing, resolveNextPhase, applyAiDecision,
-  normalizeAiStepResult, recordAiLoot, applyDungeonSetup,
+  normalizeAiStepResult, recordAiLoot, applyDungeonSetup, resolveHealInfo,
+  itemIsConsumable, normalizeConsumableSlots, isRecoveryConsumable, recoveryConsumablesForActor,
 };

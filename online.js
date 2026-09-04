@@ -50,6 +50,7 @@
     try {
       const cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || 'null');
       if (!cached || !cached._char_db_id) return;
+      if (!Array.isArray(cached.consumableSlots)) cached.consumableSlots = [];
       window.D.my_adventurer = { ...cached, is_mine: true, _from_cache: true };
       window.D.adventurers = [window.D.my_adventurer];
       if (window.renderMine) renderMine();
@@ -383,6 +384,7 @@
       if (!Array.isArray(D.my_adventurer.skillPool)) D.my_adventurer.skillPool = [];
       if (!Array.isArray(D.my_adventurer.skills)) D.my_adventurer.skills = [];
       if (!Array.isArray(D.my_adventurer.equipment)) D.my_adventurer.equipment = [];
+      if (!Array.isArray(D.my_adventurer.consumableSlots)) D.my_adventurer.consumableSlots = [];
       if (!D.my_adventurer.staminaTs) D.my_adventurer.staminaTs = Date.now();
       if (!D.my_adventurer.hpTs) D.my_adventurer.hpTs = Date.now();
     }
@@ -486,9 +488,14 @@
   window.toggleFollow = async function toggleFollow(btn, id) {
     const previousFollowed = btn.classList.contains('active');
     const followed = !previousFollowed;
+    const setFollowText = (el, on) => {
+      const label = el.querySelector('.role-btn-label');
+      if (label) label.textContent = on ? '已关注' : '关注';
+      else el.textContent = on ? '已关注' : '☆ 关注';
+    };
     btn.disabled = true;
     btn.classList.toggle('active', followed);
-    btn.textContent = followed ? '已关注' : '☆ 关注';
+    setFollowText(btn, followed);
     try {
       await api('/api/public/characters/' + id + '/follow', {
         method: 'POST',
@@ -503,7 +510,7 @@
         .catch(error => { toastMsg(error.message || '关注状态刷新失败'); });
     } catch (error) {
       btn.classList.toggle('active', previousFollowed);
-      btn.textContent = previousFollowed ? '已关注' : '☆ 关注';
+      setFollowText(btn, previousFollowed);
       toastMsg(error.message || '关注操作失败');
       btn.disabled = false;
     }
@@ -1405,7 +1412,8 @@
     const deathReasonByName = new Map((d.death_reasons || []).map(entry => [String(entry && entry.name || '').trim(), String(entry && entry.reason || '').trim().slice(0, 100)]));
     const members = results.map(r => ({
       name: r.name, is_mine: viewerOwnsResult(r), score: r.score != null ? r.score : 5,
-      fate: r.fate || '健康', damage: r.damage || 0, gold: r.gold || 0,
+      fate: r.fate || '健康', damage: r.damage || 0, hpDelta: r.hpDelta != null ? r.hpDelta : null,
+      levelUp: !!r.levelUp, gold: r.gold || 0,
       loot: r.lootItems && r.lootItems.length ? r.lootItems : (r.loot || []).map(n => ({ name: n, qty: 1 })),
       newTraits: r.newTraits || [], praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || `角色「${r.name}」在探险中气血耗尽，壮烈阵亡。`.slice(0, 100)) : '',
     }));
@@ -1520,12 +1528,14 @@
     if (!confirm('确定删除当前角色，重新开始创建？')) return;
     try {
       await api('/api/character/' + role._char_db_id + '/delete', { method: 'POST' });
+      if (window.clearTavernSeatsForRole) window.clearTavernSeatsForRole(role);
       localStorage.removeItem('dnf_role');
       window.D.adventurers = (window.D.adventurers || []).filter(a => Number(a._char_db_id || a.id) !== Number(role._char_db_id));
       window.D.my_adventurer = null;
       await loadOnlineRoles();
       renderMine();
       renderAdventurers();
+      if (window.renderTavern) renderTavern();
       toastMsg('角色已删除，可以重新创建');
     } catch (e) { toastMsg(e.message || '删除角色失败'); }
   };

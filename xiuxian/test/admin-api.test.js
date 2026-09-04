@@ -444,7 +444,7 @@ test('admin can search players and read a character with its owner and version',
   assert.equal(detail.body.character.userId, userId);
   assert.equal(detail.body.character.username, username);
   assert.equal(typeof detail.body.character.updated_at, 'number');
-  assert.deepEqual(detail.body.character.data, originalCharacter);
+  assert.deepEqual(detail.body.character.data, { ...originalCharacter, consumableSlots: [] });
 
   const missing = await adminRequest('GET', '/api/admin/characters/999999999');
   assert.equal(missing.status, 404);

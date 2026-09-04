@@ -23,6 +23,61 @@ test('normalizeAiStepResult keeps AI outcome, damage, healing, item/skill use, a
   });
 });
 
+test('AI healing described in text works even when skillUse is omitted', () => {
+  const healer = { id: 'healer', name: '歌兰蒂斯', hp: 60, max_hp: 130 };
+  const ally = { id: 'ally', name: '奥兰奶奶', hp: 80, max_hp: 150 };
+  const dg = { party: [healer, ally] };
+  const info = GE.resolveHealInfo(
+    dg,
+    healer,
+    '歌兰蒂斯低诵祷词，快速愈合的白芒覆上伤口，焦皮缓缓收拢。',
+    '',
+    {}
+  );
+  assert.equal(info.allowed, true);
+  assert.equal(info.target.name, '歌兰蒂斯');
+});
+
+test('AI healing resolves a named teammate as the heal target', () => {
+  const healer = { id: 'healer', name: '歌兰蒂斯', hp: 120, max_hp: 130 };
+  const ally = { id: 'ally', name: '奥兰奶奶', hp: 60, max_hp: 150 };
+  const dg = { party: [healer, ally] };
+  const info = GE.resolveHealInfo(
+    dg,
+    healer,
+    '歌兰蒂斯为奥兰奶奶施展快速愈合，圣光覆上伤口。',
+    '',
+    {}
+  );
+  assert.equal(info.allowed, true);
+  assert.equal(info.target.name, '奥兰奶奶');
+});
+
+test('healing without a narrative recovery action stays disallowed', () => {
+  const healer = { id: 'healer', name: '歌兰蒂斯', hp: 60, max_hp: 130 };
+  const dg = { party: [healer] };
+  assert.equal(GE.resolveHealInfo(dg, healer, '歌兰蒂斯收剑回鞘，继续前行。', '', {}).allowed, false);
+});
+
+test('applyStageEffects heals the named target instead of the acting member', () => {
+  const dg = {
+    damage: 0,
+    deaths: [],
+    memberGains: { healer: { damage: 0 }, ally: { damage: 0, healing: 0 } },
+    _curEnemy: null,
+    bossDrops: [],
+  };
+  const healer = { id: 'healer', name: '歌兰蒂斯', hp: 100, max_hp: 100 };
+  const ally = { id: 'ally', name: '奥兰奶奶', hp: 40, max_hp: 50 };
+
+  GE.applyStageEffects(dg, 'battle', healer, 0, 'good', 0, 20, true, ally);
+
+  assert.equal(healer.hp, 100);
+  assert.equal(ally.hp, 50);
+  assert.equal(dg.healing, 10);
+  assert.equal(dg.memberGains.ally.healing, 10);
+});
+
 test('recordAiLoot merges AI loot quantities and carries rarity into gainedLoot', () => {
   const dg = { aiLoot: [], gainedLoot: [] };
   const actor = { id: 'u1', name: '甲' };
@@ -105,7 +160,7 @@ test('single-player dungeon flow and settlement are fully AI-driven without D20 
 
   assert.doesNotMatch(tick, /rollD20|itemUseCheck|skillUseCheck/);
   assert.match(tick, /outcome = gs\.outcome/);
-  assert.match(tick, /applyStageEffects\(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs\.heal, healAllowed\)/);
+  assert.match(tick, /applyStageEffects\(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs\.heal, healAllowed, healTarget\)/);
   assert.match(html, /fetch\('\/api\/ai\/setup'/);
   assert.match(step, /availableItems: availableItemsForActor\(dg, actor\)/);
   assert.match(step, /outcome: step\.outcome, damage: step\.damage/);
@@ -126,6 +181,64 @@ test('server prompts tell the AI to decide outcomes instead of using dice', () =
   assert.match(server, /本步成败、受伤与收获由你依据剧情直接判定/);
 });
 
+test('AI damage guidance carries HP context and a shared non-lethal floor', () => {
+  const server = fs.readFileSync('server.js', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
+
+  assert.match(server, /伤害尺度（按当前最大生命比例）/);
+  assert.match(server, /生命 \$\{Math\.max/);
+  assert.match(html, /hp: Math\.max\(0, Number\(m\.hp\)/);
+  assert.match(html, /max_hp: Math\.max\(1, Number\(m\.max_hp\)/);
+
+  const source = html.slice(
+    html.indexOf('/* ---------- AI 伤害保底'),
+    html.indexOf('/* ---------- 重伤体系')
+  );
+  const context = {};
+  vm.createContext(context);
+  vm.runInContext(source, context);
+  const floor = context.resolveDamageFloor(
+    { dungeon: { isHidden: false, specialEvent: false }, _curEnemy: { level: 1 } },
+    'battle',
+    { hp: 100, max_hp: 100, level: 1 },
+    'bad'
+  );
+  assert.equal(floor, 10);
+  assert.equal(context.resolveDamageFloor(
+    { dungeon: { isHidden: false, specialEvent: false }, _curEnemy: { level: 1 } },
+    'battle',
+    { hp: 100, max_hp: 100, level: 1 },
+    'good'
+  ), 0);
+});
+
+test('AI heal guidance and settlement expose HP deltas with level-up badges', () => {
+  const server = fs.readFileSync('server.js', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
+  const online = fs.readFileSync('online.js', 'utf8');
+  const runner = fs.readFileSync('room-runner.js', 'utf8');
+
+  assert.match(server, /治疗尺度（按当前最大生命比例）/);
+  assert.match(server, /hpDelta: Number\.isFinite\(hpEntry\)/);
+  assert.match(server, /memberRes\.levelUp = leveledUp/);
+  assert.match(server, /memberRes\.hpDelta = memberRes\.hpFinal - hpEntry/);
+  assert.match(html, /dg\.entryHp/);
+  assert.match(html, /function settlementHpView/);
+  assert.match(html, /💚 生命\+/);
+  assert.match(html, /LEVEL UP↑/);
+  assert.match(online, /hpDelta: r\.hpDelta/);
+  assert.match(online, /levelUp: !!r\.levelUp/);
+  assert.match(runner, /dungeon\.entryHp/);
+
+  const hpSource = html.slice(html.indexOf('function settlementHpView'), html.indexOf('function showSettlement(log)'));
+  const hpContext = {};
+  vm.createContext(hpContext);
+  vm.runInContext(hpSource, hpContext);
+  assert.equal(hpContext.settlementHpView({ hpDelta: 18 }).text, '+18');
+  assert.match(hpContext.settlementHpSpan({ hpDelta: 18 }), /💚 生命\+18/);
+  assert.equal(hpContext.settlementHpView({ hpDelta: -12 }).text, '-12');
+});
+
 test('server keeps AI outcome JSON clear of the default narrative truncation', () => {
   const server = fs.readFileSync('server.js', 'utf8');
   const outcomeCalls = server.match(/callLLM\([^;]*OUTCOME_PROMPT,\s*2000,?\s*\)/g) || [];
@@ -141,4 +254,17 @@ test('server settlement exposes AI companion loot in results without writing it 
   assert.match(npcBranch, /memberRes\.lootItems = npcLoot\.map/);
   // NPC 分支必须直接结束，不得落入玩家持久化逻辑（不写背包、不保存角色）。
   assert.match(npcBranch, /results\.push\(memberRes\);\s*continue;/);
+});
+
+test('normalizeConsumableSlots collapses duplicate consumable references', () => {
+  const role = {
+    consumableSlots: [
+      { name: ' 治疗药水 ', desc: 'a', kind: 'consumable' },
+      { name: '治疗药水', desc: 'b', kind: 'consumable' },
+      { name: '净化护符', desc: 'c', kind: 'consumable' },
+      { name: '力量护符', desc: 'd', kind: 'consumable' },
+    ],
+  };
+  GE.normalizeConsumableSlots(role);
+  assert.deepEqual(role.consumableSlots.map(slot => slot.name), ['治疗药水', '净化护符']);
 });

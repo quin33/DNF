@@ -54,6 +54,14 @@ function createRoomRunner(dependencies) {
 
     const dungeon = GE.createDg(hostCharacter, { base, setup });
     dungeon.party = buildDungeonParty(room, hostCharacter);
+    dungeon.entryHp = {};
+    dungeon.party.forEach(member => {
+      const entryKey = member.uid || member.id;
+      dungeon.entryHp[entryKey] = {
+        hp: Math.max(0, Number(member.hp) || 0),
+        max_hp: Math.max(1, Number(member.max_hp) || 100),
+      };
+    });
     dungeon.party.forEach(member => {
       const id = member.uid || member.id;
       dungeon.memberGains[id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };

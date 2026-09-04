@@ -50,6 +50,7 @@
     try {
       const cached = JSON.parse(localStorage.getItem(ROLE_CACHE_KEY) || 'null');
       if (!cached || !cached._char_db_id) return;
+      if (!Array.isArray(cached.consumableSlots)) cached.consumableSlots = [];
       window.D.my_adventurer = { ...cached, is_mine: true, _from_cache: true };
       window.D.adventurers = [window.D.my_adventurer];
       if (window.renderMine) renderMine();
@@ -342,6 +343,7 @@
       if (!Array.isArray(D.my_adventurer.skillPool)) D.my_adventurer.skillPool = [];
       if (!Array.isArray(D.my_adventurer.skills)) D.my_adventurer.skills = [];
       if (!Array.isArray(D.my_adventurer.equipment)) D.my_adventurer.equipment = [];
+      if (!Array.isArray(D.my_adventurer.consumableSlots)) D.my_adventurer.consumableSlots = [];
       if (!D.my_adventurer.staminaTs) D.my_adventurer.staminaTs = Date.now();
       if (!D.my_adventurer.hpTs) D.my_adventurer.hpTs = Date.now();
     }
@@ -1365,7 +1367,8 @@
     const deathReasonByName = new Map((d.death_reasons || []).map(entry => [String(entry && entry.name || '').trim(), String(entry && entry.reason || '').trim().slice(0, 100)]));
     const members = results.map(r => ({
       name: r.name, is_mine: viewerOwnsResult(r), score: r.score != null ? r.score : 5,
-      fate: r.fate || '健康', damage: r.damage || 0, gold: r.gold || 0,
+      fate: r.fate || '健康', damage: r.damage || 0, hpDelta: r.hpDelta != null ? r.hpDelta : null,
+      levelUp: !!r.levelUp, gold: r.gold || 0,
       loot: r.lootItems && r.lootItems.length ? r.lootItems : (r.loot || []).map(n => ({ name: n, qty: 1 })),
       newTraits: r.newTraits || [], praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || `角色「${r.name}」在探险中气血归零，道消身殒。`.slice(0, 100)) : '',
     }));

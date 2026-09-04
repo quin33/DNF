@@ -31,7 +31,7 @@ test('log identity stays unique when concurrent logs share a display id', () => 
 
 test('game content is a centered parchment canvas with the page image visible on desktop sides', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
-  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 月光酒馆页头'));
 
   assert.match(appContent, /width:\s*min\(100%,\s*1200px\)/);
   assert.match(appContent, /margin:\s*0\s+auto/);
@@ -65,7 +65,7 @@ test('DNF rarity configuration exposes seven tiers with only four active drop ti
 test('game canvas uses the parchment surface while body keeps the sky background', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   const body = styles.slice(styles.indexOf('body {'), styles.indexOf('::-webkit-scrollbar'));
-  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 深渊酒馆页头'));
+  const appContent = styles.slice(styles.indexOf('.app-content {'), styles.indexOf('/* ============ 月光酒馆页头'));
   assert.match(body, /url\("pic\/天空之城\.jpg"\)/);
   assert.match(appContent, /background:\s*var\(--paper-bg\)/);
   assert.match(appContent, /margin:\s*0\s+auto/);
@@ -108,11 +108,27 @@ test('tavern hall exposes paper desk and guestbook visual surfaces', () => {
   assert.match(styles, /\.table-seats[\s\S]*var\(--wood\)/);
 });
 
+test('moonlight tavern ships four named four-seat round tables with clickable ordering', () => {
+  const data = readAsset('data.js');
+  const html = readAsset('index.html');
+  const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
+  assert.equal((data.match(/zone: 'bar'/g) || []).length, 6, 'bar should have six stools');
+  for (const label of ['赛丽亚的圆桌', '决斗者圆桌', '天空旅人圆桌', '窗边秘闻圆桌']) {
+    assert.equal((data.match(new RegExp(label, 'g')) || []).length, 4, `${label} should have four seats`);
+  }
+  assert.match(data, /tavern_menu:/);
+  assert.match(html, /function tavernSeatClick/);
+  assert.match(html, /function orderTavernItem/);
+  assert.match(html, /月光酒馆/);
+  assert.match(styles, /\.bar-stools[\s\S]*repeat\(6,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(styles, /\.hall-tables[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+});
+
 test('secondary pages reuse the moonlit parchment panel language', () => {
   const styles = fs.readFileSync(path.join(ROOT, 'style.css'), 'utf8');
   assert.match(styles, /\.event-header[\s\S]*var\(--paper-raised\)/);
   assert.match(styles, /\.build-card[\s\S]*var\(--paper-raised\)/);
-  assert.match(styles, /\.adv-card[\s\S]*var\(--paper-raised\)/);
+  assert.match(styles, /\.role-card[\s\S]*var\(--paper-raised\)/);
   assert.match(styles, /\.log-card[\s\S]*var\(--paper-raised\)/);
   assert.match(styles, /\.btn-primary[\s\S]*var\(--moon-blue-dark\)/);
 });
@@ -356,7 +372,9 @@ test('follow controls update optimistically before the background page refresh c
   const follow = online.slice(online.indexOf('window.toggleFollow'), online.indexOf('function renderActiveOnlineTab'));
 
   assert.match(follow, /classList\.toggle\('active',\s*followed\)/);
-  assert.match(follow, /textContent\s*=\s*followed\s*\?\s*'已关注'\s*:\s*'☆ 关注'/);
+  assert.match(follow, /setFollowText\(btn,\s*followed\)/);
+  assert.match(follow, /setFollowText\(btn,\s*previousFollowed\)/);
+  assert.match(follow, /label\.textContent\s*=\s*on\s*\?\s*'已关注'\s*:\s*'关注'/);
   assert.match(follow, /window\.loadPublicCharacterPage\(window\.advFilter \|\| \{\}\)[\s\S]*\.then/);
   assert.doesNotMatch(follow, /await window\.loadPublicCharacterPage\(window\.advFilter \|\| \{\}\)/);
 });

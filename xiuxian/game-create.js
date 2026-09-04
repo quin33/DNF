@@ -62,6 +62,7 @@ function createCharacterObject({ name, rootKey, gender, pers, itemKeys }) {
     skillPool: [],
     equipment: [],
     bag: (itemKeys || []).slice(0, 2).map(k => { const it = ITEM_CHOICES.find(i => i.key === k); return it ? { name: it.name, desc: it.desc, qty: it.qty || 1, kind: it.kind } : null; }).filter(Boolean),
+    consumableSlots: [],
     latest_score: 0, praise_count: 0, is_followed: false,
   };
 }

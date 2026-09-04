@@ -298,13 +298,38 @@ function repairCorruptedText(value, key = '') {
   return value;
 }
 
+function itemIsConsumableLike(item) {
+  if (!item) return false;
+  if (item.consumable === true) return true;
+  return ['pill', 'talisman', 'consumable'].includes(String(item.kind || '').toLowerCase());
+}
+function normalizeStoredConsumableSlots(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  return list.filter(entry => {
+    if (!entry || !entry.name || !itemIsConsumableLike(entry)) return false;
+    const key = String(entry.name || '').trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  })
+    .slice(0, 2)
+    .map(entry => ({
+      name: String(entry.name || '').slice(0, 24),
+      desc: String(entry.desc || '').slice(0, 200),
+      kind: entry.kind || 'consumable',
+      rarity: entry.rarity || 'common',
+      qty: 1,
+    }));
+}
+
 const SESSION_TTL_MS = 7 * 24 * 3600 * 1000;  // 会话 7 天
 
 const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'traits', 'equipment', 'bag', 'skills', 'skillPool',
+  'traits', 'equipment', 'bag', 'skills', 'skillPool', 'consumableSlots',
 ]);
 
 function adminCharacterSnapshot(data) {
@@ -420,7 +445,11 @@ function deleteAdminSession(token) {
 function hydrateCharacterRow(row) {
   if (!row) return null;
   const data = repairCorruptedText(JSON.parse(row.data || '{}'));
-  if (!clearExpiredInjury(data)) return { row, data };
+  const rawSlots = data.consumableSlots;
+  data.consumableSlots = normalizeStoredConsumableSlots(rawSlots);
+  const slotsChanged = JSON.stringify(rawSlots || null) !== JSON.stringify(data.consumableSlots);
+  const injuryChanged = clearExpiredInjury(data);
+  if (!slotsChanged && !injuryChanged) return { row, data };
   const updatedAt = Math.max(Date.now(), Number(row.updated_at || 0) + 1);
   const updated = db.prepare('UPDATE characters SET data = ?, updated_at = ? WHERE id = ? AND updated_at = ?')
     .run(JSON.stringify(data), updatedAt, row.id, row.updated_at);
@@ -431,6 +460,8 @@ function hydrateCharacterRow(row) {
 
 function createCharacter(userId, name, data) {
   const now = Date.now();
+  data = data && typeof data === 'object' ? JSON.parse(JSON.stringify(data)) : {};
+  data.consumableSlots = normalizeStoredConsumableSlots(data.consumableSlots);
   const info = db.prepare('INSERT INTO characters (user_id, name, data, updated_at) VALUES (?,?,?,?)')
     .run(userId, name, JSON.stringify(data), now);
   return info.lastInsertRowid;
@@ -1287,6 +1318,7 @@ function publicCharacterData(row) {
       bag: Array.isArray(data.bag) ? data.bag : [],
       skills: Array.isArray(data.skills) ? data.skills : [],
       skillPool: Array.isArray(data.skillPool) ? data.skillPool : [],
+      consumableSlots: Array.isArray(data.consumableSlots) ? data.consumableSlots : [],
       equippedItems: Array.isArray(data.equippedItems) ? data.equippedItems : [],
       updated_at: row.updated_at,
   };

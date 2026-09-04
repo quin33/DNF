@@ -97,6 +97,7 @@ function createCharacterObject({ name, rootKey, gender, pers, skills }) {
       { ...STARTER_POTION },
     ],
     bag: [],
+    consumableSlots: [],
     latest_score: 0, praise_count: 0, is_followed: false,
   };
 }

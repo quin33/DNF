@@ -1,5 +1,8 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 
 const GE = require('../game-engine');
 
@@ -56,15 +59,49 @@ test('foundation progression can level repeatedly and stops at foundation comple
   assert.equal(role.agility, 12);
 });
 
-test('qi level ten uses a 2000 experience breakthrough threshold and keeps accumulating', () => {
+test('level ten uses a 2000 exp threshold and advances without a job change', () => {
   assert.equal(GE.experienceNeeded(10), 2000);
   assert.equal(GE.canBreakthrough({ level: 10, exp: 1999 }), false);
   assert.equal(GE.canBreakthrough({ level: 10, exp: 2000 }), true);
-  const role = { level: 10, exp: 2000, hp: 100, max_hp: 100, strength: 1, agility: 1, intelligence: 1, luck: 1 };
-  const levels = GE.applyExperience(role, 240);
-  assert.deepEqual(levels, []);
-  assert.equal(role.exp, 2240);
-  assert.equal(role.level, 10);
+  const role = { level: 10, exp: 0, hp: 100, max_hp: 100, strength: 1, agility: 1, intelligence: 1, luck: 1 };
+  const levels = GE.applyExperience(role, 2240, { statIndexes: Array(10).fill(0), hpGain: 20 });
+  assert.deepEqual(levels, [11]);
+  assert.equal(role.exp, 240);
+  assert.equal(role.level, 11);
+  assert.equal(role.max_hp, 120);
+  assert.equal(role.hp, 120);
+  assert.equal(role.strength, 11);
+});
+
+test('dungeons do not auto schedule a job change trial for an eligible level ten', () => {
+  const role = { level: 10, exp: 2000 };
+  for (let i = 0; i < 50; i++) {
+    const dg = GE.createDg(role, { short: true });
+    assert.equal(dg.dungeon.breakthrough, false);
+    assert.ok(!dg.plan.some(plan => plan.key === 'breakthrough'), 'dungeon must not contain a breakthrough stage');
+  }
+
+  const server = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  const normalizeSource = server.slice(server.indexOf('function normalizeAiSetup'), server.indexOf('async function aiDecideSetup'));
+  const context = {};
+  vm.createContext(context);
+  vm.runInContext(normalizeSource, context);
+  const parsed = context.normalizeAiSetup({ breakthrough: true }, { enemies: [], levelMin: 1, levelMax: 19 });
+  assert.equal(parsed.breakthrough, false);
+
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const clientNormalize = html.slice(html.indexOf('function normalizeAiSetupClient'), html.indexOf('function pickDungeon'));
+  assert.doesNotMatch(clientNormalize, /breakthrough: !!\(setup && setup\.breakthrough\)/);
+  assert.match(clientNormalize, /breakthrough: false/);
+});
+
+test('local level ten keeps the same unlocked progression and UI label', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const local = html.slice(html.indexOf('function applyLocalExperience'), html.indexOf('function showSettlementById'));
+  const card = html.slice(html.indexOf('function advCardHTML'), html.indexOf('function renderMine'));
+  assert.doesNotMatch(local, /if \(level === 10\) break;/);
+  assert.match(local, /if \(level >= 14\)/);
+  assert.match(card, /const expCap = lv >= 14;/);
 });
 
 test('online and local dungeon plans share the same 10 to 40 step range', () => {

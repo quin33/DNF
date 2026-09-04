@@ -321,13 +321,38 @@ function repairCorruptedText(value, key = '') {
   return value;
 }
 
+function itemIsConsumableLike(item) {
+  if (!item) return false;
+  if (item.consumable === true) return true;
+  return ['pill', 'talisman', 'consumable'].includes(String(item.kind || '').toLowerCase());
+}
+function normalizeStoredConsumableSlots(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  return list.filter(entry => {
+    if (!entry || !entry.name || !itemIsConsumableLike(entry)) return false;
+    const key = String(entry.name || '').trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  })
+    .slice(0, 2)
+    .map(entry => ({
+      name: String(entry.name || '').slice(0, 24),
+      desc: String(entry.desc || '').slice(0, 200),
+      kind: entry.kind || 'consumable',
+      rarity: entry.rarity || 'common',
+      qty: 1,
+    }));
+}
+
 const SESSION_TTL_MS = 7 * 24 * 3600 * 1000;  // 会话 7 天
 
 const ADMIN_SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'equipment', 'bag', 'skills', 'skillPool',
+  'equipment', 'bag', 'skills', 'skillPool', 'consumableSlots',
 ]);
 
 function adminCharacterSnapshot(data) {
@@ -454,6 +479,9 @@ function hydrateCharacterRow(row) {
   data.equipment = normalizeCollection(data.equipment);
   data.skills = Array.isArray(data.skills) ? data.skills.map(skill => { const next = { name: skill && skill.name, desc: skill && skill.desc || '' }; if (skill && skill.type) migrated = true; return next; }) : data.skills;
   data.skillPool = Array.isArray(data.skillPool) ? data.skillPool.map(skill => { const next = { name: skill && skill.name, desc: skill && skill.desc || '' }; if (skill && skill.type) migrated = true; return next; }) : data.skillPool;
+  const rawSlots = data.consumableSlots;
+  data.consumableSlots = normalizeStoredConsumableSlots(rawSlots);
+  if (JSON.stringify(rawSlots || null) !== JSON.stringify(data.consumableSlots)) migrated = true;
   if (version < 2) { data.rarity_version = 2; migrated = true; }
   const injuryChanged = clearExpiredInjury(data);
   if (!migrated && !injuryChanged) return { row, data };
@@ -471,6 +499,8 @@ function createCharacter(userId, name, data) {
   data.rarity_version = 2;
   for (const key of ['bag', 'equipment']) if (Array.isArray(data[key])) data[key] = data[key].map(item => normalizeItemRarity(item, 2));
   for (const key of ['skills', 'skillPool']) if (Array.isArray(data[key])) data[key] = data[key].map(skill => ({ name: skill && skill.name, desc: skill && skill.desc || '' }));
+  if (!Array.isArray(data.consumableSlots)) data.consumableSlots = [];
+  data.consumableSlots = normalizeStoredConsumableSlots(data.consumableSlots);
   const info = db.prepare('INSERT INTO characters (user_id, name, data, updated_at) VALUES (?,?,?,?)')
     .run(userId, name, JSON.stringify(data), now);
   return info.lastInsertRowid;
@@ -1319,6 +1349,7 @@ function publicCharacterData(row) {
       personality: data.personality || '',
       status: data.status,
       cultivation: data.cultivation,
+      seriaInn: data.seriaInn,
       injury: data.injury || null,
       title_frame: data.title_frame || '',
       latest_score: data.latest_score,
@@ -1327,6 +1358,7 @@ function publicCharacterData(row) {
       bag: Array.isArray(data.bag) ? data.bag : [],
       skills: Array.isArray(data.skills) ? data.skills : [],
       skillPool: Array.isArray(data.skillPool) ? data.skillPool : [],
+      consumableSlots: Array.isArray(data.consumableSlots) ? data.consumableSlots : [],
       equippedItems: Array.isArray(data.equippedItems) ? data.equippedItems : [],
       updated_at: row.updated_at,
   };

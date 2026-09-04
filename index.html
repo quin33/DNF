@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深渊酒馆 S1 · 独立复刻版</title>
+<title>月光酒馆 S1 · 地下城与勇士</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body data-theme="light">
@@ -40,8 +40,8 @@
 <script src="loot-settlement.js"></script>
 <script>
 /* ============================================================
-   深渊酒馆 S1 · 独立复刻版
-   模块：酒馆大厅 / 活动 / 建筑 / 我的 / 冒险者 / 小队 / 探险日志
+   月光酒馆 S1 · 地下城与勇士
+   模块：月光酒馆 / 活动 / 建筑 / 我的 / 冒险者 / 小队 / 探险日志
    数据来源：data.js 中的 window.TAVERN_DATA（可自由替换）
    ============================================================ */
 const D = window.TAVERN_DATA;
@@ -74,7 +74,7 @@ const fmtTimeFull = iso => {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 };
-const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'修炼中', breaking_through:'突破中', insighting:'领悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
+const statusText = s => ({resting:'休息', idle:'空闲', in_party:'组队中', adventuring:'探险中', cultivating:'历练中', treating:'治疗中', breaking_through:'转职试炼', insighting:'参悟中', in_tavern:'酒馆活动中', working:'工作中', dead:'已阵亡', in_tavern_activity:'酒馆活动中'}[s] || s || '未知');
 const RARITY_DEFS = (window.LootSettlement && window.LootSettlement.RARITY_CONFIG) || {};
 const rarityColor = r => (RARITY_DEFS[r] && RARITY_DEFS[r].color) || '#f4f4f4';
 function toastMsg(text) {
@@ -84,17 +84,28 @@ function toastMsg(text) {
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3200);
 }
-const accentFor = adv => {
-  // 卡片颜色优先表达当前状态，便于在列表中快速扫读。
-  if (adv.status === 'resting') return '#7c4dce';
-  if (adv.status === 'cultivating' || adv.status === 'working' || adv.status === 'breaking_through') return '#20b88a';
-  if (adv.status === 'insighting') return '#8b6fd1';
-  if (adv.status === 'adventuring') return '#f08a24';
-  if (adv.is_mine) return '#e6a817';
-  if (adv.level >= 10) return '#f0883e';
-  if (adv.level >= 5) return '#58a6ff';
-  return '#5d87b3';
+const ROLE_CLASS_META = {
+  slayer: { label: '鬼剑士', accent: '#b23a48' },
+  fighter: { label: '格斗家', accent: '#b36a2a' },
+  gunner: { label: '神枪手', accent: '#356d94' },
+  mage: { label: '魔法师', accent: '#7553a8' },
+  priest: { label: '圣职者', accent: '#3f7b68' },
+  unknown: { label: '冒险家', accent: '#31485c' },
 };
+const ROLE_KEY_BY_LABEL = {
+  鬼剑士: 'slayer', 格斗家: 'fighter', 神枪手: 'gunner', 魔法师: 'mage', 圣职者: 'priest',
+};
+function roleMetaFor(adv) {
+  const key = ROLE_KEY_BY_LABEL[(adv && adv.character_class) || ''] || 'unknown';
+  return ROLE_CLASS_META[key] || ROLE_CLASS_META.unknown;
+}
+function roleKeyFor(adv) {
+  return ROLE_KEY_BY_LABEL[(adv && adv.character_class) || ''] || 'unknown';
+}
+function roleClassNameFor(adv) {
+  return String(adv && adv.classTitle ? adv.classTitle : (adv.character_class || '未知职业'));
+}
+const accentFor = adv => roleMetaFor(adv).accent;
 
 /* ---------- UI 风格切换（默认白色仙侠风，可切深色） ---------- */
 function applyTheme(t) {
@@ -111,7 +122,7 @@ applyTheme(localStorage.getItem('dnf_theme') || 'light');
 /* ---------- 渲染主框架 ---------- */
 const root = $('#app-root');
 const T = D.tavern;
-const FEATURED_BUILDING_CODES = new Set(['training_intelligence', 'spirit_platform', 'taixu_realm', 'forge', 'mailbox']);
+const FEATURED_BUILDING_CODES = new Set(['training_intelligence', 'taixu_realm', 'forge', 'mailbox', 'task_board', 'seria_inn', 'kanina_grocery']);
 
 root.innerHTML = `
   <!-- 页头 -->
@@ -168,6 +179,9 @@ root.innerHTML = `
     <symbol id="moonlit-chat" viewBox="0 0 24 24">
       <path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.5 8.5 0 0 1-4-.9L4 20l1.9-3.3A7.1 7.1 0 0 1 4.5 12 7.5 7.5 0 0 1 12 4.5a7.5 7.5 0 0 1 8 7Z"></path><path d="M8 12h.01M12 12h.01M16 12h.01"></path>
     </symbol>
+    <symbol id="glyph-star" viewBox="0 0 24 24">
+      <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"></path>
+    </symbol>
   </svg>
 
   <!-- 标签页 -->
@@ -211,65 +225,107 @@ function normalizeAdvCardData(raw) {
 }
 function advCardHTML(adv) {
   adv = normalizeAdvCardData(adv);
-  const accent = accentFor(adv);
+  const meta = roleMetaFor(adv);
+  const roleKey = roleKeyFor(adv);
   const hpPct = adv.max_hp ? Math.max(0, adv.hp / adv.max_hp * 100) : 0;
   const stPct = adv.max_stamina ? Math.max(0, adv.stamina / adv.max_stamina * 100) : 0;
-  // 等级进度：1-9 级为等级 × 100，10 级后为等级 × 200
   const lv = adv.level || 1;
   const expNeed = lv < 10 ? lv * 100 : lv < 14 ? lv * 200 : 2800;
-  const expCap = lv === 10 || lv >= 14;
+  const expCap = lv >= 14;
   const expCur = expCap ? Math.min(expNeed, adv.exp || 0) : (adv.exp || 0);
   const expPct = expNeed ? Math.min(100, Math.max(0, expCur / expNeed * 100)) : 0;
   const expLabel = expCap && expCur >= expNeed ? '圆满' : `${expCur}/${expNeed}`;
   const status = statusText(adv.status);
-  const statusClass = ` status-${String(adv.status || 'unknown').replace(/[^a-z_]/g, '')}`;
+  const statusSafe = String(adv.status || 'unknown').replace(/[^a-z_]/g, '');
   const frame = adv.title_frame ? ` title-frame--${adv.title_frame}` : '';
   const mine = adv.is_mine ? ' mine' : '';
   const dead = adv.status === 'dead' ? ' dead' : '';
-  const equips = (adv.equipment || []).slice(0, 4);
+  const roleClass = esc(roleClassNameFor(adv));
+  const equips = (adv.equipment || []).slice(0, 5);
+  const gearItems = equips.map(e => {
+    const rarity = esc(e.rarity || 'common');
+    return `<span class="role-item" data-rarity="${rarity}" title="${esc(e.desc || e.name || '')}">
+      <span class="role-item-dot" aria-hidden="true"></span>
+      <span class="role-item-name">${esc(e.name)}</span>${e.qty > 1 ? `<em>×${e.qty}</em>` : ''}
+    </span>`;
+  }).join('');
   return `
-  <div class="adv-card${frame}${mine}${dead}${statusClass}" style="--adv-accent:${accent}" data-adv-id="${adv.id}" onclick="openAdvDetail(${advIdArg(adv.id)})">
-    <div class="adv-card-head">
-      <div class="adv-name-wrap">
-        <span class="adv-name">${esc(adv.name)}</span>
-      </div>
-      <span class="adv-status">${esc(status)}</span>
+  <article class="role-card role-card--${roleKey}${frame}${mine}${dead}" style="--class-accent:${meta.accent}" data-adv-id="${adv.id}" tabindex="0" role="link" aria-label="${esc(adv.name)} · ${roleClass} · Lv.${lv}" onclick="openAdvDetail(${advIdArg(adv.id)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAdvDetail(${advIdArg(adv.id)})}">
+    <header class="role-head">
+      <span class="role-id">
+        <span class="role-name">${esc(adv.name)}</span>
+        <span class="role-class">${roleClass}</span>
+      </span>
+      <span class="role-level"><b>${lv}</b><i>LV</i></span>
+      <span class="role-status role-status--${statusSafe}">${esc(status)}</span>
+    </header>
+    <div class="role-gauges">
+      <div class="role-gauge role-gauge--hp"><span class="role-gauge-label">生命</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="hp" style="width:${hpPct}%"></i></span><span class="role-gauge-value" data-live="hp">${adv.hp}/${adv.max_hp}</span></div>
+      <div class="role-gauge role-gauge--stamina"><span class="role-gauge-label">体力</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="stamina" style="width:${stPct}%"></i></span><span class="role-gauge-value" data-live="stamina">${adv.stamina}/${adv.max_stamina}</span></div>
+      <div class="role-gauge role-gauge--exp"><span class="role-gauge-label">经验</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="exp" style="width:${expPct}%"></i></span><span class="role-gauge-value" data-live="exp">${expLabel}</span></div>
     </div>
-    <div class="adv-hp"><div class="adv-hp-fill" style="width:${hpPct}%"></div><span class="adv-hp-text">${adv.hp}/${adv.max_hp}</span></div>
-    <div class="adv-stamina"><div class="adv-stamina-fill" style="width:${stPct}%"></div><span class="adv-stamina-text">${adv.stamina}/${adv.max_stamina}</span></div>
-    <div class="adv-cultivate" title="当前等级：Lv.${lv} ${esc(adv.character_class || '职业不明')}"><div class="adv-cultivate-fill" style="width:${expPct}%"></div><span class="adv-cultivate-text">⚔️ Lv.${lv} · ${esc(adv.character_class || '职业不明')} · ${expLabel}</span></div>
-    <div class="adv-row">
-      <span class="lv">${esc(adv.character_class || '职业不明')}</span>
-      <span>力量 ${adv.strength}</span>
-      <span>敏捷 ${adv.agility}</span>
-      <span>智力 ${adv.intelligence}</span>
-      <span>幸运 ${adv.luck}</span>
+    ${adv.injury && adv.injury.name ? `<div class="role-injury"><span class="role-injury-mark" aria-hidden="true"></span><span>${esc(adv.injury.name)}</span><span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span></div>` : ''}
+    <div class="role-stats">
+      <span class="role-stat"><em>力量</em><b>${adv.strength}</b></span>
+      <span class="role-stat"><em>敏捷</em><b>${adv.agility}</b></span>
+      <span class="role-stat"><em>智力</em><b>${adv.intelligence}</b></span>
+      <span class="role-stat"><em>幸运</em><b>${adv.luck}</b></span>
+      <span class="role-stat role-stat--gold"><em>金币</em><b>${Number(adv.gold || 0).toFixed(0)}</b></span>
     </div>
-    <div class="adv-row secondary">
-      <span>${esc((adv.injury && adv.injury.name) || '—')}</span>
-      <span>${esc(adv.personality || '')}</span>
-      <span>💰 ${Number(adv.gold || 0).toFixed(0)} 金币</span>
+    <div class="role-gear">
+      <span class="role-gear-label">装备</span>
+      <span class="role-gear-list">${gearItems || '<span class="role-gear-empty">未装备</span>'}${(adv.equipment || []).length > 5 ? `<span class="role-gear-more">+${(adv.equipment || []).length - 5}</span>` : ''}</span>
     </div>
-    ${adv.injury && adv.injury.name ? `<div class="adv-tags"><span class="tag-badge injury-tag">${esc(adv.injury.name)}<span class="injury-cd" data-expires="${adv.injury.expiresAt}"></span></span></div>` : ''}
-    ${(adv.skills && adv.skills.length) ? `<div class="adv-tags">${adv.skills.slice(0, 4).map(s => `<span class="skill-badge">${esc(s.name)}</span>`).join('')}${adv.skills.length > 4 ? `<span class="equip-badge empty">+${adv.skills.length - 4}</span>` : ''}</div>` : ''}
-    <div class="adv-tags">
-      ${adv.is_mine && (adv.bag && adv.bag.length) ? `<span class="equip-badge">🎒 背包 ${adv.bag.length}/100</span>` : ''}
-      ${equips.map(e => `<span class="equip-badge" style="color:${itemColor(e)};border-color:${itemColor(e)}55">${esc(e.name)}${e.qty > 1 ? ` ×${e.qty}` : ''}</span>`).join('')}
-      ${(adv.equipment||[]).length > 4 ? `<span class="equip-badge empty">+${(adv.equipment||[]).length - 4}</span>` : ''}
-    </div>
-    <div class="adv-foot">
-      ${adv.is_mine ? '<span class="badge-mine">我的</span>' : ''}
-      ${adv.latest_score ? `<span class="badge-score">${Number(adv.latest_score).toFixed(1)}</span>` : ''}
-      ${adv.praise_count ? `<span class="badge-praise">${adv.praise_count}赞</span>` : ''}
-      <button class="history-btn" onclick="event.stopPropagation();openAdvLogsModal(${advIdArg(adv.id)})">探险</button>
-      ${adv.is_mine ? '' : `<button class="follow-btn ${adv.is_followed ? 'active' : ''}" onclick="event.stopPropagation();toggleFollow(this, ${advIdArg(adv.id)})">${adv.is_followed ? '已关注' : '☆ 关注'}</button>`}
-    </div>
-  </div>`;
+    <footer class="role-foot">
+      <span class="role-tags">
+        ${adv.is_mine ? '<span class="role-chip role-chip--mine">我的</span>' : ''}
+        ${adv.latest_score ? `<span class="role-chip role-chip--score">评分 ${Number(adv.latest_score).toFixed(1)}</span>` : ''}
+        ${adv.praise_count ? `<span class="role-chip role-chip--praise">${adv.praise_count} 赞</span>` : ''}
+      </span>
+      <span class="role-actions">
+        <button type="button" class="role-btn role-btn--logs" onclick="event.stopPropagation();openAdvLogsModal(${advIdArg(adv.id)})"><svg class="role-icon" focusable="false"><use href="#moonlit-logs"></use></svg><span>探险</span></button>
+        ${adv.is_mine ? '' : `<button type="button" class="role-btn role-btn--follow ${adv.is_followed ? 'active' : ''}" onclick="event.stopPropagation();toggleFollow(this, ${advIdArg(adv.id)})"><svg class="role-icon" focusable="false"><use href="#glyph-star"></use></svg><span class="role-btn-label">${adv.is_followed ? '已关注' : '关注'}</span></button>`}
+      </span>
+    </footer>
+  </article>`;
 }
 
 /* ============================================================
-   酒馆大厅
+   月光酒馆
    ============================================================ */
+function tavernAdvKey(adv) {
+  if (!adv) return '';
+  return String(adv.id ?? adv._char_db_id ?? adv.charId ?? (adv.name || ''));
+}
+function tavernSeatIsMine(s) {
+  const role = D.my_adventurer;
+  if (!role || !s || !s.adventurer) return false;
+  const key = tavernAdvKey(s.adventurer);
+  return !!key && key === tavernAdvKey(role);
+}
+function tavernSeatById(id) {
+  return (D.seats || []).find(s => Number(s.id) === Number(id));
+}
+function tavernMenuItems() {
+  const menu = D.tavern_menu || {};
+  return [
+    ...(menu.drinks || []).map(item => ({ ...item, cat: 'drink' })),
+    ...(menu.foods || []).map(item => ({ ...item, cat: 'food' })),
+  ];
+}
+function tavernMenuItem(key) {
+  return tavernMenuItems().find(item => item && String(item.key) === String(key)) || null;
+}
+const TAVERN_CHATTER = [
+  '刚从地下城回来，桌腿都还抖着。',
+  '这杯敬今晚还能全须全尾回来的我们。',
+  '听说城西有人在收龙人鳞片，价格不错。',
+  '点完这单就出发，谁也别想逃。',
+  '下张圆桌的故事，得等冒险家们自己讲。',
+];
+function pickTavernChatter() {
+  return TAVERN_CHATTER[Math.floor(Math.random() * TAVERN_CHATTER.length)];
+}
 function renderTavern() {
   const el = $('#tab-tavern');
   const seats = D.seats || [];
@@ -277,7 +333,7 @@ function renderTavern() {
   const tables = seats.filter(s => s.zone !== 'bar');
   const tablesByLabel = {};
   tables.forEach(s => {
-    const key = s.table_label || s.label || '其{he}桌';
+    const key = s.table_label || s.label || '无名圆桌';
     (tablesByLabel[key] = tablesByLabel[key] || []).push(s);
   });
   const chatCol = `
@@ -304,41 +360,62 @@ function renderTavern() {
 
   const seatHTML = s => {
     const a = s.adventurer;
+    const mine = !!a && tavernSeatIsMine(s);
+    const clickable = !a || mine;
+    const clickAttr = clickable ? ` onclick="tavernSeatClick(${Number(s.id)})"` : '';
+    const keyAttr = clickable ? ` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tavernSeatClick(${Number(s.id)});}"` : '';
+    const accessAttr = clickable ? ` role="button" tabindex="0"` : '';
     if (!a) return `
-      <div class="seat seat-vacant" title="点击空位让你的冒险者入座">
+      <div class="seat seat-vacant seat-clickable" title="点击空位入座"${accessAttr}${clickAttr}${keyAttr}>
         <span class="seat-empty-icon" aria-hidden="true">⌂</span>
         <span class="seat-empty-label">空位</span>
       </div>`;
     const drink = s.drink;
-    const isMine = a.is_mine;
+    const roleNow = mine ? D.my_adventurer : null;
+    const displayName = roleNow && roleNow.name ? roleNow.name : (a.name || '冒险家');
+    const classNow = roleNow && (roleNow.classTitle || roleNow.character_class) ? (roleNow.classTitle || roleNow.character_class) : (a.character_class || '');
+    const levelNow = roleNow && roleNow.level != null ? roleNow.level : a.level;
+    const roleLine = classNow ? `${esc(classNow)} · Lv.${levelNow != null ? levelNow : '?'}` : '';
     return `
-      <div class="seat ${isMine ? 'seat-mine' : 'seat-clickable'}" title="${esc(s.label || '')}">
-        <span class="seat-name">${esc(a.name)}${isMine ? ' (我的)' : ''}</span>
+      <div class="seat ${mine ? 'seat-mine seat-clickable' : 'seat-other'}" title="${mine ? '再点一次可以点单' : `${esc(a.name || '冒险家')} 坐在这里`}"${accessAttr}${clickAttr}${keyAttr}>
+        <span class="seat-name">${esc(displayName)}${mine ? ' <em class="seat-mine-mark">(我的)</em>' : ''}</span>
+        ${roleLine ? `<span class="seat-meta">${roleLine}</span>` : ''}
         ${drink ? `<span class="seat-drink">${drink.icon || '🍺'} ${esc(drink.name)}<span class="drink-price">${drink.price}g</span></span>
                    <p class="seat-drink-text">「${esc(drink.text || '')}」</p>` : `<span class="seat-drink seat-drink-none">还没点饮品</span>`}
-        ${s.food ? `<span class="seat-food">🥘 ${esc(s.food.name || '食物')}</span>` : ''}
+        ${s.food ? `<span class="seat-food">${s.food.icon || '🥘'} ${esc(s.food.name || '食物')}</span>` : ''}
         ${s.chatter ? `<p class="seat-chatter">${esc(s.chatter)}</p>` : ''}
       </div>`;
   };
 
   const barHTML = `
     <div class="hall-bar">
-      <div class="bar-name">吧台</div>
+      <div class="bar-name">吧台 · 月光下的高脚凳</div>
       <div class="bar-stools">${bar.map(seatHTML).join('')}</div>
     </div>`;
 
-  const tablesHTML = Object.entries(tablesByLabel).map(([label, ss]) => `
-    <div class="hall-table">
-      <div class="table-name">${esc(label)}</div>
-      <div class="table-seats">${ss.map(seatHTML).join('')}</div>
-    </div>`).join('');
+  const tablesHTML = Object.entries(tablesByLabel).map(([label, ss]) => {
+    const note = ss[0] && ss[0].table_note;
+    return `
+      <div class="hall-table">
+        <div class="table-head">
+          <div class="table-name">${esc(label)}</div>
+          <span class="table-capacity">${ss.length} 席圆桌</span>
+        </div>
+        ${note ? `<p class="table-note">${esc(note)}</p>` : ''}
+        <div class="table-seats">${ss.map(seatHTML).join('')}</div>
+      </div>`;
+  }).join('');
+  const tableCount = Object.keys(tablesByLabel).length;
+  const seatCount = tables.length;
 
   const hallHTML = `
     <div class="tavern-hall">
-      <div class="tavern-hall-heading"><h3 class="col-title">酒馆大堂 <span style="font-size:12px;color:var(--color-text-secondary);font-weight:400">等级 Lv.${T.level}</span></h3></div>
+      <div class="tavern-hall-heading">
+        <h3 class="col-title">月光酒馆 <span class="tavern-hall-subtitle">${tableCount} 张圆桌 · ${seatCount} 席 · 吧台 ${bar.length} 位</span></h3>
+      </div>
       ${barHTML}
       <div class="hall-tables">${tablesHTML}</div>
-      <div class="hall-hint">点击空位让你的冒险者入座；点自己的冒险者可以点酒 / 离座；点别人的冒险者可以请对方喝东西，对方接受后才扣请客人的金币。在座冒险者偶尔会冒出几句闲聊。</div>
+      <div class="hall-hint">点击空位入座；再点自己的座位即可点单，餐费从角色金币中扣除。圆桌上的餐食会一直摆到离开座位。</div>
     </div>`;
 
   const npc = D.npcs && D.npcs.tavern;
@@ -357,6 +434,180 @@ function renderTavern() {
       ${chatCol}
     </div>`;
   bindChatInput();
+}
+function tavernSeatClick(seatId) {
+  const role = D.my_adventurer;
+  const seat = tavernSeatById(seatId);
+  if (!seat) return;
+  if (!seat.adventurer) {
+    if (!role) {
+      toastMsg('请先到「我的」创建冒险者，再来占座');
+      switchTab('mine');
+      return;
+    }
+    if (['adventuring', 'in_party', 'cultivating', 'treating', 'insighting', 'breaking_through'].includes(role.status)) {
+      toastMsg('角色正在忙，暂时不能入座');
+      return;
+    }
+    const oldSeat = (D.seats || []).find(s => s.adventurer && tavernSeatIsMine(s));
+    if (oldSeat && oldSeat.id !== seat.id) {
+      oldSeat.adventurer = null;
+      oldSeat.drink = null;
+      oldSeat.food = null;
+      oldSeat.chatter = null;
+    }
+    seat.adventurer = {
+      id: role.id ?? role._char_db_id ?? role.charId ?? '',
+      name: role.name,
+      character_class: role.classTitle || role.character_class || '冒险家',
+      level: role.level,
+      is_mine: true,
+    };
+    seat.drink = null;
+    seat.food = null;
+    seat.chatter = Math.random() < 0.45 ? pickTavernChatter() : null;
+    renderTavern();
+    toastMsg(`已入座「${seat.table_label || seat.label || '圆桌'}」`);
+    return;
+  }
+  if (tavernSeatIsMine(seat)) {
+    if (role && ['adventuring', 'in_party', 'cultivating', 'treating', 'insighting', 'breaking_through'].includes(role.status)) {
+      toastMsg('角色正在忙，暂时不能点单');
+      return;
+    }
+    openTavernMenu(seat.id);
+    return;
+  }
+  toastMsg(`${seat.adventurer.name || '这位冒险家'} 正坐在这里，换个空位吧`);
+}
+function openTavernMenu(seatId) {
+  const seat = tavernSeatById(seatId);
+  const role = D.my_adventurer;
+  if (!seat || !role || !tavernSeatIsMine(seat)) {
+    toastMsg('请先坐到自己的座位上');
+    return;
+  }
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  box.classList.add('tavern-menu-box');
+  renderTavernOrderModal(seatId);
+  showModal();
+}
+function renderTavernOrderModal(seatId) {
+  const seat = tavernSeatById(seatId);
+  const role = D.my_adventurer;
+  const box = $('#modal-box');
+  if (!seat || !role || !tavernSeatIsMine(seat)) {
+    closeModal();
+    return;
+  }
+  const menu = D.tavern_menu || {};
+  const itemCard = (item, field) => {
+    const ordered = !!seat[field] && seat[field].key === item.key;
+    const locked = !ordered && Number(role.gold || 0) < Number(item.price || 0);
+    const clickable = !ordered && !locked;
+    const clickAttr = clickable ? ` onclick="orderTavernItem(${Number(seat.id)}, '${item.key}')"` : '';
+    const keyAttr = clickable ? ` onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();orderTavernItem(${Number(seat.id)}, '${item.key}');}"` : '';
+    const accessAttr = clickable ? ` role="button" tabindex="0"` : '';
+    const tag = ordered ? '已上桌' : (locked ? '金币不足' : `${item.price} 金币`);
+    return `
+      <div class="drink-item ${ordered ? 'ordered' : ''} ${locked ? 'locked' : ''}"${accessAttr}${clickAttr}${keyAttr}>
+        <div class="d-head">
+          <span class="d-icon">${item.icon || (field === 'food' ? '🍽️' : '🍺')}</span>
+          <span class="d-name">${esc(item.name)}</span>
+          <span class="d-price">${tag}</span>
+        </div>
+        <div class="d-desc">${esc(item.desc || '')}</div>
+      </div>`;
+  };
+  const group = (items, field, label) => `
+    <div class="tavern-menu-group">
+      <div class="tavern-menu-label">${label}</div>
+      <div class="drink-list">${(items || []).map(item => itemCard(item, field)).join('')}</div>
+    </div>`;
+  const currentRows = [];
+  if (seat.drink) currentRows.push(`<span class="tavern-current-tag">${seat.drink.icon || '🍺'} ${esc(seat.drink.name)}</span>`);
+  if (seat.food) currentRows.push(`<span class="tavern-current-tag">${seat.food.icon || '🥘'} ${esc(seat.food.name)}</span>`);
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="facility-tag">MOONLIGHT TAVERN · 月光酒馆</div>
+    <h2 class="modal-title">点单 · ${esc(seat.table_label || seat.label || '座位')}</h2>
+    <p class="facility-desc">${esc(seat.table_note || '坐在月光酒馆里，点些阿拉德风味吃食。')}</p>
+    <div class="tavern-order-summary">
+      <strong>${esc(role.name)}</strong>
+      <span>${Number(role.gold || 0).toFixed(0)} 金币</span>
+      <span class="tavern-current-row">${currentRows.length ? currentRows.join('') : '桌上还空着'}</span>
+    </div>
+    ${group(menu.drinks, 'drink', '饮品')}
+    ${group(menu.foods, 'food', '地下城风味餐食')}
+    <div class="tavern-order-foot">
+      <button class="btn btn-sm" onclick="closeModal()">继续闲坐</button>
+      <button class="btn btn-sm btn-danger" onclick="leaveTavernSeat(${Number(seat.id)})">离开座位</button>
+    </div>`;
+  showModal();
+}
+async function orderTavernItem(seatId, itemKey) {
+  const seat = tavernSeatById(seatId);
+  const role = D.my_adventurer;
+  const item = tavernMenuItem(itemKey);
+  if (!seat || !role || !item || !tavernSeatIsMine(seat)) return;
+  const field = item.cat === 'food' ? 'food' : 'drink';
+  if (seat[field] && seat[field].key === item.key) {
+    toastMsg('这份已经端上桌了');
+    return;
+  }
+  if (Number(role.gold || 0) < Number(item.price || 0)) {
+    toastMsg('金币不足，点不了这份');
+    renderTavernOrderModal(seat.id);
+    return;
+  }
+  try {
+    if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+      await window.onlineCharacterAction('tavern_order', { code: item.key });
+    } else {
+      role.gold = Number(role.gold || 0) - Number(item.price || 0);
+      if (typeof window.saveRole === 'function') window.saveRole();
+    }
+  } catch (e) {
+    toastMsg(e && e.message || '点单失败，请稍后再试');
+    return;
+  }
+  seat[field] = {
+    key: item.key,
+    icon: item.icon || '',
+    name: item.name,
+    price: item.price,
+    text: item.desc || '',
+  };
+  seat.chatter = Math.random() < 0.6 ? `「${item.name}」上桌了，趁热！` : seat.chatter;
+  addFeed('🍽️', '月光酒馆', `${role.name} · ${seat.table_label || '圆桌'}`, `-${item.price} 金币`, '#ffc107');
+  renderTavern();
+  renderTavernOrderModal(seat.id);
+  toastMsg(`已端上「${item.name}」`);
+}
+function leaveTavernSeat(seatId) {
+  const seat = tavernSeatById(seatId);
+  if (seat && seat.adventurer && tavernSeatIsMine(seat)) {
+    seat.adventurer = null;
+    seat.drink = null;
+    seat.food = null;
+    seat.chatter = null;
+  }
+  closeModal();
+  renderTavern();
+  toastMsg('已离开座位');
+}
+function clearTavernSeatsForRole(role) {
+  const key = tavernAdvKey(role);
+  if (!key) return;
+  (D.seats || []).forEach(s => {
+    if (s.adventurer && tavernAdvKey(s.adventurer) === key) {
+      s.adventurer = null;
+      s.drink = null;
+      s.food = null;
+      s.chatter = null;
+    }
+  });
 }
 
 function sendChat() {
@@ -478,8 +729,8 @@ function renderBuilding() {
   }
   html += `<div class="notice-banner" style="margin-top:0">
     <div class="notice-banner-body">
-      <strong>🏗️ 驻地修炼与锻造设施</strong>
-      <p class="notice-banner-text">典籍研习、修炼突破、觉醒领悟与装备锻造均已开放</p>
+      <strong>🏗️ 驻地设施</strong>
+      <p class="notice-banner-text">技能导师、觉醒领悟、装备锻造与卡妮娜的杂货铺均已开放</p>
     </div>
   </div>`;
 
@@ -488,7 +739,7 @@ function renderBuilding() {
     html += `<div class="build-zone-title">${esc(zone)} <span class="z-meta">${built}/${list.length} 已建成</span></div>
       <div class="build-grid">
         ${list.map(b => `
-          <div class="build-card" title="${esc(b.description || '')}" ${b.code === 'forge' ? `onclick="openForgeModal()" style="cursor:pointer"` : ''} ${b.code === 'training_intelligence' ? `onclick="openLibraryModal()" style="cursor:pointer"` : ''} ${b.code === 'spirit_platform' ? `onclick="openSpiritPlatformModal()" style="cursor:pointer"` : ''} ${b.code === 'taixu_realm' ? `onclick="openTaixuRealmModal()" style="cursor:pointer"` : ''} ${b.code === 'mailbox' ? `onclick="openMailboxModal()" style="cursor:pointer"` : ''}>
+          <div class="build-card" title="${esc(b.description || '')}" ${b.code === 'forge' ? `onclick="openForgeModal()" style="cursor:pointer"` : ''} ${b.code === 'training_intelligence' ? `onclick="openLibraryModal()" style="cursor:pointer"` : ''} ${b.code === 'taixu_realm' ? `onclick="openTaixuRealmModal()" style="cursor:pointer"` : ''} ${b.code === 'mailbox' ? `onclick="openMailboxModal()" style="cursor:pointer"` : ''} ${b.code === 'task_board' ? `onclick="openTaskBoardModal()" style="cursor:pointer"` : ''} ${b.code === 'seria_inn' ? `onclick="openSeriaInnModal()" style="cursor:pointer"` : ''} ${b.code === 'kanina_grocery' ? `onclick="openKaninaGroceryModal()" style="cursor:pointer"` : ''}>
             <span class="b-status ${b.status}">${esc(statusText(b.status))}</span>
             <span class="b-icon">${esc(b.icon || '🏠')}</span>
             <div class="b-name">${esc(b.name)}</div>
@@ -496,13 +747,183 @@ function renderBuilding() {
             ${b.upgrade_level > 1 ? `<div class="b-cat" style="color:var(--color-primary)">Lv.${b.upgrade_level} · 已改造</div>` : ''}
             ${b.code === 'forge' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入锻造</div>` : ''}
             ${b.code === 'training_intelligence' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入技能导师馆</div>` : ''}
-            ${b.code === 'spirit_platform' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入修炼</div>` : ''}
             ${b.code === 'taixu_realm' ? `<div class="b-cat" style="color:var(--color-amber)">点击进入领悟</div>` : ''}
             ${b.code === 'mailbox' ? `<div class="b-cat" style="color:var(--color-amber)">${mailboxUnread ? mailboxUnread + ' 封未读 · 点击查看' : '点击查看邮件'}</div>` : ''}
+            ${b.code === 'task_board' ? `<div class="b-cat" style="color:var(--color-amber)">点击查看委托</div>` : ''}
+            ${b.code === 'seria_inn' ? `<div class="b-cat" style="color:var(--color-amber)">点击办理入住</div>` : ''}
+            ${b.code === 'kanina_grocery' ? `<div class="b-cat" style="color:var(--color-amber)">点击逛杂货铺</div>` : ''}
           </div>`).join('')}
       </div>`;
   });
   el.innerHTML = html;
+}
+
+/* ============================================================
+   公会任务板：冒险家接取委托的入口（任务内容暂为空）
+   ============================================================ */
+function openTaskBoardModal() {
+  const role = D.my_adventurer;
+  if (!role) { toastMsg('请先创建角色'); return; }
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="facility-tag">赫顿玛尔 · 冒险家公会</div>
+    <h2 class="modal-title">📜 公会任务板 <span class="built-badge">✓ 已建成</span></h2>
+    <div class="mail-empty">暂无委托</div>`;
+  showModal();
+}
+
+/* ============================================================
+   赛利亚旅馆：付费按分钟缓慢治疗
+   ============================================================ */
+function seriaInnState(role) {
+  return role && role.status === 'treating' && role.seriaInn ? role.seriaInn : null;
+}
+function seriaInnBlockedReason(role) {
+  if (!role) return '请先创建角色';
+  if (role.status === 'adventuring') return '角色正在地下城探险';
+  if (role.status === 'in_party') return '角色正在队伍中';
+  if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
+  if (role.cultivation || role.status === 'cultivating' || role.status === 'breaking_through') return '角色正在修炼';
+  if (role.status === 'dead') return '角色已阵亡，无法入住';
+  return '';
+}
+function seriaInnNumbers(role) {
+  const maxHp = Math.max(1, Number(role.max_hp || 100));
+  const hp = Math.min(maxHp, Math.max(0, Number(role.hp || 0)));
+  const healPerMinute = Math.max(1, Math.round(maxHp * 0.02));
+  const missing = Math.max(0, maxHp - hp);
+  const minutesNeeded = Math.ceil(missing / healPerMinute);
+  return { maxHp, hp, healPerMinute, missing, minutesNeeded, goldNeeded: minutesNeeded * 10 };
+}
+function renderSeriaInnModal() {
+  const role = D.my_adventurer;
+  if (!role) { closeModal(); return; }
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  const active = seriaInnState(role);
+  const numbers = seriaInnNumbers(role);
+  if (!active) {
+    const busy = seriaInnBlockedReason(role);
+    const tooRich = numbers.missing <= 0;
+    const tooPoor = Number(role.gold || 0) < 10;
+    const disabledReason = busy || (tooRich ? '生命已满，无需治疗' : '') || (tooPoor ? '金币不足，至少需要 10 金币' : '');
+    box.innerHTML = `
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="facility-tag">SERIA'S INN · 赫顿玛尔旅店</div>
+      <h2 class="modal-title">🏨 赛利亚旅馆 <span class="built-badge">✓ 已建成</span></h2>
+      <p class="facility-desc">暖黄的炉火和晒过太阳的床铺，专为负伤归来的冒险家准备。入住期间每分钟恢复约 ${numbers.healPerMinute} 点生命，并花费 10 金币；生命恢复至上限或金币不足以支付下一分钟时自动退房。</p>
+      <div class="tavern-order-summary">
+        <strong>${esc(role.name)}</strong>
+        <span>生命 ${numbers.hp} / ${numbers.maxHp}</span>
+        <span>💰 ${Number(role.gold || 0).toFixed(0)} 金币</span>
+      </div>
+      <div class="facility-section">
+        <div class="facility-sec-title">— 今日床位</div>
+        <div class="facility-rows">
+          <span class="fr">💗 每分钟恢复 2% 最大生命（约 ${numbers.healPerMinute} 点）</span>
+          <span class="fr">💰 每分钟花费 10 金币</span>
+          <span class="fr">🕐 预计 ${numbers.minutesNeeded} 分钟，约 ${numbers.goldNeeded} 金币可回到满血</span>
+          <span class="fr">💊 治疗期间状态为「治疗中」，无法进行其他操作</span>
+        </div>
+      </div>
+      <div class="facility-section">
+        <button class="btn btn-primary" type="button" onclick="startSeriaInnTreatment()" ${disabledReason ? 'disabled' : ''}>${disabledReason || '办理入住 · 开始治疗'}</button>
+      </div>`;
+  } else {
+    const last = Number(active.lastTickAt || active.startedAt || Date.now());
+    const nextMs = Math.max(0, 60000 - ((Date.now() - last) % 60000));
+    const minToFull = numbers.missing <= 0 ? 0 : Math.ceil(numbers.missing / (Number(active.healPerMinute) || numbers.healPerMinute));
+    box.innerHTML = `
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="facility-tag">SERIA'S INN · 治疗中</div>
+      <h2 class="modal-title">🏨 赛利亚旅馆 <span class="built-badge">✓ 治疗中</span></h2>
+      <p class="facility-desc">客房已准备好，角色正在床上慢慢养伤。治疗期间无法进入副本、组队或进行其他操作。</p>
+      <div class="tavern-order-summary">
+        <strong>${esc(role.name)}</strong>
+        <span>生命 ${numbers.hp} / ${numbers.maxHp}</span>
+        <span>💰 ${Number(role.gold || 0).toFixed(0)} 金币</span>
+      </div>
+      <div class="facility-section">
+        <div class="facility-sec-title">— 治疗进度</div>
+        <div class="facility-rows">
+          <span class="fr">💗 下次结算：<span id="seria-inn-next">${fmtSpiritTime(nextMs)}</span></span>
+          <span class="fr">${numbers.missing > 0 ? `预计还需 ${minToFull} 分钟回满` : '生命已满，将自动退房'}</span>
+          <span class="fr">💰 每分钟结算后扣 10 金币</span>
+        </div>
+      </div>
+      <div class="facility-section">
+        <button class="btn btn-warning" type="button" onclick="exitSeriaInnTreatment()">提前退房并结算</button>
+      </div>`;
+  }
+  showModal();
+}
+function openSeriaInnModal() {
+  const role = D.my_adventurer;
+  if (!role) { toastMsg('请先创建角色'); return; }
+  renderSeriaInnModal();
+}
+function refreshSeriaInnCountdown() {
+  const el = document.getElementById('seria-inn-next');
+  if (!el) return;
+  const role = D.my_adventurer;
+  const active = role && seriaInnState(role);
+  if (!active) return;
+  const last = Number(active.lastTickAt || active.startedAt || Date.now());
+  const nextMs = Math.max(0, 60000 - ((Date.now() - last) % 60000));
+  el.textContent = fmtSpiritTime(nextMs);
+}
+function refreshSeriaInnUI() {
+  renderSeriaInnModal();
+  if (window.renderMine) renderMine();
+  if (window.renderAdventurers) renderAdventurers();
+  if (window.renderBuilding) renderBuilding();
+}
+async function startSeriaInnTreatment() {
+  const role = D.my_adventurer;
+  if (!role) { toastMsg('请先创建角色'); return; }
+  if (typeof window.onlineCharacterAction !== 'function') { toastMsg('赛利亚旅馆仅支持在线角色'); return; }
+  try {
+    const result = await window.onlineCharacterAction('inn_start');
+    refreshSeriaInnUI();
+    toastMsg('已入住赛利亚旅馆，治疗中');
+  } catch (error) {
+    toastMsg(error && error.message || '入住失败，请稍后再试');
+    renderSeriaInnModal();
+  }
+}
+async function exitSeriaInnTreatment() {
+  const role = D.my_adventurer;
+  if (!role || !seriaInnState(role)) { toastMsg('当前未在赛利亚旅馆治疗'); return; }
+  if (typeof window.onlineCharacterAction !== 'function') { toastMsg('赛利亚旅馆仅支持在线角色'); return; }
+  try {
+    const result = await window.onlineCharacterAction('inn_exit');
+    const eventType = result && result.event && result.event.type;
+    refreshSeriaInnUI();
+    toastMsg({
+      seria_inn_completed: '生命已恢复，赛利亚旅馆治疗完成',
+      seria_inn_exited: '已提前退房，本次治疗结算完成',
+      seria_inn_stopped_insufficient_gold: '金币不足，赛利亚旅馆治疗已结束',
+    }[eventType] || '已离开赛利亚旅馆');
+  } catch (error) {
+    const message = error && error.message || '';
+    if (/当前未在赛利亚旅馆治疗/.test(message)) {
+      const staleRole = D.my_adventurer;
+      if (staleRole) {
+        staleRole.status = 'resting';
+        delete staleRole.seriaInn;
+        const match = (D.adventurers || []).find(a => a && Number(a._char_db_id || a.id) === Number(staleRole._char_db_id || staleRole.id));
+        if (match && match !== staleRole) {
+          match.status = 'resting';
+          delete match.seriaInn;
+        }
+      }
+      refreshSeriaInnUI();
+    }
+    toastMsg(message || '退房失败，请稍后再试');
+    renderSeriaInnModal();
+  }
 }
 
 /* ============================================================
@@ -524,6 +945,7 @@ function mailboxBusyReason(role) {
   if (role.status === 'adventuring') return '角色正在地下城探险';
   if (role.status === 'insighting' || role.taixuInsight) return '角色正在觉醒祭坛顿悟';
   if (role.cultivation || role.status === 'cultivating' || role.status === 'breaking_through') return '角色正在修炼';
+  if (role.status === 'treating' || role.seriaInn) return '角色正在赛利亚旅馆治疗';
   if (role.status === 'in_party') return '角色正在队伍中';
   return '';
 }
@@ -737,38 +1159,124 @@ function buyLibraryBook(code) {
   }
 }
 /* ============================================================
-   修炼静室：服务端权威的修炼修炼与突破
+   卡妮娜的杂货铺：出售药剂与普通/高级装备
    ============================================================ */
-let spiritPlatformTimer = null;
+const KANINA_GROCERY_ITEMS = [
+  { code: 'hp_potion', group: 'potion', name: '生命药水', kind: 'pill', rarity: 'common', price: 10, desc: '冒险家最常备的红色恢复药剂，喝下后能快速愈合轻度伤口。' },
+  { code: 'mp_potion', group: 'potion', name: '魔力药剂', kind: 'pill', rarity: 'common', price: 12, desc: '清凉的蓝色药剂，恢复施法消耗的精神与魔力。' },
+  { code: 'antidote', group: 'potion', name: '解毒剂', kind: 'pill', rarity: 'common', price: 15, desc: '入口微苦的解毒药剂，可驱散地下城常见毒素。' },
+  { code: 'strong_hp', group: 'potion', name: '强效生命药水', kind: 'pill', rarity: 'advanced', price: 42, desc: '药力更足的高级恢复药剂，重伤时也能明显回上一口气。' },
+  { code: 'strong_mp', group: 'potion', name: '强效魔力药剂', kind: 'pill', rarity: 'advanced', price: 45, desc: '经过精炼的深蓝药水，一口气补足大半消耗的魔力。' },
+  { code: 'iron_sword', group: 'common_gear', name: '精铁长剑', kind: 'weapon', rarity: 'common', price: 50, desc: '铁匠铺成批锻造的制式长剑，刃口可靠，适合初入地下城的冒险家。' },
+  { code: 'oak_staff', group: 'common_gear', name: '学徒橡木法杖', kind: 'weapon', rarity: 'common', price: 48, desc: '老练法师学徒常用的橡木杖，杖头嵌着一枚普通蓝晶石。' },
+  { code: 'leather_armor', group: 'common_gear', name: '耐磨皮甲', kind: 'armor', rarity: 'common', price: 40, desc: '经过油鞣处理的皮甲，轻便耐磨，能挡住小型魔物的撕咬。' },
+  { code: 'ring_armor', group: 'common_gear', name: '铁环甲', kind: 'armor', rarity: 'common', price: 55, desc: '以铁环层层缀成的旧式护甲，防护扎实但偏沉。' },
+  { code: 'steel_sword', group: 'advanced_gear', name: '高级精钢阔剑', kind: 'weapon', rarity: 'advanced', price: 150, desc: '用精钢反复锻打的阔剑，剑脊厚重，劈砍魔物皮甲毫不含糊。' },
+  { code: 'mithril_staff', group: 'advanced_gear', name: '高级秘银短杖', kind: 'weapon', rarity: 'advanced', price: 160, desc: '掺入秘银细丝炼制的短杖，导魔顺畅，杖身泛着清冷银光。' },
+  { code: 'hard_leather', group: 'advanced_gear', name: '高级硬化皮甲', kind: 'armor', rarity: 'advanced', price: 135, desc: '以硬化兽皮与钢片缝制的高级护甲，兼顾灵活与防护。' },
+  { code: 'fine_chain', group: 'advanced_gear', name: '高级精炼链甲', kind: 'armor', rarity: 'advanced', price: 180, desc: '精工打造的链甲，铁环细密坚韧，是重装冒险家的可靠选择。' },
+];
+const KANINA_GROUP_TITLES = {
+  potion: '🧪 药剂',
+  common_gear: '⚔️ 普通装备',
+  advanced_gear: '✨ 高级装备',
+};
+const KANINA_KIND_LABELS = { pill: '药剂', weapon: '武器', armor: '防具' };
+
+function openKaninaGroceryModal() {
+  const role = D.my_adventurer;
+  if (!role) { toastMsg('请先创建角色'); return; }
+  renderKaninaGroceryModal();
+}
+function renderKaninaGroceryModal() {
+  const role = D.my_adventurer;
+  if (!role) { closeModal(); return; }
+  const box = $('#modal-box');
+  box.classList.remove('log-modal', 'forge-modal-box');
+  let lastGroup = '';
+  const rows = KANINA_GROCERY_ITEMS.map(item => {
+    const groupTitle = item.group !== lastGroup
+      ? `<div class="grocery-group-title">${KANINA_GROUP_TITLES[item.group] || item.group}</div>`
+      : '';
+    lastGroup = item.group;
+    return groupTitle + kaninaItemCardHTML(item, role);
+  }).join('');
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="facility-tag">HENDON MYRE · 赫顿玛尔商店街</div>
+    <h2 class="modal-title">🧺 卡妮娜的杂货铺 <span class="built-badge">✓ 已建成</span></h2>
+    <p class="facility-desc">卡妮娜在路边支起的小铺子，货架上摆满恢复药剂、武器和防具；看上的东西付钱就拿走。</p>
+    <div class="lib-user">${esc(role.name)} · 💰 ${Number(role.gold || 0).toFixed(0)} 金币 <span class="lib-skill-count">背包 ${(role.bag || []).length} / 100</span></div>
+    <div class="lib-hint">购买后物品直接放入背包；药剂可在战备页放入消耗品栏供地下城使用，武器与防具可从背包装备到随身装备栏。</div>
+    <div class="lib-list">${rows}</div>`;
+  showModal();
+}
+function kaninaItemCardHTML(item, role) {
+  const rarityName = RARITY_NAME[item.rarity] || '普通';
+  const rarityColor = RARITY_COLOR[item.rarity] || RARITY_COLOR.common;
+  const kindName = KANINA_KIND_LABELS[item.kind] || item.kind;
+  const bag = role.bag || [];
+  const existing = bag.some(entry => entry && entry.name === item.name);
+  const reason = Number(role.gold || 0) < item.price
+    ? '金币不足'
+    : (!existing && bag.length >= 100 ? '背包已满' : '');
+  return `
+    <div class="lib-item">
+      <div class="li-head">
+        <span class="li-name" style="color:${rarityColor}">${esc(item.name)}</span>
+        <span class="li-realm ${item.rarity === 'advanced' ? 'high' : ''}">${rarityName}</span>
+        <span class="li-realm">${kindName}</span>
+      </div>
+      <div class="li-desc">${esc(item.desc)}</div>
+      <div class="li-foot">
+        <span class="li-price">💰 ${item.price} 金币</span>
+        <span class="li-stock">购买后放入背包</span>
+        <button class="btn btn-primary btn-sm" type="button" onclick="buyKaninaGroceryItem('${item.code}')" ${reason ? 'disabled' : ''}>${reason || '购买 1 件'}</button>
+      </div>
+    </div>`;
+}
+async function buyKaninaGroceryItem(code) {
+  const role = D.my_adventurer;
+  const item = KANINA_GROCERY_ITEMS.find(entry => entry.code === code);
+  if (!role || !item) return;
+  const afterPurchase = () => {
+    renderKaninaGroceryModal();
+    if (window.renderMine) renderMine();
+    if (window.renderAdventurers) renderAdventurers();
+    addFeedBatch('🧺', '卡妮娜的杂货铺', `购买《${item.name}》`, [
+      { delta: `-${item.price} 金币`, color: '#ffc107' },
+      { delta: `+1 ${item.name}`, color: item.rarity || '' },
+    ]);
+    toastMsg(`🧺 已购入「${item.name}」，放入背包`);
+  };
+  if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+    try {
+      await window.onlineCharacterAction('grocery_buy', { code });
+      afterPurchase();
+    } catch (error) {
+      toastMsg(error && error.message || '购买失败，请稍后再试');
+      renderKaninaGroceryModal();
+    }
+    return;
+  }
+  if (Number(role.gold || 0) < item.price) { toastMsg(`金币不足（需 ${item.price}）`); return; }
+  if (!Array.isArray(role.bag)) role.bag = [];
+  const existing = role.bag.find(entry => entry && entry.name === item.name);
+  if (!existing && role.bag.length >= 100) { toastMsg('背包已满，无法购买'); return; }
+  role.gold = Number(role.gold || 0) - item.price;
+  if (existing) existing.qty = (existing.qty || 1) + 1;
+  else role.bag.push({ name: item.name, desc: item.desc, kind: item.kind, qty: 1, rarity: item.rarity });
+  if (typeof window.saveRole === 'function') window.saveRole(); else saveRole();
+  afterPurchase();
+}
+/* ============================================================
+   通用倒计时格式化
+   ============================================================ */
 function fmtSpiritTime(ms) {
   const total = Math.max(0, Math.ceil(ms / 1000));
   const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
-function openSpiritPlatformModal() { renderSpiritPlatformModal(); showModal(); }
-function renderSpiritPlatformModal() {
-  const role = D.my_adventurer;
-  if (!role) { toastMsg('请先创建角色'); return; }
-  if (spiritPlatformTimer) { clearInterval(spiritPlatformTimer); spiritPlatformTimer = null; }
-  const active = role.cultivation;
-  const ready = Number(role.level) === 10 && Number(role.exp) >= 2000;
-  const box = $('#modal-box');
-  box.classList.remove('log-modal');
-  if (active) {
-    const remaining = Math.max(0, Number(active.endsAt) - Date.now());
-    const nextSettlement = active.mode === 'cultivate' ? Math.max(0, Number(active.lastSettledAt) + 1800000 - Date.now()) : 0;
-    box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 修炼静室</h2><div class="spirit-active"><div class="spirit-state">${active.mode === 'cultivate' ? '修炼中' : '突破中'}</div><div class="spirit-countdown" id="spirit-countdown">${fmtSpiritTime(remaining)}</div>${active.mode === 'cultivate' ? `<p>下一次经验结算：${fmtSpiritTime(nextSettlement)} · 每半小时 +50 经验</p><button class="btn btn-danger" onclick="exitCultivationEarly()">提前出关</button>` : `<p>修炼突破不可提前出关</p>`}</div>`;
-    spiritPlatformTimer = setInterval(() => renderSpiritPlatformModal(), 1000);
-    return;
-  }
-  const bonus = Math.round(Number(role.breakthroughBonus || 0) * 100);
-  box.innerHTML = `<button class="modal-close" onclick="closeSpiritPlatformModal()">✕</button><div class="facility-tag">OUTPOST FACILITY · 驻地设施</div><h2 class="modal-title">☯ 修炼静室 <span class="built-badge">✓ 已建成</span></h2><p class="facility-desc">打坐积累经验；Lv.10 圆满后可冲击转职。</p><div class="spirit-grid"><section><h3>日常修炼</h3><p>100 金币 / 小时，每半小时结算 50 经验。</p><div class="spirit-stepper"><button onclick="changeCultivationHours(-1)">−</button><strong id="spirit-hours">1</strong><span>小时</span><button onclick="changeCultivationHours(1)">+</button></div><p id="spirit-cost">消耗：100 金币</p><button class="btn btn-primary" onclick="startCultivation()">开始修炼</button></section><section class="${ready ? '' : 'spirit-locked'}" onclick="${ready ? '' : "toastMsg('需达到 Lv.10 圆满')"}"><h3>转职试炼</h3><p>固定 2 小时 · 基础成功率 50%</p><p>累计加成：+${bonus}% · 当前成功率：${Math.min(100, 50 + bonus)}%</p><button class="btn btn-primary" ${ready ? 'onclick="startBreakthrough()"' : 'disabled'}>开始转职</button>${ready ? '' : '<small>需达到 Lv.10 圆满</small>'}</section></div>`;
-}
-function changeCultivationHours(delta) { const el = $('#spirit-hours'); const hours = Math.max(1, Math.min(24, Number(el.textContent) + delta)); el.textContent = hours; $('#spirit-cost').textContent = `消耗：${hours * 100} 金币`; }
-async function startCultivation() { const hours = Number($('#spirit-hours').textContent); await window.spiritPlatformAction('cultivation/start', { hours }); }
-async function exitCultivationEarly() { await window.spiritPlatformAction('cultivation/exit'); }
-async function startBreakthrough() { const r = D.my_adventurer; if (Number(r.level) !== 10 || Number(r.exp) < 2000) { toastMsg('需达到 Lv.10 圆满（2000 经验）'); return; } await window.spiritPlatformAction('breakthrough/start'); }
-function closeSpiritPlatformModal() { if (spiritPlatformTimer) clearInterval(spiritPlatformTimer); spiritPlatformTimer = null; closeModal(); }
 
 /* ============================================================
    觉醒祭坛：AI 结合职业道途领悟新的战斗技能
@@ -1626,6 +2134,7 @@ function createRole() {
     skillPool: [],          // 技能库（已学未装备，可随时装卸）
     equipment: [{ name: wItem.name, desc: wItem.desc, qty: 1, kind: wItem.kind }, { ...STARTER_POTION }],  // 随身装备：职业新手武器 + 3 瓶治疗药水
     bag: [],  // 背包（100 格）
+    consumableSlots: [],  // 消耗品栏（2 格，仅引用背包中的消耗品）
     latest_score: 0, praise_count: 0, is_followed: false,
   };
   localStorage.setItem('dnf_role', JSON.stringify(role));
@@ -1641,11 +2150,13 @@ function createRole() {
 }
 function deleteRole() {
   if (!confirm('确定删除当前角色，重新开始创建？')) return;
+  clearTavernSeatsForRole(D.my_adventurer);
   localStorage.removeItem('dnf_role');
   D.adventurers = [];
   D.my_adventurer = null;
   renderMine();
   renderAdventurers();
+  renderTavern();
 }
 function showDeathDialog(roleName, dungeonName, logId, deathSummary = '') {
   if (typeof logModalTimer !== 'undefined' && logModalTimer) { clearInterval(logModalTimer); logModalTimer = null; }
@@ -1668,6 +2179,7 @@ function showDeathDialog(roleName, dungeonName, logId, deathSummary = '') {
   showModal();
 }
 window.showDeathDialog = showDeathDialog;
+const CONSUMABLE_SLOT_LIMIT = 2;
 function loadRole() {
   try {
     const r = JSON.parse(localStorage.getItem('dnf_role') || 'null');
@@ -1680,6 +2192,8 @@ function loadRole() {
       // 兼容旧存档：补充背包/技能字段
       if (!Array.isArray(r.bag)) r.bag = [];
       if (!Array.isArray(r.equipment)) r.equipment = [];
+      if (!Array.isArray(r.consumableSlots)) r.consumableSlots = [];
+      normalizeConsumableSlots(r, true);
       if (!Array.isArray(r.skills)) {
         const rootKey = Object.keys(ROOT_KEYS).find(k => ROOT_KEYS[k].label === r.character_class) || 'jin';
         r.skills = ROOT_SKILLS[rootKey].map(s => ({ ...s }));
@@ -1721,6 +2235,79 @@ loadFeed();  // 载入最近动态（道具/金币流水）
 /* ---------- 背包 / 随身装备 ---------- */
 function saveRole() {
   if (D.my_adventurer) localStorage.setItem('dnf_role', JSON.stringify(D.my_adventurer));
+}
+function itemIsConsumable(item) {
+  if (!item) return false;
+  if (item.consumable === true) return true;
+  return ['pill', 'talisman', 'consumable'].includes(String(item.kind || '').toLowerCase());
+}
+function normalizeConsumableSlots(role, pruneMissing = false) {
+  if (!role || typeof role !== 'object') return false;
+  if (!Array.isArray(role.consumableSlots)) role.consumableSlots = [];
+  const seen = new Set();
+  role.consumableSlots = role.consumableSlots
+    .filter(entry => {
+      if (!entry || !entry.name || !itemIsConsumable(entry)) return false;
+      const key = String(entry.name || '').trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, CONSUMABLE_SLOT_LIMIT)
+    .map(entry => ({
+      name: String(entry.name || '').slice(0, 24),
+      desc: String(entry.desc || '').slice(0, 200),
+      kind: entry.kind || 'consumable',
+      rarity: entry.rarity || 'common',
+      qty: 1,
+    }));
+  if (pruneMissing) {
+    role.consumableSlots = role.consumableSlots.filter(entry => {
+      const list = [...(role.bag || []), ...(role.equipment || [])];
+      return list.some(item => item && String(item.name || '') === String(entry.name)
+        && Number(item.qty == null ? 1 : item.qty) > 0);
+    });
+  }
+  return role.consumableSlots.length <= CONSUMABLE_SLOT_LIMIT;
+}
+function equipConsumableFromBag(bagIdx) {   // 背包 -> 消耗品栏（快捷引用，本体仍在背包）
+  const role = D.my_adventurer;
+  if (!role) return;
+  if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+    window.onlineCharacterAction('consumable_slot_equip', { index: bagIdx }).then(() => refreshAdvSec('combat')).catch(e => toastMsg(e.message || '放入失败'));
+    return;
+  }
+  const it = (role.bag || [])[bagIdx];
+  if (!it) return;
+  if (!itemIsConsumable(it)) { toastMsg('只能放入消耗品'); return; }
+  normalizeConsumableSlots(role);
+  if ((role.consumableSlots || []).some(slot => slot && String(slot.name || '').trim().toLowerCase() === String(it.name || '').trim().toLowerCase())) {
+    toastMsg('该消耗品已在消耗品栏中');
+    return;
+  }
+  if (role.consumableSlots.length >= CONSUMABLE_SLOT_LIMIT) { toastMsg('消耗品栏已满（2/2），请先卸下一个'); return; }
+  role.consumableSlots.push({
+    name: String(it.name || '').slice(0, 24),
+    desc: String(it.desc || '').slice(0, 200),
+    kind: it.kind || 'consumable',
+    rarity: it.rarity || 'common',
+    qty: 1,
+  });
+  saveRole();
+  refreshAdvSec('combat');
+  toastMsg('🧪 已放入消耗品栏');
+}
+function unequipConsumableSlot(slotIdx) {   // 消耗品栏 -> 清除快捷引用（道具留在背包）
+  const role = D.my_adventurer;
+  if (!role) return;
+  if (window.__onlineMode && typeof window.onlineCharacterAction === 'function') {
+    window.onlineCharacterAction('consumable_slot_unequip', { slot: slotIdx }).then(() => refreshAdvSec('combat')).catch(e => toastMsg(e.message || '卸下失败'));
+    return;
+  }
+  if (!Array.isArray(role.consumableSlots) || !role.consumableSlots[slotIdx]) return;
+  role.consumableSlots.splice(slotIdx, 1);
+  saveRole();
+  refreshAdvSec('combat');
 }
 function bagAdd(role, item) {
   if (!Array.isArray(role.bag)) role.bag = [];
@@ -1864,22 +2451,17 @@ function regenerateAiHp() {
 function refreshStaminaUI() {
   const role = D.my_adventurer;
   if (!role) return;
-  document.querySelectorAll('.adv-stamina-text').forEach(el => {
-    el.textContent = el.textContent.includes('💪')
-      ? `💪 ${role.stamina}/${role.max_stamina} 精力`
-      : `${role.stamina}/${role.max_stamina}`;
+  document.querySelectorAll('.role-gauge-value[data-live="stamina"]').forEach(el => {
+    el.textContent = `${role.stamina}/${role.max_stamina}`;
   });
-  document.querySelectorAll('.adv-stamina-fill').forEach(el => {
+  document.querySelectorAll('.role-gauge-fill[data-live="stamina"]').forEach(el => {
     el.style.width = role.max_stamina ? Math.max(0, role.stamina / role.max_stamina * 100) + '%' : '0%';
   });
   document.querySelectorAll('.st-min').forEach(el => { el.textContent = `${role.stamina}/${role.max_stamina}`; });
-  // 气血条同步就地刷新
-  document.querySelectorAll('.adv-hp-text').forEach(el => {
-    el.textContent = el.textContent.includes('❤️')
-      ? `❤️ 气血 ${role.hp}/${role.max_hp}`
-      : `${role.hp}/${role.max_hp}`;
+  document.querySelectorAll('.role-gauge-value[data-live="hp"]').forEach(el => {
+    el.textContent = `${role.hp}/${role.max_hp}`;
   });
-  document.querySelectorAll('.adv-hp-fill').forEach(el => {
+  document.querySelectorAll('.role-gauge-fill[data-live="hp"]').forEach(el => {
     el.style.width = role.max_hp ? Math.max(0, role.hp / role.max_hp * 100) + '%' : '0%';
   });
 }
@@ -1951,7 +2533,7 @@ function renderAdventurers() {
   const npc = D.npcs && D.npcs.adventurers;
   const statuses = [
     ['all', '全部状态'], ['idle', '空闲'], ['in_party', '组队中'], ['adventuring', '探险中'],
-    ['in_tavern', '酒馆活动中'], ['resting', '休息'], ['cultivating', '修炼中'], ['breaking_through', '突破中'], ['working', '工作中'], ['dead', '已阵亡']
+    ['in_tavern', '酒馆活动中'], ['resting', '休息'], ['cultivating', '历练中'], ['treating', '治疗中'], ['breaking_through', '转职试炼'], ['working', '工作中'], ['dead', '已阵亡']
   ];
   let html = '';
   if (npc) {
@@ -2649,11 +3231,12 @@ function memberStatusPanelHTML(s, logId) {
         <div class="member-status-card ${m.is_mine ? 'mine' : ''}">
           <div class="msc-head">
             <span class="msc-name">${esc(m.name)}</span>
+            ${m.levelUp ? '<span class="level-up-badge">LEVEL UP↑</span>' : ''}
             <span class="msc-fate ${m.fate === '健康' ? 'ok' : (m.fate === '阵亡' ? 'dead' : 'hurt')}">${esc(m.fate)}</span>
             <span class="msc-score">${m.score}</span>
           </div>
           <div class="msc-line">
-            ${m.damage ? `<span class="msc-dmg">💔 气血-${m.damage}</span>` : ''}
+            ${settlementHpSpan(m)}
             ${m.gold ? `<span class="msc-gold">💰 +${m.gold} 金币</span>` : ''}
             ${(m.statBuffs || []).map(b => `<span class="msc-buff">${esc(b)}</span>`).join('')}
           </div>
@@ -3057,6 +3640,7 @@ function genNpc(name) {
       max_stamina: preset.max_stamina != null ? preset.max_stamina : 100,
       hpTs: now,
       staminaTs: now,
+      consumableSlots: [],
     };
   }
   const rand = () => 1 + Math.floor(Math.random() * 20);
@@ -3068,7 +3652,7 @@ function genNpc(name) {
     level: 1 + Math.floor(Math.random() * 3),
     strength: rand(), agility: rand(), intelligence: rand(), luck: rand(),
     gold: 0, character_class: ROOT_KEYS[roots[Math.floor(Math.random() * roots.length)]].label, personality: PERS_LIST[Math.floor(Math.random() * PERS_LIST.length)],
-    equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i),
+    equipment: [], bag: [ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)], ITEM_CHOICES[Math.floor(Math.random() * ITEM_CHOICES.length)]].filter((v, i, a) => a.indexOf(v) === i), consumableSlots: [],
     latest_score: 0, praise_count: 0, is_followed: false,
   };
 }
@@ -3138,7 +3722,8 @@ function rollEnemies(dungeon, specialEvent) {
     return { ...e, level };
   });
 }
-/* AI 开本结果归一化：隐藏/特殊事件/突破与敌人名单由 AI 决定，敌人必须来自副本池 */
+/* AI 开本结果归一化：隐藏/特殊事件与敌人名单由 AI 决定，敌人必须来自副本池；
+   转职试炼不再由副本自动生成 */
 function normalizeAiSetupClient(setup, base) {
   const pool = Array.isArray(base && base.enemies) ? base.enemies : [];
   const seen = new Set();
@@ -3156,7 +3741,7 @@ function normalizeAiSetupClient(setup, base) {
   return {
     isHidden: !!(setup && (setup.isHidden === true || setup.hidden === true)),
     specialEvent,
-    breakthrough: !!(setup && setup.breakthrough),
+    breakthrough: false,
     enemies: enemies.slice(0, specialEvent ? 4 : 3),
   };
 }
@@ -3171,7 +3756,7 @@ async function startDungeon(role, npcs, choice) {
   if ((role.stamina || 0) < 10) { toastMsg('精力不足（进入副本需 10 精力，每分钟回复 1 点）'); return; }
   // 自选地图优先；未选择则按等级随机挑选
   const base = (choice && DUNGEON_POOL.find(d => d.name === choice)) || pickDungeon(role);
-  // 隐藏副本/特殊事件/转职试炼/敌人数量与等级由 AI 开局推演决定；失败时使用安全默认
+  // 隐藏副本/特殊事件/敌人数量与等级由 AI 开局推演决定；失败时使用安全默认
   let setup = { isHidden: false, specialEvent: false, breakthrough: false, enemies: [] };
   try {
     const r = await fetch('/api/ai/setup', {
@@ -3199,6 +3784,13 @@ async function startDungeon(role, npcs, choice) {
   const dg = { id: dungeonSeq++, logNumber: nextLogId(), dungeon, party, plan: buildPlan(isHidden, enemies.length, specialEvent, breakthrough), planIdx: 0, stepIdx: 0, totalStep: 0, steps: [], damage: 0, deaths: [], status: 'running', startedAt: Date.now(), timer: null, memberGains: {}, bossDrops: [], _curEnemy: null };
   dg.focusPlan = buildNarrativeFocusPlan(dg);
   dg.party.forEach(m => { dg.memberGains[m.id] = { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 }; });
+  dg.entryHp = {};
+  dg.party.forEach(m => {
+    dg.entryHp[m.id || m.uid] = {
+      hp: Math.max(0, Number(m.hp) || 0),
+      max_hp: Math.max(1, Number(m.max_hp) || 100),
+    };
+  });
   role.stamina = Math.max(0, (role.stamina || 0) - 10);  // 进入副本消耗 10 精力
   role.hpTs = Date.now();  // 进入副本重置气血计时（探险中不回复，从结算时刻重新起算）
   role.status = 'adventuring';
@@ -3221,11 +3813,56 @@ function scheduleTick(dg) {  dg.timer = setTimeout(async () => {
   }, 3500);
 }
 const AI_STEP_OUTCOMES = ['crit', 'good', 'mid', 'bad', 'fumble'];
+const RECOVERY_EFFECT_RE = /(?:治疗|治愈|疗愈|愈合|疗伤|回春|回血|续命|包扎|止血|恢复(?:了)?(?:生命|气血|伤口|伤势|体力|气力|元气)|伤(?:口|势)(?:渐渐|慢慢|迅速|很快|正在|终于|肉眼可见)[^。！？\n]{0,10}(?:愈合|好转|复原|收拢))/;
+const RECOVERY_FAIL_RE = /(?:未能|没能|无法|没有生效|未生效|未曾|并未|不曾|失败|无效|作罢)/;
+function recoverySentenceInText(text) {
+  const body = String(text || '').replace(/【[^】]*】/g, '');
+  const sentence = String(body).split(/[。！？；\n]+/).find(part => RECOVERY_EFFECT_RE.test(part));
+  return sentence && !RECOVERY_FAIL_RE.test(sentence) ? sentence : '';
+}
+function resolveHealTargetFromText(dg, actor, text) {
+  const actorName = actor && String(actor.name || '').trim();
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const healSentence = recoverySentenceInText(text);
+  if (!healSentence) return actor || null;
+  const others = party.filter(member => member && member !== actor && member.name && healSentence.includes(member.name));
+  if (!others.length) return actor || null;
+  const markerHits = ['为', '给', '帮', '替', '救', '喂', '护住', '包扎', '治疗', '治愈', '拉住', '扶起'];
+  for (const member of others) {
+    const at = healSentence.indexOf(member.name);
+    const before = healSentence.slice(Math.max(0, at - 16), at);
+    if (markerHits.some(mark => before.includes(mark))) return member;
+  }
+  if (!actorName || !healSentence.includes(actorName)) return others[0];
+  const selfWound = /(?:自己|自身|她|他)(?:的)?(?:伤口|焦皮|灼伤|烧伤|伤势|手臂|手臂伤)/.test(healSentence);
+  if (!selfWound) {
+    const actorAt = healSentence.indexOf(actorName);
+    const after = others.find(member => healSentence.indexOf(member.name) > actorAt);
+    if (after) return after;
+  }
+  return actor;
+}
+function resolveHealInfo(dg, actor, text, healTargetHint, options) {
+  const hintName = healTargetHint && typeof healTargetHint === 'object'
+    ? String(healTargetHint.name || '').trim()
+    : String(healTargetHint || '').trim();
+  const explicitUse = !!(options && options.explicitUse);
+  const textHeal = !!recoverySentenceInText(text);
+  const allowed = explicitUse || textHeal;
+  if (!allowed) return { allowed: false, target: actor || null };
+  const party = Array.isArray(dg && dg.party) ? dg.party : [];
+  const hintTarget = party.find(member => member && member.name && member.name === hintName) || null;
+  const target = hintTarget || resolveHealTargetFromText(dg, actor, String(text || ''));
+  return { allowed: true, target: target || actor || null };
+}
 function normalizeAiStepResult(raw, fallbackOutcome) {
   const input = raw && typeof raw === 'object' ? raw : {};
   const outcome = AI_STEP_OUTCOMES.includes(input.outcome) ? input.outcome : fallbackOutcome;
   const damage = Number.isFinite(Number(input.damage)) ? Math.max(0, Math.round(Number(input.damage))) : 0;
   const heal = Number.isFinite(Number(input.heal)) ? Math.max(0, Math.round(Number(input.heal))) : 0;
+  const healTarget = input.healTarget && typeof input.healTarget === 'object'
+    ? String(input.healTarget.name || '').trim().slice(0, 30)
+    : String(input.healTarget || '').trim().slice(0, 30) || null;
   const itemUse = input.itemUse && input.itemUse.name
     ? { name: String(input.itemUse.name).trim().slice(0, 20), success: input.itemUse.success === true }
     : null;
@@ -3241,7 +3878,7 @@ function normalizeAiStepResult(raw, fallbackOutcome) {
       rarity: LootSettlement.OPEN_DROP_RARITIES.includes(LootSettlement.normalizeRarity(entry && entry.rarity)) ? LootSettlement.normalizeRarity(entry && entry.rarity) : null,
     };
   }).filter(Boolean);
-  return { outcome, damage, heal, itemUse, skillUse, loot };
+  return { outcome, damage, heal, healTarget, itemUse, skillUse, loot };
 }
 /* AI 返回的装备/药剂使用：只从本步主角自己的随身装备与背包里解析 */
 function resolveAiItemUse(dg, actor, entry) {
@@ -3289,6 +3926,24 @@ function collectClientOwnedItems(dg) {
     });
   });
   return out;
+}
+function clientConsumableSlots(member) {
+  if (!member) return [];
+  const inventory = [...(member.bag || []), ...(member.equipment || [])];
+  return (member.consumableSlots || []).map(slot => {
+    if (!slot || !slot.name || !itemIsConsumable(slot)) return null;
+    const source = inventory.find(item => item && String(item.name || '') === String(slot.name));
+    if (!source || Number(source.qty == null ? 1 : source.qty) <= 0) return null;
+    return {
+      name: String(source.name || '').slice(0, 24),
+      desc: String(source.desc || slot.desc || '').slice(0, 200),
+      kind: source.kind || slot.kind || 'consumable',
+      rarity: source.rarity || slot.rarity || 'common',
+      qty: Math.max(1, Number(source.qty == null ? 1 : source.qty) || 1),
+      ownerId: member.id,
+      ownerName: member.name || '',
+    };
+  }).filter(Boolean).slice(0, 2);
 }
 function availableItemsForActor(dg, actor) {
   return collectClientOwnedItems(dg).filter(i => i.ownerId === actor.id || i.loaned);
@@ -3338,15 +3993,19 @@ async function dungeonTick(dg) {
   const cleanText = text.replace(/【获得：[^】]*】/g, '').trim();
   // 消耗品（药剂/符箓）：AI 判定成功且本步使用 → 记录待结算扣除
   const itemExplicit = itemUse && itemUse.success && itemUseExplicitInText(cleanText, itemUse.item, actor);
-  const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
-  if (itemExplicit && (itemUse.item.kind === 'pill' || itemUse.item.kind === 'talisman')) {
+  const healItemAllowed = itemExplicit && itemIsConsumable(itemUse.item);
+  const healSkillAllowed = !!(skillUse && skillUse.success);
+  const healInfo = resolveHealInfo(dg, actor, cleanText, gs.healTarget || '', { explicitUse: healItemAllowed || healSkillAllowed });
+  const healAllowed = healInfo.allowed;
+  const healTarget = healAllowed ? (healInfo.target || actor) : actor;
+  if (itemExplicit && itemIsConsumable(itemUse.item)) {
     if (!dg.consumed) dg.consumed = [];
     dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common' });
   }
   // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;
-  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, aiHeal: gs.heal || 0, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
-  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs.heal, healAllowed);
+  dg.steps.push({ stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText: text, stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: gs.src, aiDamage, aiHeal: gs.heal || 0, healTargetName: healAllowed && healTarget ? healTarget.name : null, itemUse: itemUse ? { name: itemUse.item.name, roll: null, total: null, success: itemUse.success, rarity: itemUse.item.rarity || 'common' } : null, skillUse: skillUse ? { name: skillUse.name, elem: skillUse.elem || '', elemMod: skillUse.elemMod || 0, roll: null, total: null, success: skillUse.success } : null });
+  applyStageEffects(dg, stageKey, actor, '', 0, 0, 0, outcome, aiDamage, gs.heal, healAllowed, healTarget);
   const g = dg.memberGains[actor.id];
   if (g) { g.acts++; if (needsCheck) { if (outcome === 'crit') g.crits++; if (outcome === 'fumble') g.fumbles++; } }
   if (support && cleanText.includes(support.name)) { const sg = dg.memberGains[support.id]; if (sg) sg.acts++; }
@@ -3694,11 +4353,13 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
         totalSteps: dg.plan.reduce((a, p) => a + p.steps, 0),
         enemy: dg._curEnemy ? { name: dg._curEnemy.name, level: dg._curEnemy.level || null, realm: dg._curEnemy.realm || '', desc: dg._curEnemy.desc || '' } : null,
         itemUse: null,
+        consumableSlots: clientConsumableSlots(actor),
         availableItems: availableItemsForActor(dg, actor),
         ownedItems: collectClientOwnedItems(dg),
         skillUse: null,
         party: dg.party.map(m => ({
           name: m.name, gender: m.gender || '男', level: Number(m.level) || 1, realm: m.character_class || '',
+          hp: Math.max(0, Number(m.hp) || 0), max_hp: Math.max(1, Number(m.max_hp) || 100),
           personality: m.personality || '',
           skills: (m.skills || []).map(s => ({ name: s.name, desc: s.desc || '' })),
           equipment: (m.equipment || []).map(i => ({ name: i.name, kind: i.kind || 'misc', desc: i.desc || '', qty: i.qty || 1, ownerId: m.id, ownerName: m.name || '' })),
@@ -3711,7 +4372,7 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
     const j = await r.json();
     if (j && j.text) {
       const step = normalizeAiStepResult(j, (dg.plan[dg.planIdx] || {}).check ? 'mid' : 'good');
-      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, heal: step.heal, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
+      return { text: String(j.text), src: 'ai', outcome: step.outcome, damage: step.damage, heal: step.heal, healTarget: step.healTarget, itemUse: step.itemUse, skillUse: step.skillUse, loot: step.loot };
     }
     throw new Error('服务器返回异常：' + (j.error || 'AI 返回空内容'));
   } catch (e) {
@@ -3723,10 +4384,36 @@ async function generateStep(dg, stageKey, actor, support, support2, attrKey, rol
   }
 }
 
+/* ---------- AI 伤害保底：与联机 GE.resolveDamageFloor 保持一致 ---------- */
+const DAMAGE_FLOOR_PCT = {
+  battle: { mid: 0.05, bad: 0.10, fumble: 0.18 },
+  boss: { mid: 0.06, bad: 0.14, fumble: 0.22 },
+  encounter: { bad: 0.08, fumble: 0.16 },
+  explore: { bad: 0.06, fumble: 0.10 },
+  loot: { bad: 0.05, fumble: 0.09 },
+  retreat: { bad: 0.08, fumble: 0.16 },
+  breakthrough: { bad: 0.06, fumble: 0.12 },
+};
+function resolveDamageFloor(dg, stageKey, actor, outcome) {
+  if (!dg || !actor || actor.isDead) return 0;
+  const base = (DAMAGE_FLOOR_PCT[stageKey] || {})[outcome] || 0;
+  if (!base) return 0;
+  const actorLevel = Math.max(1, Number(actor.level || 1));
+  const enemyLevel = Math.max(1, Number(dg._curEnemy && dg._curEnemy.level) || actorLevel);
+  const levelDanger = Math.min(0.08, Math.max(0, enemyLevel - actorLevel) * 0.01);
+  const mapDanger = dg.dungeon && (dg.dungeon.isHidden || dg.dungeon.specialEvent) ? 0.02 : 0;
+  const maxHp = Math.max(1, Number(actor.max_hp || 100));
+  const floor = Math.round(maxHp * Math.min(0.35, base + levelDanger + mapDanger));
+  const currentHp = Number.isFinite(Number(actor.hp)) ? Math.max(0, Number(actor.hp)) : maxHp;
+  const nonLethal = Math.max(0, currentHp - 1);
+  return Math.max(0, Math.min(floor, nonLethal));
+}
+
 /* ---------- 阶段效果（记录每名成员的 AI 战损与收获） ---------- */
-function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage, aiHeal = 0, healAllowed = false) {
+function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outcome, aiDamage, aiHeal = 0, healAllowed = false, healTarget = actor) {
   const g = dg.memberGains[actor.id];
-  const dmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const aiDmg = Number.isFinite(Number(aiDamage)) ? Math.max(0, Math.round(Number(aiDamage))) : 0;
+  const dmg = Math.max(aiDmg, resolveDamageFloor(dg, stageKey, actor, outcome));
   if (dmg > 0) {
     actor.hp = Math.max(0, (actor.hp || 0) - dmg);
     dg.damage += dmg;
@@ -3738,13 +4425,16 @@ function applyStageEffects(dg, stageKey, actor, attrKey, roll, mod, total, outco
     }
   }
   const heal = Number.isFinite(Number(aiHeal)) ? Math.max(0, Math.round(Number(aiHeal))) : 0;
-  if (healAllowed && heal > 0 && actor.hp > 0 && !actor.isDead) {
-    const beforeHp = Math.max(0, Number(actor.hp) || 0);
-    const maxHp = Math.max(0, Number(actor.max_hp) || 100);
+  const target = healTarget || actor;
+  const targetGKey = target.uid || target.id || target.charId || target.name;
+  const tg = targetGKey ? dg.memberGains[targetGKey] : null;
+  if (healAllowed && heal > 0 && target && Number(target.hp || 0) > 0 && !target.isDead) {
+    const beforeHp = Math.max(0, Number(target.hp) || 0);
+    const maxHp = Math.max(0, Number(target.max_hp) || 100);
     const actualHeal = Math.max(0, Math.min(maxHp, beforeHp + heal) - beforeHp);
-    actor.hp = beforeHp + actualHeal;
+    target.hp = beforeHp + actualHeal;
     dg.healing = (dg.healing || 0) + actualHeal;
-    if (g) g.healing = (g.healing || 0) + actualHeal;
+    if (tg) tg.healing = (tg.healing || 0) + actualHeal;
   }
   if (stageKey === 'boss' && (outcome === 'crit' || outcome === 'good')) {
     // 首领战：胜利掉落首领专属战利品，是否受伤完全由 AI damage 决定
@@ -4009,6 +4699,7 @@ async function finishRoleDeath(dg, role) {
   const dgIdx = activeDungeons.indexOf(dg);
   if (dgIdx >= 0) activeDungeons.splice(dgIdx, 1);
   saveRuns();
+  clearTavernSeatsForRole(role);
   localStorage.removeItem('dnf_role');
   D.adventurers = [];
   D.my_adventurer = null;
@@ -4108,6 +4799,7 @@ async function settleDungeon(dg) {
       }
     }
   });
+  if (consumed.length) normalizeConsumableSlots(role, true);
   const levelUp = [];
   applyLocalExperience(role, expFinal).forEach(level => {
     levelUp.push(`Lv.${level}`);
@@ -4153,6 +4845,8 @@ async function settleDungeon(dg) {
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [String(entry.name || '').trim(), String(entry.reason || '').trim().slice(0, 100)]));
   const members = dg.party.map(m => {
     const g = dg.memberGains[m.id] || { acts: 0, rolls: [], damage: 0, loot: [], crits: 0, fumbles: 0 };
+    const entry = (dg.entryHp || {})[m.id || m.uid];
+    const hpEntry = entry && Number.isFinite(Number(entry.hp)) ? Number(entry.hp) : null;
     const avgR = g.rolls.length ? g.rolls.reduce((a, b) => a + b, 0) / g.rolls.length : 10;
     const score = Math.max(5, Math.min(9.5, +(5 + avgR * 0.16 + g.crits * 0.3 - g.fumbles * 0.5).toFixed(1)));
         // 金币：统计整篇剧情的明确获得数量后由全队平分；没有明确获得时为 0。
@@ -4169,7 +4863,7 @@ async function settleDungeon(dg) {
     if (m.is_mine && gold > 0) role.gold = (role.gold || 0) + gold;
     // 点赞数：初始为历史累积（5~150）
     const praise = 5 + Math.floor(Math.random() * 146);
-    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, praise };
+    return { name: m.name, is_mine: !!m.is_mine, realm: m.character_class, acts: g.acts, rolls: g.rolls, damage: g.damage, score, gold, loot, crits: g.crits, fumbles: g.fumbles, fate: (m.hp || 0) <= 0 ? '阵亡' : '健康', death_reason: (m.hp || 0) <= 0 ? (deathReasonByName.get(m.name) || fallbackDeathSummaryLocal([m.name], dg.dungeon.name).roles[0].reason) : '', statBuffs, praise, hpDelta: Number.isFinite(hpEntry) ? Math.max(0, Number(m.hp) || 0) - hpEntry : null, levelUp: !!m.is_mine && levelUp.length > 0 };
   });
   saveRole();
   const log = {
@@ -4221,7 +4915,6 @@ function applyLocalExperience(role, amount) {
   const levels = [];
   while (true) {
     const level = Number(role.level || 1);
-    if (level === 10) break;
     if (level >= 14) { role.exp = 2800; break; }
     const threshold = level < 10 ? level * 100 : level * 200;
     if (role.exp < threshold) break;
@@ -4236,12 +4929,29 @@ function showSettlementById(id) {
   const log = (D.logs || []).find(l => logKey(l) === String(id));
   if (log) showSettlement(log);
 }
+function settlementHpView(m) {
+  const delta = Number(m && m.hpDelta);
+  if (Number.isFinite(delta)) {
+    if (delta === 0) return { text: '', cls: '' };
+    return delta > 0 ? { text: '+' + delta, cls: 'heal' } : { text: String(delta), cls: 'dmg' };
+  }
+  const damage = Number(m && m.damage || 0);
+  return damage > 0 ? { text: '-' + damage, cls: 'dmg' } : { text: '', cls: '' };
+}
+function settlementHpSpan(m) {
+  const hp = settlementHpView(m);
+  if (!hp.text) return '';
+  const icon = hp.text[0] === '-' ? '💔 生命' : '💚 生命+';
+  const amount = hp.text.slice(1);
+  return `<span class="settlement-hp ${hp.cls}">${icon}${amount}</span>`;
+}
 function showSettlement(log) {
   const box = $('#modal-box');
   box.classList.remove('log-modal');
   const s = log.settlement;
   const snap = log.dg_snapshot || { icon: '⚔️', name: log.dungeon_name, desc: '', steps: [], party: [] };
   const my = s.members.find(m => m.is_mine);
+  const myHp = settlementHpView(my);
   const ok = log.status === 'completed';
   box.innerHTML = `
     <button class="modal-close" onclick="closeModal()">✕</button>
@@ -4257,7 +4967,7 @@ function showSettlement(log) {
     <div class="st2-stats">
       <div class="st2-stat"><div class="st2-v gold">+${s.exp}</div><div class="st2-k">获得经验</div></div>
       <div class="st2-stat"><div class="st2-v gold">+${my ? my.gold : 0}</div><div class="st2-k">金币</div></div>
-      <div class="st2-stat"><div class="st2-v red">-${s.damage}</div><div class="st2-k">战损气血</div></div>
+      <div class="st2-stat"><div class="st2-v ${myHp.cls || 'red'}">${myHp.text || '0'}</div><div class="st2-k">生命变化</div></div>
       <div class="st2-stat"><div class="st2-v">${my ? my.score : '-'}</div><div class="st2-k">我的评分</div></div>
       <div class="st2-stat"><div class="st2-v">${s.members.length}</div><div class="st2-k">队伍人数</div></div>
     </div>
@@ -4269,7 +4979,7 @@ function showSettlement(log) {
           <div class="st2-my-v">${s.items.length ? s.items.map(i => `<span class="st2-item" style="color:${itemColor(i)}">${esc(i.name)}<em>${RARITY_NAME[i.rarity] || i.rarity}</em></span>`).join('') : '<span class="st2-none">无</span>'}</div>
         </div>
         ${s.consumed && s.consumed.length ? `<div class="st2-my-box">
-          <div class="st2-my-k">剧情消耗（已扣除）</div>
+          <div class="st2-my-k">消耗品已消耗（已从背包扣除）</div>
           <div class="st2-my-v">${s.consumed.map(n => `<span class="st2-item" style="color:${itemColor(n)}">${esc(n.name || n)} ×1</span>`).join('')}</div>
         </div>` : ''}
       </div>
@@ -4281,12 +4991,13 @@ function showSettlement(log) {
           <div class="st2-member ${m.is_mine ? 'mine' : ''}">
             <div class="st2m-left">
               <span class="st2m-name">${esc(m.name)}</span>
+              ${m.levelUp ? '<span class="level-up-badge">LEVEL UP↑</span>' : ''}
               <span class="st2m-fate ${m.fate === '健康' ? 'ok' : (m.fate === '阵亡' ? 'dead' : 'hurt')}">${esc(m.fate)}</span>
             </div>
             <div class="st2m-mid">
               <span class="st2m-score">${m.score}</span>
               <span class="st2m-gold">+${m.gold} 金币</span>
-              ${m.damage ? `<span class="st2m-dmg">-${m.damage}</span>` : ''}
+              ${settlementHpSpan(m)}
               ${(m.statBuffs || []).map(b => `<span class="st2m-buff">${esc(b)}</span>`).join('')}
             </div>
             ${m.loot.length ? `<div class="st2m-loot">${m.loot.map(x => `<span style="color:${itemColor(x)}">${esc(x.name)}</span><em>${RARITY_NAME[x.rarity] || x.rarity}</em>`).join('　')}</div>` : ''}
@@ -4323,16 +5034,20 @@ function toggleAdvBagExpand() { advBagExpanded = !advBagExpanded; refreshAdvSec(
 function renderAdvDetail() {
   const adv = findAdvById(advDetailId) || D.adventurerDetails?.get(Number(advDetailId)) || D.my_adventurer;
   if (!adv) return;
+  const meta = roleMetaFor(adv);
+  const roleClass = esc(roleClassNameFor(adv));
   const box = $('#modal-box');
   box.classList.remove('log-modal');
   box.innerHTML = `
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="adv-detail-head">
+    <div class="adv-detail-head role-detail-head" style="--class-accent:${meta.accent}">
       <div class="adh-left">
-        <span class="adh-name" style="color:${accentFor(adv)}">${esc(adv.name)}</span>
-        <span class="adh-lv">Lv.${adv.level || 1}</span>
+        <span class="adh-id">
+          <span class="adh-name">${esc(adv.name)}</span>
+          <span class="adh-meta"><span class="role-class">${roleClass}</span><span class="adh-lv">Lv.${adv.level || 1}</span></span>
+        </span>
         <span class="adh-state">${esc(statusText(adv.status))}</span>
-        <button class="adv-log-btn" onclick="openAdvLogsModal(${advIdArg(adv.id)})">📜 探险日志</button>
+        <button class="adv-log-btn" onclick="openAdvLogsModal(${advIdArg(adv.id)})"><svg class="role-icon" focusable="false"><use href="#moonlit-logs"></use></svg><span>探险日志</span></button>
       </div>
       <span class="adh-tag">ADVENTURER DOSSIER</span>
     </div>
@@ -4502,23 +5217,26 @@ function advLogPagerHTML(cur, total) {
   return btns.join('');
 }
 function advTabProfile(adv) {
+  const meta = roleMetaFor(adv);
   const hpPct = adv.max_hp ? Math.max(0, adv.hp / adv.max_hp * 100) : 0;
   const stPct = adv.max_stamina ? Math.max(0, adv.stamina / adv.max_stamina * 100) : 0;
   const lv2 = adv.level || 1;
   const expNeed2 = lv2 < 10 ? lv2 * 100 : lv2 < 14 ? lv2 * 200 : 2800;
-  const expPatched = lv2 === 10 || lv2 >= 14 ? Math.min(expNeed2, adv.exp || 0) : (adv.exp || 0);
+  const expPatched = lv2 >= 14 ? Math.min(expNeed2, adv.exp || 0) : (adv.exp || 0);
   const expPct2 = expNeed2 ? Math.min(100, Math.max(0, expPatched / expNeed2 * 100)) : 0;
-  const expLabel2 = (lv2 === 10 || lv2 >= 14) && expPatched >= expNeed2 ? '圆满' : `${expPatched}/${expNeed2}`;
+  const expLabel2 = lv2 >= 14 && expPatched >= expNeed2 ? '圆满' : `${expPatched}/${expNeed2}`;
   const pool = adv.skillPool || [];
   const poolVisible = advPoolExpanded ? pool : pool.slice(0, 5);
   return `
-  <div class="adv-hp" style="margin-bottom:8px"><div class="adv-hp-fill" style="width:${hpPct}%"></div><span class="adv-hp-text">❤️ 气血 ${adv.hp}/${adv.max_hp}</span></div>
-  <div class="adv-stamina" style="margin-bottom:8px"><div class="adv-stamina-fill" style="width:${stPct}%"></div><span class="adv-stamina-text">💪 ${adv.stamina}/${adv.max_stamina} 精力</span></div>
-  <div class="adv-cultivate" style="margin-bottom:12px" title="当前等级：Lv.${lv2} ${esc(adv.character_class || '职业不明')}"><div class="adv-cultivate-fill" style="width:${expPct2}%"></div><span class="adv-cultivate-text">⚔️ Lv.${lv2} · ${esc(adv.character_class || '职业不明')} · ${expLabel2}</span></div>
+  <div class="role-gauges role-gauges--dossier" style="--class-accent:${meta.accent}" aria-label="当前状态">
+    <div class="role-gauge role-gauge--hp"><span class="role-gauge-label">生命</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="hp" style="width:${hpPct}%"></i></span><span class="role-gauge-value" data-live="hp">${adv.hp}/${adv.max_hp}</span></div>
+    <div class="role-gauge role-gauge--stamina"><span class="role-gauge-label">体力</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="stamina" style="width:${stPct}%"></i></span><span class="role-gauge-value" data-live="stamina">${adv.stamina}/${adv.max_stamina}</span></div>
+    <div class="role-gauge role-gauge--exp" title="Lv.${lv2} · ${esc(roleClassNameFor(adv))}"><span class="role-gauge-label">经验</span><span class="role-gauge-track"><i class="role-gauge-fill" data-live="exp" style="width:${expPct2}%"></i></span><span class="role-gauge-value" data-live="exp">${expLabel2}</span></div>
+  </div>
   <div class="modal-section">
     <h4>基础属性</h4>
     <div class="stat-grid">
-      <div class="stat-box"><div class="k">职业</div><div class="v" style="font-size:13px">${esc(adv.character_class || '—')}${adv.classTitle ? ` · ${esc(adv.classTitle)}` : ''}</div></div>
+      <div class="stat-box"><div class="k">职业</div><div class="v" style="font-size:13px;color:${meta.accent}">${esc(roleClassNameFor(adv))}</div></div>
       <div class="stat-box"><div class="k">特长</div><div class="v" style="font-size:13px">${esc((adv.injury && adv.injury.name) || '-')}</div></div>
       <div class="stat-box"><div class="k">性格</div><div class="v" style="font-size:13px">${esc(adv.personality || '-')}</div></div>
       <div class="stat-box"><div class="k">金币</div><div class="v" style="font-size:13px">${Number(adv.gold || 0).toFixed(0)}</div></div>
@@ -4552,7 +5270,21 @@ function advTabProfile(adv) {
 function advTabCombat(adv) {
   // —— 随身装备：纵向卡片，名称 + 稀有度 + 描述 + 卸下 ——
   const eq = (adv.equipment || []);
-  let html = `<div class="ad-sec-title">随身装备（${eq.length} / 5）</div>`;
+  let html = '';
+  if (adv.is_mine) {
+    const slots = (adv.consumableSlots || []).slice(0, 2);
+    html += `<div class="ad-sec-title">消耗品栏（${slots.length} / 2）</div>
+    <div class="consumable-slot-grid">
+      ${[0, 1].map(i => {
+        const slot = slots[i];
+        const inv = slot ? [...(adv.bag || []), ...(adv.equipment || [])].find(item => item && String(item.name || '') === String(slot.name)) : null;
+        const view = slot && inv ? { ...slot, qty: Number(inv.qty == null ? 1 : inv.qty) || 1 } : null;
+        return itemCardHTML(view || { name: '空槽位', desc: '', rarity: 'common' },
+          view && adv.is_mine ? `<button class="btn btn-sm" onclick="unequipConsumableSlot(${i})">卸下</button>` : '');
+      }).join('')}
+    </div>`;
+  }
+  html += `<div class="ad-sec-title">随身装备（${eq.length} / 5）</div>`;
   html += eq.length ? `<div class="skill-pool-list">
     ${eq.map((e, i) => itemCardHTML(e, adv.is_mine ? `<button class="btn btn-sm" onclick="unequipToBag(${i})">卸下</button>` : '')).join('')}
   </div>` : '<div class="ad-empty">暂无随身装备</div>';
@@ -4582,8 +5314,19 @@ function advTabCombat(adv) {
         <option value="name" ${advBagSort === 'name' ? 'selected' : ''}>按名称</option>
       </select>
     </div>`;
+    const slotNameKeys = new Set((adv.consumableSlots || [])
+      .map(s => String(s && s.name || '').trim().toLowerCase())
+      .filter(Boolean));
     html += bagList.length ? `<div class="skill-pool-list">
-      ${bagList.map(({ it, idx }) => itemCardHTML(it, adv.is_mine ? `<button class="btn btn-sm" onclick="equipFromBag(${idx})">装备</button>` : '')).join('')}
+      ${bagList.map(({ it, idx }) => {
+        const consumable = itemIsConsumable(it);
+        const alreadyInSlots = consumable && slotNameKeys.has(String(it.name || '').trim().toLowerCase());
+        const actionDisabled = alreadyInSlots || (consumable && (adv.consumableSlots || []).length >= 2);
+        const actions = consumable
+          ? `<button class="btn btn-sm" onclick="equipConsumableFromBag(${idx})" ${actionDisabled ? 'disabled' : ''}>${alreadyInSlots ? '已在栏中' : '放入消耗品'}</button>`
+          : `<button class="btn btn-sm" onclick="equipFromBag(${idx})">装备</button>`;
+        return itemCardHTML(it, adv.is_mine ? actions : '');
+      }).join('')}
     </div>
     ${list.length > 5 ? `<div class="list-expand-row"><button class="btn btn-sm" onclick="toggleAdvBagExpand()">${advBagExpanded ? '收起' : `展开全部（${list.length}）`}</button></div>` : ''}` : '<div class="ad-empty">背包空空如也</div>';
   }
@@ -4641,7 +5384,7 @@ function advTabBio(adv) {
   </div>`;
 }
 function showModal() { $('#modal-overlay').classList.add('show'); }
-function closeModal() { $('#modal-overlay').classList.remove('show'); $('#modal-box').classList.remove('forge-modal-box'); }
+function closeModal() { $('#modal-overlay').classList.remove('show'); $('#modal-box').classList.remove('forge-modal-box', 'tavern-menu-box'); }
 $('#modal-overlay').addEventListener('click', e => {
   if (e.target.id !== 'modal-overlay') return;
   if (advLogsAdv !== null) closeAdvLogsModal();
@@ -4704,6 +5447,7 @@ window.addEventListener('hashchange', () => {
 
 /* ---------- 重伤倒计时：每秒刷新 .injury-cd 徽章，到期自动清除受伤状态 ---------- */
 function injuryTick() {
+  refreshSeriaInnCountdown();
   let expired = false;
   document.querySelectorAll('.injury-cd').forEach(el => {
     const exp = Number(el.dataset.expires || 0);

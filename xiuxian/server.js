@@ -242,14 +242,14 @@ function requireAiAccess(req, res) {
 const ADMIN_CHARACTER_FIELDS = new Set([
   'name', 'character_class', 'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
-  'traits', 'equipment', 'bag', 'skills', 'skillPool',
+  'traits', 'equipment', 'bag', 'skills', 'skillPool', 'consumableSlots',
 ]);
 const ADMIN_NUMERIC_FIELDS = new Set([
   'level', 'hp', 'max_hp', 'stamina', 'max_stamina',
   'strength', 'agility', 'intelligence', 'luck', 'gold', 'exp',
 ]);
 const ADMIN_TEXT_FIELDS = new Set(['name', 'character_class']);
-const ADMIN_ARRAY_FIELDS = new Set(['traits', 'equipment', 'bag', 'skills', 'skillPool']);
+const ADMIN_ARRAY_FIELDS = new Set(['traits', 'equipment', 'bag', 'skills', 'skillPool', 'consumableSlots']);
 const ADMIN_TEXT_MAX_LENGTH = 1000;
 const ADMIN_IDENTITY_MAX_LENGTH = 100;
 const ADMIN_ARRAY_MAX_ITEMS = 100;
@@ -536,6 +536,9 @@ const SYSTEM_PROMPT = `你是《问道仙坊》的探险日志作家，一名修
 6. 结合副本背景：敌人、场景、战利品必须与副本背景设定一致，敌人与首领的**修为（【此间生灵】/【深处首领】中已标注，如练气三层、筑基初期）要在战斗描写中自然体现**——修为高的敌人出手更沉、威压更强。**战利品类型不限**：武器、防具、丹药、符箓、材料、杂物、功法术法卷轴等皆可，只要与副本故事设定自洽即可（例如古战场可出残兵锈甲与军功之物，药镇废墟可出药炉丹方），不要凭空出现与副本无关的物品。**战利品全程自然分配**：战斗获胜可缴获、探索途中可发现、搜刮时可拾取，各阶段按剧情合理出现，不要集中堆在某一阶段；获得灵石时在正文写明具体数量（如"得了三十块灵石"），数量合理（几十到几百）。**凡本步获得道具，必须在段落最后另起一行输出标记：**【获得：道具名1、道具名2】（只写本步获得的，一次最多两三件；本步没有获得道具就不要输出该标记）。道具名可自由创造（简洁 4~12 字，不得输出 3 字及以下的简称、货币或“无”）。
 6b. **道具归属红线**：所有道具以【物品归属】为准，谁持有就是谁的；不得把他人道具写成由非持有人取出、使用、携带或展示。队友使用前必须由原持有人明确写出“借给/递给/交给/暂借”的交接动作，且交接句必须同时出现原持有人、使用者与道具完整名称；借出但未消耗的非消耗道具使用完毕应归还原持有人。道具名必须与【物品归属】完全一致，不得缩写。
 7. 成败由你直接判定：本步没有骰子。依据剧情张力、敌人修为、角色状态与叙事因果，自然决定成功或受挫，并让正文明确体现结果（成功则势如破竹，失败则险象环生），不要播报骰子或判定数字。
+7b. **伤害尺度（按当前最大气血比例）**：damage 是本次主角实际扣除的气血，必须与【队伍】中标注的气血上限相称，不得随手给 1~5 点。普通战斗一般取值：good 3~8%、mid 8~15%、bad 15~25%、fumble 25~40%；首领战在对应档位上再上浮约 20~50%；探索/搜刮只在明显遭遇陷阱、禁制或妖兽袭击时填伤害（bad 5~12%、fumble 12~20%）。隐藏洞天、异象当前或敌人修为明显更高时取高档；只有修为碾压、一招制敌的场合才允许接近 0。普通战斗即使取胜也应付出代价、受创或损耗护体灵光，不能连续多步全程无伤。damage 至少为整数，正文明确受伤时不得省略。
+7c. **治疗尺度（按当前最大气血比例）**：heal 是成功服下恢复丹药或施展治疗术法后实际恢复的气血，必须与【队伍】中标注的气血上限相称，不得随手只回 1~5 点。普通丹药/低阶疗伤约恢复 10~25%，高阶丹药或专精疗伤约 25~50%，正文写明治疗生效且本步受创较重时取高档；若当前只差少量气血，可直接回满，但恢复量不得超过当前缺失的气血。heal 至少为整数，正文明确写了治疗生效时不得省略。角色携带恢复类丹药时，本步若实际受创、带伤作战、需要维持战力或即将面对更强凶险，应优先让该角色实际服下一枚并返回 success:true 的 itemUse；不要按固定低气血百分比机械触发，也不要用调息或“硬撑”代替丹药生效。**heal>0 时必须同时填写 success:true 的 itemUse 或 skillUse，并在 healTarget 中写被治疗的队伍成员完整全名；治疗自己时写【本步主角】的完整全名。正文没写治疗生效时 heal 必须为 0。**
+7d. **消耗品使用优先级**：本步主角携带的消耗品（疗伤丹、聚气丹、符箓等）是入谷前特意准备的补给，不是摆设。本步出现实际受创、气血或灵力吃紧、战局胶着、需要续战，或存在明显适用的消耗品时，应优先让该角色在正文中实际使用并返回 success:true 的 itemUse；没有合适时机则由剧情自然判断暂不使用。只有正文明确写出服食、激发并成功生效时才填写 itemUse；恢复类丹药按 7c 填写 heal。
 8. **宗门任务设定**：本次探险是宗门派发的任务——开局阶段必须尽早交代任务由来：由宗门长辈/执事差遣，结合副本背景说明任务目的（如调查异动、寻回失物、清剿妖兽、取回传承等），队伍受命出发；收尾阶段必须描写**回到宗门复命、领取任务报酬**（写明报酬灵石数量），收束故事。
 9. **遇险可逃（由 AI 依据剧情判断）**：队伍遇到危险时（战斗失利、敌人过强、首领凶威、身负重伤、灵光将尽等），**由剧情自然决定是否逃跑**——玩家不干预。**当局面已无胜算（判定大失败、多人重伤昏迷、修为被敌人碾压等）时，应写队伍逃跑/撤退的剧情**，逃跑不一定成功——成功则队伍仓皇脱身保住性命但**任务失败**（归途如实写向宗门复命请罪、无报酬或仅少量抚恤）；失败则被追上付出代价（负伤、损失道具、死战到底）。**凡描写逃跑，必须明确写出逃跑的成与败，不得含糊**；逃跑后任务即告失败，最终成败以【深处首领】与归途剧情走向为准。若局面尚有转机，也可选择死战翻盘——成败由最终剧情判定。
 10. **突破试炼（练气十层 → 筑基前期）**：当【当前进度】为「突破」阶段（见【突破试炼】标注），说明队伍中有角色修为已至练气十层满（灵机盈满），正面临突破筑基的关隘。**本阶段必须围绕该角色（主角）安排一场突破试炼**：可召唤天劫淬体、心魔问心、道基重铸、斩我明道等（贴合其灵根与修行路数），凶险与机缘并存——**试炼成败由你直接决定**：本步成功则突破成功（灵台清明、道基稳固、踏入筑基）；失败则功亏一篑（气血翻涌、受创，修为仍停留练气十层，待下次再寻机缘）。叙事要写出「临界、冲关、成败」的过程。
@@ -559,10 +562,32 @@ function buildUserMessage(b) {
   (b.party || []).forEach(m => {
     const sk = (m.skills || []).map(s => `${s.name}（${s.tier || '黄阶'}·${s.type || '功法'}：${s.desc || '无描述'}）`).join('、') || '无';
     const items = (m.items || []).map(i => `${i.name}（${i.kind || '杂物'}：${i.desc || '无描述'}，持有人：${i.ownerName || m.name || '未知'}）`).join('，') || '无';
-    lines.push(`· ${m.name}（${m.gender || '男'}·${m.realm}·${m.root}·性格${m.personality}）｜特质：${(m.traits || []).join('、')}｜功法术法：${sk}｜携带：${items}`);
+    lines.push(`· ${m.name}（${m.gender || '男'}·${m.realm}·${m.root}·气血 ${Math.max(0, Number(m.hp) || 0)}/${Math.max(1, Number(m.max_hp) || 100)}·性格${m.personality}）｜特质：${(m.traits || []).join('、')}｜功法术法：${sk}｜携带：${items}`);
   });
   if (Array.isArray(b.ownedItems) && b.ownedItems.length) {
     lines.push(`【物品归属】${b.ownedItems.map(item => `${item.name}（${item.ownerName || '未知'}持有）`).join('；')}`);
+  }
+  const recoveryItems = Array.isArray(b.recoveryConsumables)
+    ? b.recoveryConsumables
+    : (b.availableItems || []).filter(item => (
+      typeof GE === 'object' && GE && typeof GE.isRecoveryConsumable === 'function'
+        ? GE.isRecoveryConsumable(item)
+        : /(生命|气血|伤口|疗伤|治疗|治愈|愈合|回血|恢复(?:生命|气血))/.test(`${String(item && item.name || '')} ${String(item && item.desc || '')}`)
+    ));
+  const slotConsumables = (Array.isArray(b.consumableSlots) ? b.consumableSlots : [])
+    .filter(slot => slot && String(slot.name || '').trim())
+    .slice(0, 2);
+  if (slotConsumables.length) {
+    lines.push(`【本步消耗品·优先关注】本步主角的消耗品栏：${slotConsumables.map(item => `${item.name}（${item.desc || '无描述'}，库存 ${item.qty || 1}）`).join('；')}。这些是入谷前特意装填的补给，本步实际受创、气血或灵力吃紧、战局胶着或需要续战时，优先让角色在正文中实际使用并返回 success:true 的 itemUse；没有合适时机则不强制使用，也不按固定低气血百分比机械服丹。`);
+  }
+  if (recoveryItems.length) {
+    const actorState = (b.party || []).find(member => member && member.name === b.actor) || null;
+    const hpNow = actorState ? Math.max(0, Number(actorState.hp) || 0) : null;
+    const hpMax = actorState ? Math.max(1, Number(actorState.max_hp) || 100) : null;
+    const stateText = hpNow == null
+      ? '当前气血以【队伍】标注为准'
+      : `当前气血 ${hpNow}/${hpMax}，仅作状态参考；若本步实际受创、带伤作战或即将面对更强凶险，优先让主角服下恢复丹药；没有合适时机则本步可暂不使用，不按固定低气血阈值机械触发。`;
+    lines.push(`【本步恢复丹药】本步主角可自行使用：${recoveryItems.map(item => `${item.name}（${item.desc || '无描述'}，库存 ${item.qty || 1}）`).join('；')}。${stateText}。若选择使用，正文必须先写实际服食动作并让效果生效，同时返回 success:true 的 itemUse，heal 按正文与当前缺失气血填写且 >0，healTarget 写被治疗角色完整全名；不得只写“撕布条缠伤口”或空有恢复描述却没有 itemUse/heal。`);
   }
   if (dynamic) {
     const quest = b.quest || {};
@@ -608,14 +633,14 @@ function buildUserMessage(b) {
   if (!dynamic && b.stepNo >= b.totalSteps) lines.push('【收尾】这是本次探险的最后一步（归途）：请描写队伍**回到宗门复命、领取任务报酬**（写明报酬灵石数量），回顾得失，收束故事，留有余韵。');
   if (dynamic) {
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"heal":0,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
-    lines.push('heal 仅用于成功使用恢复类丹药或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":12,"heal":0,"healTarget":null,"itemUse":null,"skillUse":null,"loot":[{"name":"道具名","qty":1,"rarity":"common"}],"phase":"opening|explore|encounter|battle|boss|loot|rest|retreat|closing","event":"advance|resolve|fail|retreat","questStatus":"active|completed|failed|retreated","encounterStatus":"none|active|resolved|escaped","nextHint":"下一步应承接的已出现线索，简短填写","continue":true}');
+    lines.push('heal 仅用于成功使用恢复类丹药或成功施展治疗技能且正文明确生效的情况；heal>0 时必须填写 success:true 的 itemUse/skillUse 与 healTarget（被治疗的队伍成员完整全名，治疗自己写主角名）。否则 heal 填 0，且最终气血不会超过上限。');
     lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的气血（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】；phase 只是建议；控制字段必须与 text 中已经发生的事实一致。只有任务已完成、失败或明确撤退，且当前遭遇不再 active 时，才可建议 phase=closing 并设置 continue=false。');
   } else {
     if (Array.isArray(b.availableItems) && b.availableItems.length) lines.push(`【本步可用道具】${b.availableItems.map(i => `${i.name}（${i.userName || b.actor || '当前角色'}使用，原持有人：${i.ownerName || i.userName || b.actor || '当前角色'}${i.loaned ? '，已明确借出' : '，自有'}）`).join('；')}`);
     lines.push('\n请严格输出单个 JSON 对象，不要代码围栏或额外文字：');
-    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"heal":0,"itemUse":null,"skillUse":null,"loot":[]}');
-    lines.push('heal 仅用于成功使用恢复类丹药或成功施展治疗技能且正文明确生效的情况，恢复量必须为正整数；否则填 0，且最终气血不会超过上限。');
+    lines.push('{"text":"本步正文，不超过250字","outcome":"crit|good|mid|bad|fumble","damage":0,"heal":0,"healTarget":null,"itemUse":null,"skillUse":null,"loot":[]}');
+    lines.push('heal 仅用于成功使用恢复类丹药或成功施展治疗技能且正文明确生效的情况；heal>0 时必须填写 success:true 的 itemUse/skillUse 与 healTarget（被治疗的队伍成员完整全名，治疗自己写主角名）。否则 heal 填 0，且最终气血不会超过上限。');
     lines.push('text 写本步实际发生的剧情；outcome 是这一步的定性结果，damage 是本步对主角实际扣除的气血（无则为 0），damage 是唯一扣血依据，服务端不会根据 bad/fumble 或阶段另行补伤害；正文明确写主角实际受伤时 damage 必须为正整数，若只是闪避、险些命中或敌人受伤则填 0；itemUse/skillUse 只有本步正文中实际使用且可用时才填写，否则为 null；loot 是本步明确获得的道具及数量、稀有度，同时必须在正文末尾写【获得：道具名】。阶段只是叙事倾向，无需把本步写成独立、封闭的固定章节；允许与前后事件自然交错，衔接前文。');
   }
   return lines.join('\n');
@@ -1694,12 +1719,14 @@ async function handleAuthAPI(req, res, urlPath) {
       settlePassiveRecovery(current.data);
       const action = String(body.action || '');
       const role = current.data;
-    const busy = ['inventory_equip', 'inventory_unequip', 'skill_equip', 'skill_unequip'].includes(action)
+    const busy = ['inventory_equip', 'inventory_unequip', 'consumable_slot_equip', 'consumable_slot_unequip', 'skill_equip', 'skill_unequip'].includes(action)
       ? equipmentActionBusyReason(role)
       : characterBusyReason(role);
     if (busy) { sendJSON(res, 400, { error: busy, code: 'character_busy' }); return true; }
     role.bag = Array.isArray(role.bag) ? role.bag : [];
     role.equipment = Array.isArray(role.equipment) ? role.equipment : [];
+    if (typeof GE.normalizeConsumableSlots === 'function') GE.normalizeConsumableSlots(role);
+    else role.consumableSlots = Array.isArray(role.consumableSlots) ? role.consumableSlots.filter(slot => slot && slot.name) : [];
     role.skills = Array.isArray(role.skills) ? role.skills : [];
     role.skillPool = Array.isArray(role.skillPool) ? role.skillPool : [];
     if (action === 'inventory_equip' || action === 'inventory_unequip') {
@@ -1710,6 +1737,28 @@ async function handleAuthAPI(req, res, urlPath) {
       if (!Number.isSafeInteger(index) || index < 0 || index >= from.length) { sendJSON(res, 400, { error: '物品位置无效' }); return true; }
       if (to.length >= max) { sendJSON(res, 400, { error: action === 'inventory_equip' ? '随身法宝已满' : '储物袋已满' }); return true; }
       to.push(from.splice(index, 1)[0]);
+    } else if (action === 'consumable_slot_equip' || action === 'consumable_slot_unequip') {
+      if (role.consumableSlots.length >= 2 && action === 'consumable_slot_equip') { sendJSON(res, 400, { error: '消耗品栏已满（2/2），请先卸下一个' }); return true; }
+      if (action === 'consumable_slot_equip') {
+        const index = Number(body.index);
+        const it = role.bag && role.bag[index];
+        if (!Number.isSafeInteger(index) || index < 0 || !it) { sendJSON(res, 400, { error: '物品位置无效' }); return true; }
+        if (!GE.itemIsConsumable(it)) { sendJSON(res, 400, { error: '只能放入消耗品' }); return true; }
+        if ((role.consumableSlots || []).some(slot => slot && String(slot.name || '').trim().toLowerCase() === String(it.name || '').trim().toLowerCase())) {
+          sendJSON(res, 400, { error: '该消耗品已在消耗品栏中' }); return true;
+        }
+        role.consumableSlots.push({
+          name: String(it.name || '').slice(0, 24),
+          desc: String(it.desc || '').slice(0, 200),
+          kind: it.kind || 'consumable',
+          rarity: it.rarity || 'common',
+          qty: 1,
+        });
+      } else {
+        const slot = Number(body.slot);
+        if (!Number.isSafeInteger(slot) || slot < 0 || slot >= 2 || !role.consumableSlots[slot]) { sendJSON(res, 400, { error: '消耗品栏位无效' }); return true; }
+        role.consumableSlots.splice(slot, 1);
+      }
     } else if (action === 'skill_equip' || action === 'skill_unequip') {
       const from = action === 'skill_equip' ? role.skillPool : role.skills;
       const to = action === 'skill_equip' ? role.skills : role.skillPool;
@@ -1757,6 +1806,7 @@ async function handleAuthAPI(req, res, urlPath) {
         c.data.max_hp = running.max_hp || c.data.max_hp;
         c.data.equipment = running.equipment || c.data.equipment;
         c.data.bag = running.bag || c.data.bag;
+        c.data.consumableSlots = running.consumableSlots || c.data.consumableSlots || [];
         c.data.skills = running.skills || c.data.skills;
       }
       sendJSON(res, 200, { id: c.id, character: c.data, updated_at: c.updated_at });
@@ -2088,7 +2138,7 @@ const server = http.createServer(async (req, res) => {
     settlePassiveRecovery(character);
     const followed = DB.getFollowedCharacterIds(u.id).includes(character.id);
     const running = findRunningRoomMember(null, character.id);
-    const liveCharacter = !running ? { ...character, is_followed: followed } : { ...character, is_followed: followed, status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, skills: running.skills || character.skills };
+    const liveCharacter = !running ? { ...character, is_followed: followed } : { ...character, is_followed: followed, status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, consumableSlots: running.consumableSlots || character.consumableSlots || [], skills: running.skills || character.skills };
     sendJSON(res, 200, { character: liveCharacter });
     return true;
   }
@@ -2113,7 +2163,7 @@ const server = http.createServer(async (req, res) => {
       settlePassiveRecovery(character);
       const running = findRunningRoomMember(null, character.id);
       if (!running) return { ...character, is_followed: followedCharacterSet.has(character.id) };
-      return { ...character, is_followed: followedCharacterSet.has(character.id), status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, skills: running.skills || character.skills };
+      return { ...character, is_followed: followedCharacterSet.has(character.id), status: 'adventuring', stamina: running.stamina, hp: running.hp, max_hp: running.max_hp || character.max_hp, equipment: running.equipment || character.equipment, bag: running.bag || character.bag, consumableSlots: running.consumableSlots || character.consumableSlots || [], skills: running.skills || character.skills };
     });
     sendJSON(res, 200, { ...pageResult, characters });
     return true;
@@ -2196,7 +2246,7 @@ const server = http.createServer(async (req, res) => {
         if (!violations.length) {
           sendJSON(res, 200, {
             text: generated.text, outcome: generated.outcome, damage: generated.damage, heal: generated.heal,
-            itemUse: generated.itemUse, skillUse: generated.skillUse, loot: generated.loot,
+            healTarget: generated.healTarget, itemUse: generated.itemUse, skillUse: generated.skillUse, loot: generated.loot,
             structured: generated.structured,
           });
           return;
@@ -2874,7 +2924,9 @@ async function dungeonStep(room) {
   try {
     payload = GE.aiStoryPayload(dg, stageKey, actor, support, support2, attrKey, roll, mod, total, null, null);
     for (let attempt = 0; attempt < 2; attempt++) {
-      j = await callAIStory(payload, attempt > 0 ? GE.itemGuardFeedback(violations) : '');
+      const feedback = [];
+      if (attempt > 0 && violations.length) feedback.push(GE.itemGuardFeedback(violations));
+      j = await callAIStory(payload, feedback.filter(Boolean).join('\n\n'));
       const text = j && j.text ? String(j.text) : '';
       if (!text) throw new Error('AI 返回空内容');
       rawText = String(text).trim();
@@ -2896,8 +2948,12 @@ async function dungeonStep(room) {
     const itemUse = resolveAiItemUse(dg, actor, aiStep.itemUse);
     const skillUse = resolveAiSkillUse(actor, aiStep.skillUse);
     const itemExplicit = itemUse && itemUse.success && GE.itemUseExplicitInText(cleanText, itemUse.item, actor);
-    const healAllowed = !!((itemExplicit && ['pill', 'talisman'].includes(String(itemUse.item.kind || '').toLowerCase())) || (skillUse && skillUse.success));
-    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed);
+    const healItemAllowed = itemExplicit && typeof GE.itemIsConsumable === 'function' && GE.itemIsConsumable(itemUse.item);
+    const healSkillAllowed = !!(skillUse && skillUse.success);
+    const healInfo = GE.resolveHealInfo(dg, actor, cleanText, j && (j.healTarget || j.target), { explicitUse: healItemAllowed || healSkillAllowed });
+    const healAllowed = healInfo.allowed;
+    const healTarget = healAllowed ? (healInfo.target || actor) : actor;
+    GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed, healTarget);
     if (typeof GE.recordItemLoansFromText === 'function') GE.recordItemLoansFromText(dg, cleanText);
     if (itemExplicit && typeof GE.consumeItemUse === 'function') {
       GE.consumeItemUse(dg, itemUse, { explicitUse: true, actor });
@@ -2905,6 +2961,7 @@ async function dungeonStep(room) {
     stepRec = {
       stage: stageKey, actor: actor.name, attr: '', roll: 0, mod: 0, total: 0, outcome, text: cleanText, rawText,
       stepNo: dg.totalStep + 1, enemy: dg._curEnemy ? dg._curEnemy.name : '', realmB: 0, src: 'ai', aiDamage: aiStep.damage, aiHeal: aiStep.heal,
+      healTargetName: healAllowed && healTarget ? healTarget.name : null,
       itemUse: itemUse ? { name: itemUse.item.name, success: itemUse.success, ownerId: itemUse.item.ownerId || null, userId: itemUse.item.userId || null, ownerName: itemUse.item.owner ? itemUse.item.owner.name : null, userName: actor.name, loaned: !!itemUse.item.loaned } : null,
       skillUse: skillUse ? { name: skillUse.name, type: skillUse.type, tier: skillUse.tier, elemMod: skillUse.elemMod || 0, success: skillUse.success } : null,
     };
@@ -2957,7 +3014,7 @@ async function dungeonStep(room) {
 function parseAiStoryResponse(content, fallback = {}) {
   const raw = String(content || '').trim();
   const fallbackOutcome = fallback.needsCheck === false ? 'good' : 'mid';
-  const defaultStep = { outcome: fallbackOutcome, damage: 0, heal: 0, itemUse: null, skillUse: null, loot: [] };
+  const defaultStep = { outcome: fallbackOutcome, damage: 0, heal: 0, healTarget: null, itemUse: null, skillUse: null, loot: [] };
   let parsed = null;
   try { parsed = JSON.parse(raw); } catch {
     const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
@@ -2967,7 +3024,11 @@ function parseAiStoryResponse(content, fallback = {}) {
   const text = String(parsed.text || parsed.content || '').trim() || raw;
   const decision = GE.normalizeAiDecision(parsed, fallback);
   const aiStep = GE.normalizeAiStepResult(parsed, { outcome: fallbackOutcome });
-  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, heal: aiStep.heal, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
+  const healHint = parsed && (parsed.healTarget || parsed.target);
+  const healTarget = healHint && typeof healHint === 'object'
+    ? String(healHint.name || '').trim().slice(0, 30)
+    : String(healHint || '').trim().slice(0, 30) || null;
+  return { text, decision, structured: true, outcome: aiStep.outcome, damage: aiStep.damage, heal: aiStep.heal, healTarget, itemUse: aiStep.itemUse, skillUse: aiStep.skillUse, loot: aiStep.loot };
 }
 async function callAIStory(payload, extraInstruction = '') {
   if (process.env.ROOM_FAST === '1') {
@@ -2984,6 +3045,7 @@ async function callAIStory(payload, extraInstruction = '') {
       structured: true,
       outcome: 'good',
       damage: 0,
+      healTarget: null,
       itemUse: null,
       skillUse: null,
       loot: [],
@@ -3027,10 +3089,10 @@ async function callAIStory(payload, extraInstruction = '') {
         const lastDot = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('！'), cut.lastIndexOf('？'), cut.lastIndexOf('…'));
         return {
           text: lastDot > 100 ? cut.slice(0, lastDot + 1) : cut, decision: parsed.decision, structured: parsed.structured,
-          outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
+          outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, healTarget: parsed.healTarget, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot,
         };
       }
-      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
+      return { text, decision: parsed.decision, structured: parsed.structured, outcome: parsed.outcome, damage: parsed.damage, heal: parsed.heal, healTarget: parsed.healTarget, itemUse: parsed.itemUse, skillUse: parsed.skillUse, loot: parsed.loot };
     } catch (e) {
       lastError = e;
       if (attempt === 0) {
@@ -3255,10 +3317,13 @@ async function settleRoom(room) {
   for (const m of dg.party) {
     const g = dg.memberGains[m.uid || m.id] || { damage: 0, crits: 0, fumbles: 0 };
     const hpNow = m.hp || 0;
+    const entryInfo = (dg.entryHp || {})[m.uid || m.id];
+    const hpEntry = entryInfo && Number.isFinite(Number(entryInfo.hp)) ? Number(entryInfo.hp) : null;
     const spiritStoneShare = spiritStoneShares[m.uid || m.id] || 0;
     const memberRes = {
       uid: m.uid || null, charId: m.charId || null,
       name: m.name, isNpc: !!m.isNpc, isMine: !m.isNpc, loot: [], lootItems: [], exp: 0, hpFinal: hpNow,
+      hpDelta: Number.isFinite(hpEntry) ? Math.max(0, Number(hpNow) || 0) - hpEntry : null, levelUp: false,
       fate: (hpNow <= 0 || m.isDead) ? '阵亡' : (hpNow <= (m.max_hp || 100) * 0.35 ? '受伤' : '健康'),
       score: 5, damage: g.damage || 0, gold: spiritStoneShare, newTraits: [], newSkills: [], praise: 0,
     };
@@ -3306,6 +3371,7 @@ async function settleRoom(room) {
         leveledUp = true;
       }
     }
+    memberRes.levelUp = leveledUp;
     const assignedLoot = lootByMember[m.uid || m.id] || [];
     const myLoot = assignedLoot;
     myLoot.forEach(it => {
@@ -3337,12 +3403,19 @@ async function settleRoom(room) {
     // 结算后气血并入真实结算值（服务端权威，m.hp 为冒险中扣血后的值）
     if (!leveledUp) role.max_hp = m.max_hp || role.max_hp || 100;
     role.hp = leveledUp ? role.max_hp : Math.min(m.hp > 0 ? m.hp : 1, role.max_hp);
+    if (typeof GE.normalizeConsumableSlots === 'function') GE.normalizeConsumableSlots(role);
+    const keptSlotNames = new Set([...(role.bag || []), ...(role.equipment || [])]
+      .filter(entry => entry && Number(entry.qty == null ? 1 : entry.qty) > 0)
+      .map(entry => String(entry.name || '')));
+    role.consumableSlots = (role.consumableSlots || []).filter(slot => slot && slot.name && keptSlotNames.has(String(slot.name)));
+    memberRes.hpFinal = Math.max(0, Number(role.hp) || 0);
+    if (Number.isFinite(hpEntry)) memberRes.hpDelta = memberRes.hpFinal - hpEntry;
     characterWrites.push({ userId: m.uid, characterId: m.charId, name: role.name, data: role });
     settledPlayers.push({ uid: m.uid, memberRes, goldGain, damage: g.damage });
     results.push(memberRes);
   }
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [entry.name, entry.reason]));
-  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, loot: r.lootItems, statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
+  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, hpDelta: r.hpDelta != null ? r.hpDelta : null, levelUp: !!r.levelUp, loot: r.lootItems, statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
   const anyDeath = results.some(r => r.fate === '阵亡');
   const participants = settledPlayers.map(settled => ({ userId: settled.uid, characterId: dg.party.find(m => m.uid === settled.uid)?.charId, memberName: settled.memberRes.name, personalData: { exp: settled.memberRes.exp, gold: settled.goldGain, items: settled.memberRes.lootItems, damage: settled.damage } }));
   const log = {

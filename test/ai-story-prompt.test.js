@@ -129,6 +129,27 @@ test('dynamic prompt restricts item use to actor-owned or explicitly loaned item
   assert.match(prompt, /使用者、原持有人/);
 });
 
+test('story prompts prioritize carried consumables without a fixed low HP recovery mandate', () => {
+  const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  const systemPrompt = server.slice(server.indexOf('const SYSTEM_PROMPT'), server.indexOf('function buildUserMessage'));
+  const prompt = buildPrompt({
+    flowMode: 'dynamic', dungeon: '洛兰', party: [{ name: '甲', hp: 60, max_hp: 100 }], actor: '甲', stepNo: 4,
+    minSteps: 10, preferredMaxSteps: 25, maxSteps: 40, phase: 'battle', stage: 'battle', stageLabel: '战斗',
+    quest: { status: 'active', objective: '清剿哥布林' }, encounter: { status: 'active', name: '哥布林' },
+    availableItems: [{ name: '生命药水', desc: '恢复生命' }],
+    recoveryConsumables: [{ name: '生命药水', desc: '恢复生命', qty: 3 }],
+    consumableSlots: [{ name: '生命药水', desc: '恢复生命', qty: 3 }],
+  });
+
+  assert.match(systemPrompt, /7c\. \*\*治疗尺度/);
+  assert.match(systemPrompt, /7d\. \*\*消耗品使用优先级\*\*/);
+  assert.match(prompt, /【本步消耗品·优先关注】/);
+  assert.match(prompt, /库存 3/);
+  assert.match(prompt, /优先让角色在正文中实际使用/);
+  assert.doesNotMatch(prompt, /本步必须使用恢复用品/);
+  assert.doesNotMatch(prompt, /低于 70%/);
+});
+
 test('story prompts keep DNF dungeon vocabulary and avoid xianxia wording', () => {
   const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
   const systemPrompt = server.slice(server.indexOf('const SYSTEM_PROMPT'), server.indexOf('function buildUserMessage'));

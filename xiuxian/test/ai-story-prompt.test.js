@@ -128,3 +128,24 @@ test('dynamic prompt restricts item use to actor-owned or explicitly loaned item
   assert.match(prompt, /不得擅自使用其他角色/);
   assert.match(prompt, /使用者、原持有人/);
 });
+
+test('story prompts prioritize carried consumables without a fixed low HP recovery mandate', () => {
+  const server = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+  const systemPrompt = server.slice(server.indexOf('const SYSTEM_PROMPT'), server.indexOf('function buildUserMessage'));
+  const prompt = buildPrompt({
+    flowMode: 'dynamic', dungeon: '枯骨林', party: [{ name: '甲', hp: 60, max_hp: 100 }], actor: '甲', stepNo: 4,
+    minSteps: 10, preferredMaxSteps: 25, maxSteps: 40, phase: 'battle', stage: 'battle', stageLabel: '战斗',
+    quest: { status: 'active', objective: '清理碑林执念' }, encounter: { status: 'active', name: '守碑残魂' },
+    availableItems: [{ name: '疗伤丹', desc: '恢复气血' }],
+    recoveryConsumables: [{ name: '疗伤丹', desc: '恢复气血', qty: 3 }],
+    consumableSlots: [{ name: '疗伤丹', desc: '恢复气血', qty: 3 }],
+  });
+
+  assert.match(systemPrompt, /7c\. \*\*治疗尺度/);
+  assert.match(systemPrompt, /7d\. \*\*消耗品使用优先级\*\*/);
+  assert.match(prompt, /【本步消耗品·优先关注】/);
+  assert.match(prompt, /库存 3/);
+  assert.match(prompt, /优先让角色在正文中实际使用/);
+  assert.doesNotMatch(prompt, /本步必须使用恢复丹药/);
+  assert.doesNotMatch(prompt, /低于 70%/);
+});

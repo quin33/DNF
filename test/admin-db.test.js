@@ -85,6 +85,7 @@ test('admin character lookup includes the owning username', () => {
     equipment: characterData.equipment.map(item => ({ ...item, rarity: 'common' })),
     skills: characterData.skills.map(skill => ({ ...skill, desc: '' })),
     skillPool: characterData.skillPool.map(skill => ({ ...skill, desc: '' })),
+    consumableSlots: [],
   });
 });
 

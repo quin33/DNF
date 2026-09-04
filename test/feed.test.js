@@ -38,7 +38,7 @@ test('a forge operation records material consumption and output in one feed entr
 test('mine layout keeps the adventurer card above a full-width activity feed', () => {
   assert.match(styles, /:root\s*\{[\s\S]*?--color-bg:\s*#0e1319/);
   assert.match(styles, /\[data-theme="light"\]\s*\{[\s\S]*?--color-bg:\s*var\(--paper-bg\)/);
-  assert.match(source, /adv-card[^`]*statusClass/, 'adventurer cards should derive a status class');
+  assert.match(source, /role-card[^`]*role-status role-status--\$\{statusSafe\}/, 'adventurer cards should derive a status class');
   assert.match(source, /mine-layout[^`]*adv-grid[^`]*advCardHTML\(me\)[^`]*feed-list/, 'mine page should reuse the adventurer grid sizing for the card');
   assert.doesNotMatch(source, /<div class="mine-card-col" style="flex:1\.4">/, 'activity feed should not remain in a side column');
 });
@@ -200,8 +200,9 @@ test('mine and adventurer views use one shared full-detail character card', () =
   const adventurers = html.slice(html.indexOf('function renderAdvList'), html.indexOf('function renderParty'));
   assert.match(mine, /advCardHTML\(me\)/);
   assert.match(adventurers, /list\.map\(advCardHTML\)/);
+  const cardData = html.slice(html.indexOf('function normalizeAdvCardData'), html.indexOf('function renderMine'));
   for (const field of ['hp', 'max_hp', 'stamina', 'max_stamina', 'equipment', 'bag', 'skills']) {
-    assert.match(html.slice(html.indexOf('function advCardHTML'), html.indexOf('function renderMine')), new RegExp('adv\\.' + field));
+    assert.match(cardData, new RegExp('adv\\.' + field));
   }
 });
 

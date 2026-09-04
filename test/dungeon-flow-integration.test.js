@@ -268,6 +268,15 @@ test('dungeon step applies AI healing from a successful treatment skill', async 
   assert.equal(dg.party[0].hp, 85);
 });
 
+test('dungeon step heals from narrative recovery even when AI omits skillUse', async () => {
+  const actor = { id: 'p1', name: '甲', hp: 55, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [], skills: [{ name: '快速愈合' }] };
+  const dg = makeDg({ party: [actor], memberGains: { p1: { acts: 0, rolls: [], damage: 0 } } });
+  const harness = createHarness({ text: '甲施展快速愈合，白芒覆上伤口，焦皮缓缓收拢。', structured: true, heal: 30, decision: decision() });
+  await harness.step({ dg });
+  assert.equal(dg.party[0].hp, 85);
+  assert.equal(dg.steps[0].healTargetName, '甲');
+});
+
 test('dungeon step records an explicit narrative loan for later use', async () => {
   const lender = { id: 'p1', name: '甲', hp: 100, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [{ name: '铁剑', kind: 'weapon', qty: 1 }], bag: [], skills: [] };
   const borrower = { id: 'p2', name: '乙', hp: 100, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [], skills: [] };
@@ -298,4 +307,44 @@ test('item guard rewrites an unauthorized item use with ownership feedback', asy
   assert.match(harness.events.extras[1], /顾长风/);
   assert.equal(dg.steps.length, 1);
   assert.match(dg.steps[0].text, /测试修士摇动净魂道铃/);
+});
+
+test('low HP no longer forces an AI recovery retry when no consumable is used', async () => {
+  const actor = { id: 'p1', name: '甲', hp: 60, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [{ name: '生命药水', kind: 'pill', desc: '恢复生命', qty: 2 }], skills: [] };
+  const dg = makeDg({ totalStep: 12, party: [actor], memberGains: { p1: { acts: 0, rolls: [], damage: 0 } } });
+  const harness = createHarness({ text: '甲挥剑斩开石像，左臂被碎石划开一道血口。', structured: true, damage: 20, decision: decision() });
+
+  await harness.step({ dg });
+
+  assert.equal(harness.events.payloads.length, 1);
+  assert.equal(harness.events.extras[0], '');
+  assert.equal(dg.party[0].hp, 40);
+  assert.equal(dg.party[0].bag[0].qty, 2);
+  assert.deepEqual(dg.consumed, []);
+});
+
+test('AI-declared recovery potion use still heals and deducts in one call', async () => {
+  const actor = { id: 'p1', name: '甲', hp: 60, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [{ name: '生命药水', kind: 'pill', desc: '恢复生命', qty: 2 }], skills: [] };
+  const dg = makeDg({ totalStep: 12, party: [actor], memberGains: { p1: { acts: 0, rolls: [], damage: 0 } } });
+  const harness = createHarness({ text: '甲拧开瓶盖，将生命药水一饮而尽，伤口迅速愈合。', structured: true, itemUse: { name: '生命药水', success: true }, heal: 40, decision: decision() });
+
+  await harness.step({ dg });
+
+  assert.equal(harness.events.payloads.length, 1);
+  assert.equal(dg.party[0].hp, 100);
+  assert.equal(dg.party[0].bag[0].qty, 1);
+  assert.deepEqual(dg.consumed[0], { name: '生命药水', ownerId: 'p1', userId: 'p1', qty: 1, loaned: false });
+});
+
+test('successful healing skill resolves low HP in a single call', async () => {
+  const actor = { id: 'p1', name: '甲', hp: 55, max_hp: 100, level: 1, strength: 10, agility: 10, intelligence: 10, luck: 10, traits: [], equipment: [], bag: [{ name: '生命药水', kind: 'pill', desc: '恢复生命', qty: 1 }], skills: [{ name: '快速愈合' }] };
+  const dg = makeDg({ party: [actor], memberGains: { p1: { acts: 0, rolls: [], damage: 0 } } });
+  const harness = createHarness({ text: '甲催动快速愈合，白芒覆上伤口，焦皮缓缓收拢。', structured: true, skillUse: { name: '快速愈合', success: true }, heal: 30, decision: decision() });
+
+  await harness.step({ dg });
+
+  assert.equal(harness.events.payloads.length, 1);
+  assert.equal(dg.party[0].hp, 85);
+  assert.equal(dg.party[0].bag[0].qty, 1);
+  assert.deepEqual(dg.consumed, []);
 });
