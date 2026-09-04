@@ -3217,6 +3217,36 @@ function logDetailHTML(l) {
     ${s ? memberStatusPanelHTML(s, l.id) : ''}
   </div>`;
 }
+function memberConsumedGroups(m, s) {
+  const consumed = Array.isArray(m && m.consumed) ? m.consumed : null;
+  const all = Array.isArray(s && s.consumed) ? s.consumed : [];
+  const records = [];
+  if (consumed) {
+    records.push(...consumed);
+  } else {
+    const memberName = String(m && m.name || '').trim();
+    const hasOwnerLabels = all.some(entry => entry && (entry.userName || entry.ownerName));
+    if (hasOwnerLabels) {
+      records.push(...all.filter(entry => entry && String(entry.userName || entry.ownerName || '').trim() === memberName));
+    } else if (m && m.is_mine) {
+      records.push(...all);
+    }
+  }
+  const groups = new Map();
+  for (const entry of records || []) {
+    const name = String(entry && entry.name || '').trim();
+    if (!name) continue;
+    const group = groups.get(name) || { name, qty: 0, rarity: entry.rarity };
+    group.qty += Math.max(1, Number(entry.qty) || 1);
+    groups.set(name, group);
+  }
+  return [...groups.values()];
+}
+function memberConsumedHTML(m, s) {
+  const groups = memberConsumedGroups(m, s);
+  if (!groups.length) return '';
+  return `<div class="msc-loot"><span class="msc-loot-label">剧情消耗：</span>${groups.map(item => `<span class="consumed-tag"><span style="color:${itemColor(item)}">${esc(item.name)}</span> ×${item.qty}</span>`).join('')}</div>`;
+}
 function memberStatusPanelHTML(s, logId) {
   const members = s.members || [];
   let likesDone = [];
@@ -3243,13 +3273,9 @@ function memberStatusPanelHTML(s, logId) {
           ${m.newSkills && m.newSkills.length ? `<div class="msc-traits"><span class="msc-loot-label">新领悟：</span>${m.newSkills.map(skill => `<span class="msc-trait" title="${esc(skill.desc || '')}">${esc(skill.name)}${skill.storage === 'pool' ? '（技能库）' : ''}</span>`).join('')}</div>` : ''}
           ${m.fate === '阵亡' && m.death_reason ? `<div class="msc-death">☠ ${esc(m.death_reason)}</div>` : ''}
           ${m.loot && m.loot.length ? `<div class="msc-loot"><span class="msc-loot-label">新装备：</span>${m.loot.map(it => `<span class="msc-loot-item" title="${esc(it.desc || '')}"><span style="color:${itemColor(it)}">${esc(it.name)}</span> ×${it.qty || 1} <span class="rarity-tag" style="color:${RARITY_COLOR[it.rarity]};border-color:${RARITY_COLOR[it.rarity]}">${RARITY_NAME[it.rarity] || it.rarity}</span></span>`).join('')}</div>` : ''}
+          ${memberConsumedHTML(m, s)}
         </div>`).join('')}
     </div>
-    ${s.consumed && s.consumed.length ? `
-    <div class="msc-consumed">
-      <span class="msc-consumed-title">🧪 剧情中消耗的道具（已扣除）：</span>
-      ${s.consumed.map(n => `<span class="consumed-tag"><span style="color:${itemColor(n)}">${esc(n.name || n)}</span> ×1</span>`).join('')}
-    </div>` : ''}
     <div class="praise-box">
       <div class="praise-title">👍 给队友点赞</div>
       <div class="praise-list">
@@ -4000,7 +4026,7 @@ async function dungeonTick(dg) {
   const healTarget = healAllowed ? (healInfo.target || actor) : actor;
   if (itemExplicit && itemIsConsumable(itemUse.item)) {
     if (!dg.consumed) dg.consumed = [];
-    dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common' });
+    dg.consumed.push({ name: itemUse.item.name, ownerId: itemUse.item.owner ? itemUse.item.owner.id : null, rarity: itemUse.item.rarity || 'common', ownerName: actor.name, userName: actor.name });
   }
   // 转职试炼：本步判定成功（good/crit）→ 转职功成标记，结算时晋级 Lv.11
   if (stageKey === 'breakthrough' && (outcome === 'good' || outcome === 'crit')) dg.breachSuccess = true;

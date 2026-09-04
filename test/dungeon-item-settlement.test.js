@@ -71,3 +71,43 @@ test('successful one-shot use records the inventory owner and the acting user', 
   await context.dungeonStep({ dg });
   assert.deepEqual(JSON.parse(JSON.stringify(dg.consumed)), [{ name: '聚气丹', ownerId: 'u2', userId: 'u2', qty: 1, loaned: false }]);
 });
+
+test('settlement attaches consumed story items to each acting member card', () => {
+  const server = fs.readFileSync('server.js', 'utf8');
+  const settlement = server.slice(server.indexOf('async function settleRoom'), server.indexOf('function leaveRoomCleanup'));
+  const online = fs.readFileSync('online.js', 'utf8');
+  const html = fs.readFileSync('index.html', 'utf8');
+
+  assert.match(settlement, /memberRes\.consumed = .*itemSettlement\.consumed/);
+  assert.match(settlement, /consumed: r\.consumed \|\| \[\],/);
+  assert.match(online, /consumed: r\.consumed \|\| \[\],/);
+  assert.match(html, /剧情消耗：/);
+});
+
+test('member consumed grouping follows userName and aggregates repeated item uses', () => {
+  const html = fs.readFileSync('index.html', 'utf8');
+  const start = html.indexOf('function memberConsumedGroups');
+  const end = html.indexOf('function memberStatusPanelHTML', start);
+  assert.ok(start >= 0 && end > start, 'memberConsumedGroups helper should exist');
+  const context = {
+    module: {}, exports: {},
+    esc: value => String(value),
+    itemColor: () => '#c8a24f',
+  };
+  vm.createContext(context);
+  vm.runInContext(html.slice(start, end) + '\nthis.memberConsumedGroups = memberConsumedGroups; this.memberConsumedHTML = memberConsumedHTML;', context);
+
+  const settlement = {
+    consumed: [
+      { name: '生命药水', userName: '阿尔伯特', qty: 1 },
+      { name: '生命药水', userName: '阿尔伯特', qty: 1 },
+      { name: '魔力药剂', userName: '卡妮娜', qty: 1 },
+    ],
+  };
+  const albert = { name: '阿尔伯特', is_mine: false };
+  assert.deepEqual(JSON.parse(JSON.stringify(context.memberConsumedGroups(albert, settlement))), [
+    { name: '生命药水', qty: 2 },
+  ]);
+  assert.match(context.memberConsumedHTML(albert, settlement), /剧情消耗：/);
+  assert.doesNotMatch(context.memberConsumedHTML(albert, settlement), /魔力药剂/);
+});

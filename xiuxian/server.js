@@ -2948,14 +2948,15 @@ async function dungeonStep(room) {
     const itemUse = resolveAiItemUse(dg, actor, aiStep.itemUse);
     const skillUse = resolveAiSkillUse(actor, aiStep.skillUse);
     const itemExplicit = itemUse && itemUse.success && GE.itemUseExplicitInText(cleanText, itemUse.item, actor);
-    const healItemAllowed = itemExplicit && typeof GE.itemIsConsumable === 'function' && GE.itemIsConsumable(itemUse.item);
+    const itemSuccessful = itemUse && itemUse.success;
+    const healItemAllowed = itemSuccessful && typeof GE.itemIsConsumable === 'function' && GE.itemIsConsumable(itemUse.item);
     const healSkillAllowed = !!(skillUse && skillUse.success);
     const healInfo = GE.resolveHealInfo(dg, actor, cleanText, j && (j.healTarget || j.target), { explicitUse: healItemAllowed || healSkillAllowed });
     const healAllowed = healInfo.allowed;
     const healTarget = healAllowed ? (healInfo.target || actor) : actor;
     GE.applyStageEffects(dg, stageKey, actor, total, outcome, aiStep.damage, aiStep.heal, healAllowed, healTarget);
     if (typeof GE.recordItemLoansFromText === 'function') GE.recordItemLoansFromText(dg, cleanText);
-    if (itemExplicit && typeof GE.consumeItemUse === 'function') {
+    if (itemSuccessful && typeof GE.consumeItemUse === 'function') {
       GE.consumeItemUse(dg, itemUse, { explicitUse: true, actor });
     }
     stepRec = {
@@ -3327,6 +3328,10 @@ async function settleRoom(room) {
       fate: (hpNow <= 0 || m.isDead) ? '阵亡' : (hpNow <= (m.max_hp || 100) * 0.35 ? '受伤' : '健康'),
       score: 5, damage: g.damage || 0, gold: spiritStoneShare, newTraits: [], newSkills: [], praise: 0,
     };
+    const memberNameKey = String(m.name || '').trim();
+    memberRes.consumed = (itemSettlement.consumed || []).filter(item =>
+      String(item.userName || item.ownerName || '').trim() === memberNameKey
+    );
     if (m.isNpc) {
       // AI 队友结算时可分到战利品：仅用于结算界面展示，不进入其储物袋（NPC 无持久化背包）。
       const npcLoot = lootByMember[m.uid || m.id] || [];
@@ -3415,7 +3420,7 @@ async function settleRoom(room) {
     results.push(memberRes);
   }
   const deathReasonByName = new Map((deathSummary.roles || []).map(entry => [entry.name, entry.reason]));
-  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, hpDelta: r.hpDelta != null ? r.hpDelta : null, levelUp: !!r.levelUp, loot: r.lootItems, statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
+  const memberStatuses = results.map(r => ({ name: r.name, is_mine: r.isMine, score: r.score, gold: r.gold, fate: r.fate, damage: r.damage, hpDelta: r.hpDelta != null ? r.hpDelta : null, levelUp: !!r.levelUp, loot: r.lootItems, consumed: r.consumed || [], statBuffs: r.statBuffs || [], newTraits: r.newTraits, newSkills: r.newSkills, praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || fallbackDeathSummary([r.name], dg.dungeon.name).roles[0].reason) : '' }));
   const anyDeath = results.some(r => r.fate === '阵亡');
   const participants = settledPlayers.map(settled => ({ userId: settled.uid, characterId: dg.party.find(m => m.uid === settled.uid)?.charId, memberName: settled.memberRes.name, personalData: { exp: settled.memberRes.exp, gold: settled.goldGain, items: settled.memberRes.lootItems, damage: settled.damage } }));
   const log = {

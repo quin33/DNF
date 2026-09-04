@@ -1415,6 +1415,7 @@
       fate: r.fate || '健康', damage: r.damage || 0, hpDelta: r.hpDelta != null ? r.hpDelta : null,
       levelUp: !!r.levelUp, gold: r.gold || 0,
       loot: r.lootItems && r.lootItems.length ? r.lootItems : (r.loot || []).map(n => ({ name: n, qty: 1 })),
+      consumed: r.consumed || [],
       newTraits: r.newTraits || [], praise: 0, death_reason: r.fate === '阵亡' ? (deathReasonByName.get(r.name) || `角色「${r.name}」在探险中气血耗尽，壮烈阵亡。`.slice(0, 100)) : '',
     }));
     // 日志编号：优先用服务端分配的本局日志 id（001 起递增）
